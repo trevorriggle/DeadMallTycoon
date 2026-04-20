@@ -85,7 +85,9 @@ struct DecisionBanner: View {
 // MARK: - Start screen
 
 struct StartScreenView: View {
-    let onStart: () -> Void
+    // withTutorial=true → guided first-year tutorial (half-speed, welcome coachmark).
+    // withTutorial=false → skip straight into a normal run at x1.
+    let onStart: (_ withTutorial: Bool) -> Void
     @State private var showingTutorial = false
 
     var body: some View {
@@ -123,7 +125,7 @@ struct StartScreenView: View {
                     .frame(maxWidth: 520)
                     .padding(.top, 8)
                 Button("Begin Run · Jan 1982") {
-                    onStart()
+                    onStart(true)
                 }
                 .font(.system(size: 20, weight: .bold, design: .monospaced))
                 .tracking(1.2)
@@ -134,6 +136,13 @@ struct StartScreenView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .buttonStyle(.plain)
                 .padding(.top, 20)
+                Button("Skip Tutorial") { onStart(false) }
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(Color(hex: "#888780"))
+                    .padding(.horizontal, 10).padding(.vertical, 3)
+                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#3a3935")))
+                    .padding(.top, 2)
                 Button("How to Play") { showingTutorial = true }
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .tracking(0.8)

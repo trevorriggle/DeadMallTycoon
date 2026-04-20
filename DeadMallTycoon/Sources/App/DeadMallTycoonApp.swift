@@ -16,20 +16,31 @@ struct DeadMallTycoonApp: App {
 struct ContentView: View {
     @Bindable var vm: GameViewModel
     @State private var showingTutorial = false
+    // Collected from .coachmarkAnchor(...) modifiers throughout the game body.
+    // Used by CoachmarkOverlay to position arrows over real UI element frames.
+    @State private var coachmarkAnchors: [CoachmarkAnchor: CGRect] = [:]
 
     var body: some View {
         ZStack {
             Color(hex: "#0a0908").ignoresSafeArea()
             if !vm.state.started {
-                StartScreenView(onStart: { vm.startGame() })
+                StartScreenView(onStart: { withTutorial in
+                    vm.startGame(withTutorial: withTutorial)
+                })
             } else {
                 gameBody
                 if vm.state.gameover {
                     GameOverView(vm: vm)
                         .transition(.opacity)
                 }
+                // Overlay sits above the game but below the game-over card.
+                // It renders nothing unless state.activeTutorialStep is set, and
+                // yields to a DecisionBanner internally.
+                CoachmarkOverlay(vm: vm, anchors: coachmarkAnchors)
             }
         }
+        .coordinateSpace(name: CoachmarkSpace.name)
+        .onPreferenceChange(CoachmarkAnchorKey.self) { coachmarkAnchors = $0 }
         .sheet(isPresented: $showingTutorial) {
             TutorialView(onClose: { showingTutorial = false })
         }
@@ -41,12 +52,15 @@ struct ContentView: View {
                 goalStrip
                 HUDView(vm: vm)
                 TabBar(current: vm.state.currentTab, onSelect: { vm.switchTab($0) })
+                    .coachmarkAnchor(.tabBar)
                 // MallView is always in the tree so the SpriteKit scene is not torn down
                 // when the player switches tabs. Non-Mall tabs overlay on top of it.
                 ZStack {
                     MallView(vm: vm)
                         .opacity(vm.state.currentTab == .mall ? 1 : 0)
                         .allowsHitTesting(vm.state.currentTab == .mall)
+                        .coachmarkAnchor(.sceneVisitor)
+                        .coachmarkAnchor(.sceneStore)
                     if vm.state.currentTab != .mall {
                         OpsTabsView(vm: vm, tab: vm.state.currentTab)
                     }

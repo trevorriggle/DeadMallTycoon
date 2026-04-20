@@ -10,12 +10,15 @@ struct HUDView: View {
             dateChip
             Text("·").foregroundStyle(.secondary)
             stat("Cash", value: fmt(vm.state.cash), color: cashColor)
+                .coachmarkAnchor(.cash)
             stat("Debt", value: fmt(vm.state.debt), color: debtColor)
             stat("Score", value: vm.state.score.formatted(), color: .yellow)
+                .coachmarkAnchor(.score)
             stat("Mult", value: String(format: "%.1f×", Economy.aestheticMult(vm.state)), color: .yellow)
             ScoreSparklineView(history: vm.state.scoreHistory)
                 .frame(width: 90, height: 30)
             threatMeter
+                .coachmarkAnchor(.threatMeter)
             Spacer()
             speedButtons
         }

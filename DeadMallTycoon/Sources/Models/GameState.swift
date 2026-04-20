@@ -58,4 +58,17 @@ struct GameState: Equatable {
 
     // v9 addition — populated by TickEngine each month, rendered as sparkline in Phase 5
     var scoreHistory: RingBuffer<Int> = RingBuffer(capacity: 12)
+
+    // tutorial — new in iOS port, no v8 equivalent.
+    // activeTutorialStep drives the CoachmarkOverlay (Phase 2). tutorialSeenSteps
+    // prevents a beat from firing twice. tutorialOwnedPause lets the director
+    // distinguish a player-initiated pause (which it must not override) from
+    // one it set itself during a coachmark. tickIntervalOverrideMs is read by
+    // GameViewModel.applySpeed() to slow the tick rate during tutorial without
+    // adding a player-visible speed button.
+    var tutorialActive: Bool = false
+    var activeTutorialStep: TutorialStep? = nil
+    var tutorialSeenSteps: Set<TutorialStep> = []
+    var tutorialOwnedPause: Bool = false
+    var tickIntervalOverrideMs: Int? = nil
 }

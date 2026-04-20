@@ -19,9 +19,40 @@ final class GameViewModel {
     }
 
     // v8: startGame()
-    func startGame() {
+    // withTutorial=true enables the guided first-year tutorial: tick rate slows
+    // to 8000ms, game starts paused on the welcome coachmark, director (Phase 3)
+    // handles beat scheduling from there.
+    func startGame(withTutorial: Bool = false) {
         state = StartingMall.initialState()
+        if withTutorial {
+            state.tutorialActive = true
+            state.tickIntervalOverrideMs = 8000
+            state.activeTutorialStep = .welcomeIntro
+            state.paused = true
+            state.tutorialOwnedPause = true
+        }
         applySpeed()
+    }
+
+    // Called by the CoachmarkOverlay's Got-It button. Marks the active step as
+    // seen, clears it, and — if the tutorial owned the pause — resumes play.
+    func dismissCoachmark() {
+        guard let step = state.activeTutorialStep else { return }
+        state.tutorialSeenSteps.insert(step)
+        state.activeTutorialStep = nil
+        if state.tutorialOwnedPause {
+            state.paused = false
+            state.tutorialOwnedPause = false
+        }
+        // Graduation: tutorial is over, release the speed override and the flag.
+        if step == .graduation {
+            state.tutorialActive = false
+            state.tickIntervalOverrideMs = nil
+            applySpeed()
+        }
+        // Director may fire another beat immediately — e.g. .hud right after
+        // .welcomeIntro is dismissed, while still in Jan (month 0).
+        state = TutorialDirector.maybeFireNextBeat(state)
     }
 
     // v8: restart()
@@ -41,16 +72,35 @@ final class GameViewModel {
     private func applySpeed() {
         ticker?.invalidate(); ticker = nil
         guard !state.gameover, state.started,
-              let ms = state.speed.tickIntervalMs else { return }
+              let baseMs = state.speed.tickIntervalMs else { return }
+        // Tutorial-set override (e.g. 8000ms during year 1) wins over the player's
+        // selected speed. Pause still wins over everything — speed.tickIntervalMs
+        // is nil when paused, so we've already returned above in that case.
+        let ms = state.tickIntervalOverrideMs ?? baseMs
         let interval = TimeInterval(ms) / 1000.0
         ticker = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.tickOnce()
         }
     }
 
+    // Called by the TutorialDirector (Phase 3). Pass an ms value to slow the
+    // tick rate regardless of the player's selected Speed; pass nil to release
+    // the override and return to the player's speed.
+    func setTutorialSpeedOverride(_ ms: Int?) {
+        state.tickIntervalOverrideMs = ms
+        applySpeed()
+    }
+
     // v8: tick()
     func tickOnce() {
+        let prevOverrideMs = state.tickIntervalOverrideMs
         state = TickEngine.tick(state, rng: &rng)
+        state = TutorialDirector.maybeFireNextBeat(state)
+        // Director may have ended the tutorial on rollover to 1983, which
+        // nils the override; reschedule the timer at the player's speed.
+        if state.tickIntervalOverrideMs != prevOverrideMs {
+            applySpeed()
+        }
         if state.gameover {
             ticker?.invalidate(); ticker = nil
         }
