@@ -24,48 +24,79 @@ struct DecisionBanner: View {
     }
 
     private func tenantOffer(_ o: TenantOffer) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("TENANT OFFER · PAUSED")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .tracking(0.6)
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .tracking(0.8)
                 .foregroundStyle(Color(hex: "#FAC775"))
             Text(o.name).font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color(hex: "#f4e4b0"))
             Text(o.pitch)
                 .font(.system(size: 15, design: .serif))
                 .foregroundStyle(Color(hex: "#c4b4a0"))
-            Text("$\(o.rent)/mo · \(o.lease)mo")
-                .font(.system(size: 15, weight: .bold, design: .monospaced))
-                .foregroundStyle(Color(hex: "#FAC775"))
-            HStack {
-                Button("Sign") { vm.acceptDecision() }
-                    .buttonStyle(.borderedProminent).tint(.green)
-                Button("Decline") { vm.declineDecision() }
-                    .buttonStyle(.bordered)
+            Text("\(o.tier.rawValue) · \(o.lease)mo lease")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(Color(hex: "#888780"))
+            HStack(spacing: 8) {
+                decisionButton(primary: true,
+                               title: "Sign",
+                               subtitle: "+$\(o.rent)/mo · less score") { vm.acceptDecision() }
+                decisionButton(primary: false,
+                               title: "Decline",
+                               subtitle: "Keep empty") { vm.declineDecision() }
             }
-            .padding(.top, 2)
+            .padding(.top, 4)
         }
     }
 
     private func flavorEvent(_ ev: FlavorEvent) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("DISASTER · PAUSED")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .tracking(0.6)
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .tracking(0.8)
                 .foregroundStyle(Color(hex: "#F09595"))
             Text(ev.name).font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color(hex: "#f4e4b0"))
             Text(ev.description)
                 .font(.system(size: 15, design: .serif))
                 .foregroundStyle(Color(hex: "#c4b4a0"))
-            HStack {
-                Button(ev.acceptLabel) { vm.acceptDecision() }
-                    .buttonStyle(.borderedProminent).tint(.green)
-                Button(ev.declineLabel) { vm.declineDecision() }
-                    .buttonStyle(.bordered).tint(.red)
+            HStack(spacing: 8) {
+                decisionButton(primary: true,
+                               title: ev.acceptLabel,
+                               subtitle: nil) { vm.acceptDecision() }
+                decisionButton(primary: false,
+                               title: ev.declineLabel,
+                               subtitle: nil) { vm.declineDecision() }
             }
-            .padding(.top, 2)
+            .padding(.top, 4)
         }
+    }
+
+    // Large outcome-summarizing button. Primary = green sign/accept, secondary = muted decline.
+    private func decisionButton(primary: Bool, title: String, subtitle: String?,
+                                action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Text(title)
+                    .font(.system(size: 17, weight: .black, design: .monospaced))
+                    .tracking(0.6)
+                if let s = subtitle {
+                    Text(s)
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .tracking(0.4)
+                        .opacity(0.85)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .foregroundStyle(primary ? Color(hex: "#0a1f10") : Color(hex: "#e8dcc8"))
+            .background(primary ? Color(hex: "#5DCAA5") : Color(hex: "#2a2520"))
+            .overlay(RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(primary ? Color(hex: "#2a8a70") : Color(hex: "#5a4a3a"),
+                                      lineWidth: 1.5))
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+        }
+        .buttonStyle(.plain)
     }
 
     private var backgroundColor: Color {

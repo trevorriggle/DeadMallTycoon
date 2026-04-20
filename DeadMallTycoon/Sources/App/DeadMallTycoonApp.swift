@@ -13,12 +13,15 @@ struct DeadMallTycoonApp: App {
 }
 
 // Root. Handles three top-level states: start screen, live game, game-over.
+// Phase A UI overhaul: tycoon-convention scene-first layout. The mall scene
+// fills the viewport; the only persistent chrome is a thin top strip and two
+// bottom-corner controls (MANAGE + speed). Everything else is reveal-on-demand.
 struct ContentView: View {
     @Bindable var vm: GameViewModel
     @State private var showingTutorial = false
-    @Environment(\.horizontalSizeClass) private var hSize
+    @State private var showManage = false
+    @State private var showPnL = false
     // Collected from .coachmarkAnchor(...) modifiers throughout the game body.
-    // Used by CoachmarkOverlay to position arrows over real UI element frames.
     @State private var coachmarkAnchors: [CoachmarkAnchor: CGRect] = [:]
 
     var body: some View {
@@ -35,8 +38,6 @@ struct ContentView: View {
                         .transition(.opacity)
                 }
                 // Overlay sits above the game but below the game-over card.
-                // It renders nothing unless state.activeTutorialStep is set, and
-                // yields to a DecisionBanner internally.
                 CoachmarkOverlay(vm: vm, anchors: coachmarkAnchors)
             }
         }
@@ -47,131 +48,61 @@ struct ContentView: View {
         }
     }
 
+    // Scene-first layout. Vertical stack:
+    //   1. Thin top strip (date/month · cash · threat)
+    //   2. Decision banner (if any) — above the mall so it never covers it
+    //   3. Mall scene, takes all remaining space, letterboxed to world aspect
+    // Floating overlays (MANAGE button bottom-left, speed controls bottom-right,
+    // store/decoration info cards) sit above the scene without occupying layout space.
     private var gameBody: some View {
-        ZStack(alignment: .top) {
+        ZStack {
             VStack(spacing: 6) {
-                goalStrip
-                HUDView(vm: vm)
-                TabBar(current: vm.state.currentTab, onSelect: { vm.switchTab($0) })
-                    .coachmarkAnchor(.tabBar)
-                // MallView is always in the tree so the SpriteKit scene is not torn down
-                // when the player switches tabs. Non-Mall tabs overlay on top of it.
-                ZStack {
-                    MallView(vm: vm)
-                        .opacity(vm.state.currentTab == .mall ? 1 : 0)
-                        .allowsHitTesting(vm.state.currentTab == .mall)
-                        .coachmarkAnchor(.sceneVisitor)
-                        .coachmarkAnchor(.sceneStore)
-                    if vm.state.currentTab != .mall {
-                        OpsTabsView(vm: vm, tab: vm.state.currentTab)
-                    }
+                HUDView(vm: vm, onTapCash: { showPnL = true })
+
+                if let decision = vm.state.decision {
+                    DecisionBanner(vm: vm, decision: decision)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
+
+                MallView(vm: vm)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .padding(12)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
 
-            // Decision banner floats above all tabs so the paused state is always visible,
-            // not just when the Mall tab is active.
-            if let decision = vm.state.decision {
-                DecisionBanner(vm: vm, decision: decision)
-                    .padding(.top, 120)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-    }
-
-    private var goalStrip: some View {
-        HStack(spacing: 12) {
-            Text("GOAL")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .tracking(1.2)
-                .foregroundStyle(Color(hex: "#c4919a"))
-            // Full pitch on iPad-scale widths; short version on iPhone / narrow split.
-            if hSize == .compact {
-                (Text("Keep the mall ")
-                    .foregroundStyle(Color(hex: "#c4b4a0"))
-                 + Text("barely open")
-                    .foregroundStyle(Color(hex: "#FAC775"))
-                    .fontWeight(.bold)
-                 + Text(".")
-                    .foregroundStyle(Color(hex: "#c4b4a0")))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            } else {
-                Text("Keep the mall ")
-                    .foregroundStyle(Color(hex: "#c4b4a0"))
-                + Text("barely open")
-                    .foregroundStyle(Color(hex: "#FAC775"))
-                    .fontWeight(.bold)
-                + Text(" as long as possible. Empty spaces score. Tenants pay the bills. Find the edge.")
-                    .foregroundStyle(Color(hex: "#c4b4a0"))
-            }
-            Spacer(minLength: 0)
-            Button("How to Play") { showingTutorial = true }
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .tracking(0.8)
-                .foregroundStyle(Color(hex: "#c4919a"))
-                .padding(.horizontal, 10).padding(.vertical, 3)
-                .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#5a2a35")))
-        }
-        .font(.system(size: 15, design: .serif))
-        .italic()
-        .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(
-            LinearGradient(colors: [Color(hex: "#2a1515"), Color(hex: "#1a1410"), Color(hex: "#2a1515")],
-                           startPoint: .leading, endPoint: .trailing)
-        )
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#5a2a35")))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-    }
-}
-
-struct TabBar: View {
-    let current: Tab
-    let onSelect: (Tab) -> Void
-    @Environment(\.horizontalSizeClass) private var hSize
-
-    private let tabs: [(Tab, String)] = [
-        (.mall, "Mall"),
-        (.operations, "Operations"),
-        (.tenants, "Tenants"),
-        (.promotions, "Promotions"),
-        (.revenue, "Revenue"),
-    ]
-
-    var body: some View {
-        if hSize == .compact {
-            // Horizontal scroll so all five tabs stay tappable on iPhone-width screens.
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 2) { tabButtons }
-                    .padding(.trailing, 12)
-            }
-        } else {
-            HStack(spacing: 2) {
-                tabButtons
+            // Bottom-left: MANAGE drawer trigger.
+            VStack {
                 Spacer()
+                HStack(alignment: .bottom) {
+                    ManageButton(action: { showManage = true })
+                        .coachmarkAnchor(.tabBar)   // rebound — MANAGE replaces the old TabBar
+                    Spacer()
+                    SpeedControls(vm: vm)
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 12)
             }
-        }
-    }
 
-    @ViewBuilder
-    private var tabButtons: some View {
-        ForEach(tabs, id: \.0) { pair in
-            let (tab, name) = pair
-            let on = tab == current
-            Button(action: { onSelect(tab) }) {
-                Text(name.uppercased())
-                    .font(.system(size: 15, weight: .bold, design: .monospaced))
-                    .tracking(0.6)
-                    .padding(.horizontal, 14).padding(.vertical, 6)
-                    .foregroundStyle(on ? Color(hex: "#FAC775") : Color(hex: "#888780"))
-                    .background(on ? Color(hex: "#2a2520") : Color(hex: "#1a1917"))
-                    .overlay(
-                        UnevenRoundedRectangle(cornerRadii: .init(topLeading: 6, topTrailing: 6))
-                            .strokeBorder(on ? Color(hex: "#5a4a3a") : Color(hex: "#3a3935"))
-                    )
-                    .clipShape(UnevenRoundedRectangle(cornerRadii: .init(topLeading: 6, topTrailing: 6)))
+            // Store / decoration info cards — tap-to-reveal. Positioned at bottom-center
+            // as a Phase A stub; Phase B pins them near the tapped scene node via
+            // scene→screen coordinate conversion.
+            if let id = vm.state.selectedStoreId {
+                VStack {
+                    Spacer()
+                    StoreInfoCard(vm: vm, storeId: id)
+                        .padding(.bottom, 60)   // clear the bottom-corner controls
+                }
+                .transition(.scale.combined(with: .opacity))
+            } else if let id = vm.state.selectedDecorationId {
+                VStack {
+                    Spacer()
+                    DecorationInfoCard(vm: vm, decorationId: id)
+                        .padding(.bottom, 60)
+                }
+                .transition(.scale.combined(with: .opacity))
             }
-            .buttonStyle(.plain)
         }
+        .sheet(isPresented: $showManage) { ManageDrawer(vm: vm) }
+        .sheet(isPresented: $showPnL)    { PnLModal(vm: vm) }
     }
 }
