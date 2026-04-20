@@ -19,9 +19,8 @@ Hand-off from the Linux-codespace scaffold to Mac testing. Written at the end of
 ## To run on Mac
 
 ```bash
-brew install xcodegen
-cd DeadMallTycoon && xcodegen generate
-open DeadMallTycoon.xcodeproj
+git pull
+open DeadMallTycoon/DeadMallTycoon.xcodeproj
 ```
 
 Build + run on iPad simulator. Run tests with ⌘U, or:
@@ -30,6 +29,8 @@ Build + run on iPad simulator. Run tests with ⌘U, or:
 xcodebuild test -scheme DeadMallTycoon \
   -destination 'platform=iOS Simulator,name=iPad (11th generation)'
 ```
+
+The `.xcodeproj` is checked in directly — no XcodeGen, no generation step.
 
 ---
 

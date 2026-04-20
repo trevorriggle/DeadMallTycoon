@@ -10,11 +10,14 @@ xcuserdata/
 *.xcscmblueprint
 *.xccheckout
 
-## XcodeGen output — project is generated from project.yml, don't commit
-*.xcodeproj/
+## Xcode project: the .xcodeproj is checked in (standard Xcode workflow).
+## Only ignore per-user state inside it.
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
 
 ## Workspaces (except shared schemes if added later)
-*.xcworkspace/
+*.xcworkspace/xcuserdata/
 !**/contents.xcworkspacedata
 
 ## Swift Package Manager
