@@ -1,18 +1,52 @@
 import SwiftUI
 
 // "Mall" tab — the living scene plus three sidebars (P&L, status + watch list, selected + thoughts log).
-// Layout mirrors v8's sidebar grid-template-columns: 220px 1fr 260px.
+// Layout mirrors v8's sidebar grid-template-columns: 220px 1fr 260px on iPad-scale widths.
+// On compact widths (iPhone, narrow split) the three panels stack vertically under the scene
+// in a scroll view so every value remains reachable without horizontal overflow.
 struct MallView: View {
     @Bindable var vm: GameViewModel
+    @Environment(\.horizontalSizeClass) private var hSize
 
     var body: some View {
+        if hSize == .compact {
+            compactBody
+        } else {
+            regularBody
+        }
+    }
+
+    // iPad-scale layout: scene on top at its native aspect ratio, three panels in a row below.
+    private var regularBody: some View {
         VStack(spacing: 8) {
             sceneContainer
-                .frame(height: 520)
+                .aspectRatio(
+                    GameConstants.worldWidth / GameConstants.worldHeight,
+                    contentMode: .fit
+                )
             HStack(alignment: .top, spacing: 10) {
                 leftPanel.frame(width: 280)
                 centerPanel
                 rightPanel.frame(width: 320)
+            }
+        }
+    }
+
+    // iPhone / narrow-split layout: scene takes what it can, panels stack vertically
+    // inside a ScrollView so all content is reachable.
+    private var compactBody: some View {
+        VStack(spacing: 8) {
+            sceneContainer
+                .aspectRatio(
+                    GameConstants.worldWidth / GameConstants.worldHeight,
+                    contentMode: .fit
+                )
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 10) {
+                    leftPanel
+                    centerPanel
+                    rightPanel
+                }
             }
         }
     }

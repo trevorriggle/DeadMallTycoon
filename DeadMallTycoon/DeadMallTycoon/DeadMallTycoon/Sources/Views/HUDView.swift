@@ -1,52 +1,110 @@
 import SwiftUI
 
-// Top stats bar — date, cash, debt, score, multiplier, threat meter, speed buttons.
+// Top stats bar — date, cash, debt, score, threat meter, speed buttons.
 // Matches v8's .hud row at the top of the page.
+// Responsive: on regular width (iPad landscape/portrait) everything sits in a
+// single row; on compact width (iPhone, narrow iPad split) the bar reflows into
+// two rows so every value stays visible without horizontal scrolling.
 struct HUDView: View {
     @Bindable var vm: GameViewModel
+    @Environment(\.horizontalSizeClass) private var hSize
 
     var body: some View {
-        HStack(spacing: 10) {
-            dateChip
-            Text("·").foregroundStyle(.secondary)
-            stat("Cash", value: fmt(vm.state.cash), color: cashColor)
-            stat("Debt", value: fmt(vm.state.debt), color: debtColor)
-            stat("Score", value: vm.state.score.formatted(), color: .yellow)
-            stat("Mult", value: String(format: "%.1f×", Economy.aestheticMult(vm.state)), color: .yellow)
-            ScoreSparklineView(history: vm.state.scoreHistory)
-                .frame(width: 90, height: 30)
-            threatMeter
-            Spacer()
-            speedButtons
+        Group {
+            if hSize == .compact {
+                compactLayout
+            } else {
+                regularLayout
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
         .background(Color(hex: "#1a1917"))
         .overlay(Rectangle().frame(height: 1).foregroundStyle(Color(hex: "#3a3935")), alignment: .bottom)
-        .font(.system(size: 17, design: .monospaced))
         .foregroundStyle(Color(hex: "#e8dcc8"))
     }
 
-    private var dateChip: some View {
-        Text("\(GameConstants.months[vm.state.month]) \(String(vm.state.year))")
-            .foregroundStyle(Color(hex: "#c4919a"))
-            .monospacedDigit()
-    }
-
-    private func stat(_ label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 4) {
-            Text(label.uppercased())
-                .font(.system(size: 14, design: .monospaced))
-                .tracking(0.6)
-                .foregroundStyle(Color(hex: "#888780"))
-            Text(value)
-                .font(.system(size: 17, weight: .bold, design: .monospaced))
-                .monospacedDigit()
-                .foregroundStyle(color)
+    // Wide one-line HUD for iPad-scale widths.
+    private var regularLayout: some View {
+        HStack(alignment: .center, spacing: 14) {
+            dateCell(compact: false)
+            statCell("CASH",  value: fmt(vm.state.cash),  color: cashColor)
+                .coachmarkAnchor(.cash)
+            if vm.state.debt > 0 {
+                statCell("DEBT", value: fmt(vm.state.debt), color: debtColor)
+            }
+            statCell("SCORE", value: fmtScore(vm.state.score), color: Color(hex: "#FAC775"))
+                .coachmarkAnchor(.score)
+            ScoreSparklineView(history: vm.state.scoreHistory)
+                .frame(width: 110, height: 36)
+            threatMeter(compact: false)
+                .coachmarkAnchor(.threatMeter)
+            Spacer()
+            speedButtons(compact: false)
         }
     }
 
-    private var threatMeter: some View {
+    // Two-row HUD for iPhone / narrow-split widths. Priority stats up top, sparkline
+    // + threat + speed controls on the second row. Cells are slightly smaller so
+    // three fit on an iPhone portrait (~390pt) without clipping.
+    private var compactLayout: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                dateCell(compact: true)
+                statCell("CASH", value: fmt(vm.state.cash), color: cashColor, compact: true)
+                    .coachmarkAnchor(.cash)
+                if vm.state.debt > 0 {
+                    statCell("DEBT", value: fmt(vm.state.debt), color: debtColor, compact: true)
+                }
+                statCell("SCORE", value: fmtScore(vm.state.score),
+                         color: Color(hex: "#FAC775"), compact: true)
+                    .coachmarkAnchor(.score)
+                Spacer(minLength: 0)
+            }
+            HStack(spacing: 10) {
+                ScoreSparklineView(history: vm.state.scoreHistory)
+                    .frame(width: 72, height: 26)
+                threatMeter(compact: true)
+                    .coachmarkAnchor(.threatMeter)
+                Spacer(minLength: 0)
+                speedButtons(compact: true)
+            }
+        }
+    }
+
+    // Dashboard-style cell: small muted label on top, big bold value below.
+    // Much more legible at a glance than the old inline label+value pairs.
+    private func statCell(_ label: String, value: String, color: Color, compact: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .tracking(1.2)
+                .foregroundStyle(Color(hex: "#888780"))
+            Text(value)
+                .font(.system(size: compact ? 22 : 26, weight: .black, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func dateCell(compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("DATE")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .tracking(1.2)
+                .foregroundStyle(Color(hex: "#888780"))
+            Text("\(GameConstants.months[vm.state.month]) \(String(vm.state.year))")
+                .font(.system(size: compact ? 18 : 22, weight: .bold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(Color(hex: "#c4919a"))
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func threatMeter(compact: Bool) -> some View {
         let t = vm.state.threatMeter
         let band = Threat.band(t)
         let fillColor: Color = {
@@ -56,8 +114,20 @@ struct HUDView: View {
             case .critical:        return Color(hex: "#e24b4a")
             }
         }()
-        return HStack(spacing: 6) {
-            Text("Threat").font(.system(size: 14)).tracking(0.5).foregroundStyle(Color(hex: "#888780"))
+        let barWidth: CGFloat = compact ? 120 : 160
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Text("THREAT")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(Color(hex: "#888780"))
+                Text(band.displayName.uppercased())
+                    .font(.system(size: 11, weight: .black, design: .monospaced))
+                    .tracking(0.8)
+                    .padding(.horizontal, 5).padding(.vertical, 1)
+                    .background(Capsule().fill(fillColor.opacity(0.25)))
+                    .foregroundStyle(fillColor)
+            }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color(hex: "#0a0908")).overlay(
@@ -67,26 +137,21 @@ struct HUDView: View {
                         .frame(width: geo.size.width * t)
                 }
             }
-            .frame(width: 130, height: 16)
-            Text(band.displayName.uppercased())
-                .font(.system(size: 13, weight: .bold))
-                .tracking(0.5)
-                .padding(.horizontal, 6).padding(.vertical, 2)
-                .background(Capsule().fill(fillColor.opacity(0.25)))
-                .foregroundStyle(fillColor)
+            .frame(width: barWidth, height: 18)
         }
     }
 
-    private var speedButtons: some View {
-        HStack(spacing: 3) {
+    private func speedButtons(compact: Bool) -> some View {
+        HStack(spacing: compact ? 2 : 3) {
             ForEach(Speed.allCases, id: \.rawValue) { s in
                 Button {
                     vm.setSpeed(s)
                 } label: {
                     Text(label(for: s))
-                        .font(.system(size: 15, design: .monospaced))
+                        .font(.system(size: compact ? 12 : 15, design: .monospaced))
                         .monospacedDigit()
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .padding(.horizontal, compact ? 5 : 8)
+                        .padding(.vertical, compact ? 2 : 3)
                         .background(vm.state.speed == s ? Color(hex: "#2a4a5a") : Color.clear)
                         .foregroundStyle(vm.state.speed == s ? Color(hex: "#9FE1CB") : Color(hex: "#888780"))
                         .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#444441")))
@@ -118,8 +183,29 @@ struct HUDView: View {
         return Color(hex: "#9FE1CB")
     }
 
+    // Short money format — $1.2k / $2.5M / $850 (no suffix under 1k).
+    // Vastly easier to scan than "$1,234,567" when values get large.
     private func fmt(_ n: Int) -> String {
-        "$" + (abs(n)).formatted()
+        let v = abs(n)
+        if v >= 1_000_000 {
+            return "$" + String(format: "%.1fM", Double(v) / 1_000_000)
+        }
+        if v >= 10_000 {
+            return "$" + String(format: "%.0fk", Double(v) / 1_000)
+        }
+        if v >= 1_000 {
+            return "$" + String(format: "%.1fk", Double(v) / 1_000)
+        }
+        return "$\(v)"
+    }
+
+    // Score uses the same K/M shaping but without the $ prefix.
+    private func fmtScore(_ n: Int) -> String {
+        let v = abs(n)
+        if v >= 1_000_000 { return String(format: "%.1fM", Double(v) / 1_000_000) }
+        if v >= 10_000    { return String(format: "%.0fk", Double(v) / 1_000) }
+        if v >= 1_000     { return String(format: "%.1fk", Double(v) / 1_000) }
+        return "\(v)"
     }
 }
 
