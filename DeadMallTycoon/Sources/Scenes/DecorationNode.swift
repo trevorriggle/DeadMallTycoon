@@ -86,7 +86,7 @@ final class DecorationNode: SKSpriteNode {
         if d.condition >= 3 {
             if badgeNode == nil {
                 let label = SKLabelNode(fontNamed: "Courier-Bold")
-                label.fontSize = 8
+                label.fontSize = 12
                 label.verticalAlignmentMode = .center
                 label.horizontalAlignmentMode = .center
                 label.position = CGPoint(x: size.width / 2 + 4, y: size.height / 2 - 4)

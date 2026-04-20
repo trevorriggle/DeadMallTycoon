@@ -11,7 +11,7 @@ final class VisitorNode: SKSpriteNode {
         let body = UIColor(hex: visitor.color)
         let head = UIColor(hex: visitor.headColor)
         let texture = TextureFactory.visitorTexture(bodyColor: body, headColor: head)
-        super.init(texture: texture, color: .clear, size: CGSize(width: 10, height: 14))
+        super.init(texture: texture, color: .clear, size: CGSize(width: 26, height: 36))
         name = "visitor:\(visitor.id.uuidString)"
         isUserInteractionEnabled = false
     }
@@ -42,7 +42,7 @@ final class ThoughtBubbleNode: SKNode {
         super.init()
         let label = SKLabelNode(fontNamed: "Georgia-Italic")
         label.text = text
-        label.fontSize = 11
+        label.fontSize = 15
         label.fontColor = Palette.bubbleText
         label.numberOfLines = 0
         label.preferredMaxLayoutWidth = maxWidth

@@ -9,10 +9,10 @@ struct MallView: View {
         VStack(spacing: 8) {
             sceneContainer
                 .frame(height: 520)
-            HStack(alignment: .top, spacing: 8) {
-                leftPanel.frame(width: 220)
+            HStack(alignment: .top, spacing: 10) {
+                leftPanel.frame(width: 280)
                 centerPanel
-                rightPanel.frame(width: 260)
+                rightPanel.frame(width: 320)
             }
         }
     }
@@ -29,7 +29,7 @@ struct MallView: View {
                 VStack {
                     Button(action: { vm.cancelPlacement() }) {
                         Text("Placing \(DecorationTypes.type(kind).name) · Click in corridor · Tap to cancel")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(.system(size: 15, weight: .bold, design: .monospaced))
                             .tracking(0.5)
                             .padding(.horizontal, 14).padding(.vertical, 6)
                             .background(Color(hex: "#FAC775").opacity(0.95))
@@ -97,7 +97,7 @@ struct MallView: View {
         panel {
             sectionHeader("Status")
             Text(Mall.moodText(vm.state))
-                .font(.system(size: 11, design: .serif))
+                .font(.system(size: 15, design: .serif))
                 .italic()
                 .foregroundStyle(Color(hex: "#c4b4a0"))
                 .padding(.bottom, 6)
@@ -105,7 +105,7 @@ struct MallView: View {
             sectionHeader("Watch List").padding(.top, 8)
             if vm.state.warnings.isEmpty {
                 Text("Nothing urgent. Enjoy it while it lasts.")
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(Color(hex: "#555"))
                     .italic()
             } else {
@@ -126,18 +126,18 @@ struct MallView: View {
             sectionHeader("Thoughts Overheard").padding(.top, 10)
             if vm.state.thoughtsLog.isEmpty {
                 Text("Tap visitors to overhear them.")
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(Color(hex: "#555"))
                     .italic()
             } else {
                 ForEach(vm.state.thoughtsLog) { t in
                     VStack(alignment: .leading, spacing: 1) {
                         Text("\(t.visitorName) · \(t.personality)".uppercased())
-                            .font(.system(size: 8, design: .monospaced))
+                            .font(.system(size: 12, design: .monospaced))
                             .tracking(0.5)
                             .foregroundStyle(Color(hex: "#888780"))
                         Text(t.text)
-                            .font(.system(size: 10, design: .serif))
+                            .font(.system(size: 14, design: .serif))
                             .italic()
                             .foregroundStyle(Color(hex: "#a89484"))
                     }
@@ -165,7 +165,7 @@ struct MallView: View {
 
     private func sectionHeader(_ t: String) -> some View {
         Text(t.uppercased())
-            .font(.system(size: 10, design: .monospaced))
+            .font(.system(size: 14, design: .monospaced))
             .tracking(0.8)
             .foregroundStyle(Color(hex: "#888780"))
     }
@@ -176,7 +176,7 @@ struct MallView: View {
             Spacer()
             Text(value).foregroundStyle(color).monospacedDigit()
         }
-        .font(.system(size: 11, design: .monospaced))
+        .font(.system(size: 15, design: .monospaced))
     }
 
     private func fmtK(_ n: Int) -> String {
@@ -189,7 +189,7 @@ struct WarningRow: View {
     let warning: Warning
     var body: some View {
         Text(warning.text)
-            .font(.system(size: 10, design: .monospaced))
+            .font(.system(size: 14, design: .monospaced))
             .foregroundStyle(Color(hex: "#c4b4a0"))
             .padding(6)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -220,7 +220,7 @@ struct SelectedDetailView: View {
             visitorDetail()
         } else {
             Text("Tap a visitor, store, or decoration.")
-                .font(.system(size: 10, design: .monospaced))
+                .font(.system(size: 14, design: .monospaced))
                 .italic()
                 .foregroundStyle(Color(hex: "#888780"))
         }
@@ -232,31 +232,31 @@ struct SelectedDetailView: View {
                 let label = s.monthsVacant >= 18 ? "Long abandoned"
                           : s.monthsVacant >= 6  ? "Boarded up"
                           : "Empty storefront"
-                Text(label).font(.system(size: 12, weight: .bold))
+                Text(label).font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Color(hex: "#888780"))
                 Text("\(s.wing.rawValue) wing · \(s.monthsVacant)mo empty")
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(.system(size: 13, design: .monospaced))
                     .foregroundStyle(Color(hex: "#888780"))
                 Text("This empty space is generating score each month.")
-                    .font(.system(size: 10, design: .serif))
+                    .font(.system(size: 14, design: .serif))
                     .italic()
                     .foregroundStyle(Color(hex: "#c4b4a0"))
             } else {
-                Text(s.name).font(.system(size: 12, weight: .bold))
+                Text(s.name).font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Color(hex: "#FAC775"))
                 Text("\(s.tier.rawValue) · \(s.wing.rawValue)")
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(.system(size: 13, design: .monospaced))
                     .foregroundStyle(Color(hex: "#888780"))
                 HStack {
                     Text("Rent").foregroundStyle(Color(hex: "#888780"))
                     Spacer()
                     Text("$\(s.rent.formatted())/mo").foregroundStyle(.yellow)
-                }.font(.system(size: 11, design: .monospaced))
+                }.font(.system(size: 15, design: .monospaced))
                 HStack(spacing: 4) {
                     Button("−") { vm.adjustRent(storeId: s.id, delta: -0.1) }
                         .buttonStyle(.bordered).disabled(s.rentMultiplier <= 0.5)
                     Text(String(format: "Rent ×%.1f", s.rentMultiplier))
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.system(size: 15, design: .monospaced))
                         .foregroundStyle(.yellow).frame(maxWidth: .infinity)
                     Button("+") { vm.adjustRent(storeId: s.id, delta: 0.1) }
                         .buttonStyle(.bordered).disabled(s.rentMultiplier >= 2.0)
@@ -277,25 +277,25 @@ struct SelectedDetailView: View {
         let type = DecorationTypes.type(d.kind)
         let mult = d.condition >= 4 ? type.ruinMult : type.baseMult * (1 + Double(d.condition) * 0.2)
         return VStack(alignment: .leading, spacing: 6) {
-            Text(type.name).font(.system(size: 12, weight: .bold))
+            Text(type.name).font(.system(size: 17, weight: .bold))
                 .foregroundStyle(Color(hex: "#FAC775"))
             Text("\((Condition(rawValue: d.condition) ?? .pristine).name)\(d.hazard ? " · HAZARD" : "")")
-                .font(.system(size: 9, design: .monospaced))
+                .font(.system(size: 13, design: .monospaced))
                 .foregroundStyle(Color(hex: "#888780"))
             Text(type.description)
-                .font(.system(size: 10, design: .serif)).italic()
+                .font(.system(size: 14, design: .serif)).italic()
                 .foregroundStyle(Color(hex: "#c4b4a0"))
             HStack {
                 Text("Multiplier").foregroundStyle(Color(hex: "#888780"))
                 Spacer()
                 Text("+\(Int((mult * 100).rounded()))%").foregroundStyle(.yellow)
-            }.font(.system(size: 11, design: .monospaced))
+            }.font(.system(size: 15, design: .monospaced))
             if d.hazard {
                 HStack {
                     Text("Monthly fine").foregroundStyle(Color(hex: "#888780"))
                     Spacer()
                     Text("-$\(500 + d.condition * 200)").foregroundStyle(.red)
-                }.font(.system(size: 11, design: .monospaced))
+                }.font(.system(size: 15, design: .monospaced))
             }
             Button("Repair ($\(type.repair))") { vm.repairDecoration(d.id) }
                 .buttonStyle(.bordered)
@@ -307,15 +307,15 @@ struct SelectedDetailView: View {
 
     private func visitorDetail() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Visitor").font(.system(size: 12, weight: .bold))
+            Text("Visitor").font(.system(size: 17, weight: .bold))
                 .foregroundStyle(Color(hex: "#FAC775"))
             if !vm.state.selectedVisitorThought.isEmpty {
                 Text("OVERHEARD")
-                    .font(.system(size: 8, design: .monospaced))
+                    .font(.system(size: 12, design: .monospaced))
                     .tracking(0.8)
                     .foregroundStyle(Color(hex: "#888780"))
                 Text(vm.state.selectedVisitorThought)
-                    .font(.system(size: 11, design: .serif))
+                    .font(.system(size: 15, design: .serif))
                     .italic()
                     .foregroundStyle(Color(hex: "#e8dcc8"))
                     .padding(8)

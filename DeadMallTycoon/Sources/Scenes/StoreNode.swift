@@ -20,7 +20,7 @@ final class StoreNode: SKSpriteNode {
         // sign strip — 92% wide, 14 tall, at top
         let signWidth = size.width * 0.92
         signLabel = SKLabelNode(fontNamed: "Courier-Bold")
-        signLabel.fontSize = 9
+        signLabel.fontSize = 13
         signLabel.verticalAlignmentMode = .center
 
         // window — 92% wide, fills remainder, starts below sign

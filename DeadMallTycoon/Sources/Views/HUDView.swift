@@ -14,7 +14,7 @@ struct HUDView: View {
             stat("Score", value: vm.state.score.formatted(), color: .yellow)
             stat("Mult", value: String(format: "%.1f×", Economy.aestheticMult(vm.state)), color: .yellow)
             ScoreSparklineView(history: vm.state.scoreHistory)
-                .frame(width: 60, height: 22)
+                .frame(width: 90, height: 30)
             threatMeter
             Spacer()
             speedButtons
@@ -23,7 +23,7 @@ struct HUDView: View {
         .padding(.vertical, 8)
         .background(Color(hex: "#1a1917"))
         .overlay(Rectangle().frame(height: 1).foregroundStyle(Color(hex: "#3a3935")), alignment: .bottom)
-        .font(.system(size: 12, design: .monospaced))
+        .font(.system(size: 17, design: .monospaced))
         .foregroundStyle(Color(hex: "#e8dcc8"))
     }
 
@@ -36,11 +36,11 @@ struct HUDView: View {
     private func stat(_ label: String, value: String, color: Color) -> some View {
         HStack(spacing: 4) {
             Text(label.uppercased())
-                .font(.system(size: 10, design: .monospaced))
+                .font(.system(size: 14, design: .monospaced))
                 .tracking(0.6)
                 .foregroundStyle(Color(hex: "#888780"))
             Text(value)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.system(size: 17, weight: .bold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(color)
         }
@@ -57,7 +57,7 @@ struct HUDView: View {
             }
         }()
         return HStack(spacing: 6) {
-            Text("Threat").font(.system(size: 10)).tracking(0.5).foregroundStyle(Color(hex: "#888780"))
+            Text("Threat").font(.system(size: 14)).tracking(0.5).foregroundStyle(Color(hex: "#888780"))
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color(hex: "#0a0908")).overlay(
@@ -67,9 +67,9 @@ struct HUDView: View {
                         .frame(width: geo.size.width * t)
                 }
             }
-            .frame(width: 90, height: 12)
+            .frame(width: 130, height: 16)
             Text(band.displayName.uppercased())
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: 13, weight: .bold))
                 .tracking(0.5)
                 .padding(.horizontal, 6).padding(.vertical, 2)
                 .background(Capsule().fill(fillColor.opacity(0.25)))
@@ -84,7 +84,7 @@ struct HUDView: View {
                     vm.setSpeed(s)
                 } label: {
                     Text(label(for: s))
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.system(size: 15, design: .monospaced))
                         .monospacedDigit()
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(vm.state.speed == s ? Color(hex: "#2a4a5a") : Color.clear)

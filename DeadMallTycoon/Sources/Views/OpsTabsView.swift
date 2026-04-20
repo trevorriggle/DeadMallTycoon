@@ -42,11 +42,11 @@ struct OpsTabsView: View {
         let t = headerText
         return VStack(alignment: .leading, spacing: 4) {
             Text(t.title.uppercased())
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(0.8)
                 .foregroundStyle(Color(hex: "#FAC775"))
             Text(t.desc)
-                .font(.system(size: 11, design: .serif)).italic()
+                .font(.system(size: 15, design: .serif)).italic()
                 .foregroundStyle(Color(hex: "#c4b4a0"))
         }
         .padding(10)
@@ -74,7 +74,7 @@ struct OpsTabsView: View {
                             Spacer()
                             Text(active ? "ACTIVE" : "off").foregroundStyle(active ? .green : .secondary)
                         }
-                        Text(type.description).font(.system(size: 9)).foregroundStyle(Color(hex: "#888780"))
+                        Text(type.description).font(.system(size: 13)).foregroundStyle(Color(hex: "#888780"))
                     }
                 }
             }
@@ -99,7 +99,7 @@ struct OpsTabsView: View {
                             Text(active ? "ACTIVE" : "off").foregroundStyle(active ? .green : .secondary)
                         }
                         Text("\(deal.description) (−\(Int(deal.aestheticPenalty * 100))% aesthetic)")
-                            .font(.system(size: 9))
+                            .font(.system(size: 13))
                             .foregroundStyle(Color(hex: "#888780"))
                     }
                 }
@@ -139,7 +139,7 @@ struct OpsTabsView: View {
         let down = vm.state.wingsDowngraded[wing] ?? false
         VStack(alignment: .leading, spacing: 4) {
             Text("\(wing.rawValue.uppercased()) Wing")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(size: 15, weight: .bold, design: .monospaced))
                 .tracking(0.6)
                 .foregroundStyle(Color(hex: "#FAC775"))
                 .padding(.top, 6)
@@ -191,7 +191,7 @@ struct OpsTabsView: View {
                             Text("~\(baseRate)% success").foregroundStyle(Color(hex: "#888780"))
                         }
                         Text("\(t.tier.rawValue) · $\(t.rent.formatted())/mo · \(t.lease)mo lease")
-                            .font(.system(size: 9)).foregroundStyle(Color(hex: "#888780"))
+                            .font(.system(size: 13)).foregroundStyle(Color(hex: "#888780"))
                     }
                 }
                 .disabled(!canApproach)
@@ -204,19 +204,19 @@ struct OpsTabsView: View {
         let statusColor: Color = s.closing ? .red : s.hardship >= 2 ? .yellow : .green
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(s.name).font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: "#FAC775"))
+                Text(s.name).font(.system(size: 17, weight: .bold)).foregroundStyle(Color(hex: "#FAC775"))
                 Spacer()
-                Text(status).font(.system(size: 9)).foregroundStyle(statusColor)
+                Text(status).font(.system(size: 13)).foregroundStyle(statusColor)
             }
             Text("\(s.tier.rawValue) · \(s.wing.rawValue) · $\(s.rent.formatted())/mo @ \(Int((s.rentMultiplier * 100).rounded()))% · \(s.lease)mo")
-                .font(.system(size: 9, design: .monospaced))
+                .font(.system(size: 13, design: .monospaced))
                 .foregroundStyle(Color(hex: "#888780"))
             HStack(spacing: 4) {
                 Button("−") { vm.adjustRent(storeId: s.id, delta: -0.1) }
                     .buttonStyle(.bordered).disabled(s.rentMultiplier <= 0.5)
                 Text(String(format: "%.1f×", s.rentMultiplier))
                     .frame(maxWidth: .infinity)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.system(size: 15, design: .monospaced))
                     .foregroundStyle(.yellow)
                 Button("+") { vm.adjustRent(storeId: s.id, delta: 0.1) }
                     .buttonStyle(.bordered).disabled(s.rentMultiplier >= 2.0)
@@ -239,10 +239,10 @@ struct OpsTabsView: View {
             if !vm.state.activePromos.isEmpty {
                 ForEach(vm.state.activePromos) { p in
                     VStack(alignment: .leading) {
-                        Text(p.name).font(.system(size: 12, weight: .bold))
+                        Text(p.name).font(.system(size: 17, weight: .bold))
                             .foregroundStyle(Color(hex: "#FAC775"))
                         Text("\(p.remaining) months remaining")
-                            .font(.system(size: 9, design: .monospaced))
+                            .font(.system(size: 13, design: .monospaced))
                             .foregroundStyle(Color(hex: "#888780"))
                     }
                     .padding(8)
@@ -264,7 +264,7 @@ struct OpsTabsView: View {
                             Text(active ? "ACTIVE" : "\(p.duration)mo")
                                 .foregroundStyle(Color(hex: "#888780"))
                         }
-                        Text(p.description).font(.system(size: 9))
+                        Text(p.description).font(.system(size: 13))
                             .foregroundStyle(Color(hex: "#888780"))
                     }
                 }
@@ -283,7 +283,7 @@ struct OpsTabsView: View {
                 .sorted { $0.rent > $1.rent }
             if sorted.isEmpty {
                 Text("No active tenants.")
-                    .font(.system(size: 10, design: .monospaced)).italic()
+                    .font(.system(size: 14, design: .monospaced)).italic()
                     .foregroundStyle(Color(hex: "#555"))
             }
             ForEach(sorted) { s in
@@ -292,14 +292,14 @@ struct OpsTabsView: View {
                     Spacer()
                     Text("$\(s.rent.formatted())").foregroundStyle(.green)
                 }
-                .font(.system(size: 11, design: .monospaced))
+                .font(.system(size: 15, design: .monospaced))
                 .padding(.vertical, 2)
             }
 
             sectionHeader("Other Income").padding(.top, 10)
             if vm.state.activeAdDeals.isEmpty && vm.state.activePromos.filter({ $0.monthlyCost < 0 }).isEmpty {
                 Text("No ad deals or profitable promos active.")
-                    .font(.system(size: 10, design: .monospaced)).italic()
+                    .font(.system(size: 14, design: .monospaced)).italic()
                     .foregroundStyle(Color(hex: "#555"))
             }
             ForEach(vm.state.activeAdDeals) { d in
@@ -308,7 +308,7 @@ struct OpsTabsView: View {
                     Spacer()
                     Text("+$\(d.income.formatted())").foregroundStyle(.green)
                 }
-                .font(.system(size: 11, design: .monospaced))
+                .font(.system(size: 15, design: .monospaced))
             }
             ForEach(vm.state.activePromos.filter { $0.monthlyCost < 0 }) { p in
                 HStack {
@@ -316,7 +316,7 @@ struct OpsTabsView: View {
                     Spacer()
                     Text("+$\((-p.monthlyCost).formatted())").foregroundStyle(.green)
                 }
-                .font(.system(size: 11, design: .monospaced))
+                .font(.system(size: 15, design: .monospaced))
             }
         }
     }
@@ -325,7 +325,7 @@ struct OpsTabsView: View {
 
     private func sectionHeader(_ t: String) -> some View {
         Text(t.uppercased())
-            .font(.system(size: 9, weight: .bold, design: .monospaced))
+            .font(.system(size: 13, weight: .bold, design: .monospaced))
             .tracking(0.8)
             .foregroundStyle(Color(hex: "#FAC775"))
             .padding(.top, 2)
@@ -333,7 +333,7 @@ struct OpsTabsView: View {
 
     private func subtle(_ s: String) -> some View {
         Text(s)
-            .font(.system(size: 9, design: .monospaced)).italic()
+            .font(.system(size: 13, design: .monospaced)).italic()
             .foregroundStyle(Color(hex: "#888780"))
             .padding(.bottom, 2)
     }
@@ -342,7 +342,7 @@ struct OpsTabsView: View {
                                            @ViewBuilder label: () -> Label) -> some View {
         Button(action: action) {
             label()
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(0.5)
                 .foregroundStyle(active ? Color(hex: "#9FE1CB") : Color(hex: "#e8dcc8"))
                 .padding(8)

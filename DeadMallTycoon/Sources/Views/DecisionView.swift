@@ -26,16 +26,16 @@ struct DecisionBanner: View {
     private func tenantOffer(_ o: TenantOffer) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("TENANT OFFER · PAUSED")
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .tracking(0.6)
                 .foregroundStyle(Color(hex: "#FAC775"))
-            Text(o.name).font(.system(size: 14, weight: .bold))
+            Text(o.name).font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color(hex: "#f4e4b0"))
             Text(o.pitch)
-                .font(.system(size: 11, design: .serif))
+                .font(.system(size: 15, design: .serif))
                 .foregroundStyle(Color(hex: "#c4b4a0"))
             Text("$\(o.rent)/mo · \(o.lease)mo")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(size: 15, weight: .bold, design: .monospaced))
                 .foregroundStyle(Color(hex: "#FAC775"))
             HStack {
                 Button("Sign") { vm.acceptDecision() }
@@ -50,13 +50,13 @@ struct DecisionBanner: View {
     private func flavorEvent(_ ev: FlavorEvent) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("DISASTER · PAUSED")
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .tracking(0.6)
                 .foregroundStyle(Color(hex: "#F09595"))
-            Text(ev.name).font(.system(size: 14, weight: .bold))
+            Text(ev.name).font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color(hex: "#f4e4b0"))
             Text(ev.description)
-                .font(.system(size: 11, design: .serif))
+                .font(.system(size: 15, design: .serif))
                 .foregroundStyle(Color(hex: "#c4b4a0"))
             HStack {
                 Button(ev.acceptLabel) { vm.acceptDecision() }
@@ -95,17 +95,17 @@ struct StartScreenView: View {
                 .ignoresSafeArea()
             VStack(spacing: 16) {
                 Text("DEAD MALL")
-                    .font(.system(size: 42, weight: .black, design: .monospaced))
+                    .font(.system(size: 56, weight: .black, design: .monospaced))
                     .tracking(3.5)
                     .foregroundStyle(Color(hex: "#c4919a"))
                     .shadow(color: Color(hex: "#5a2a35"), radius: 0, x: 2, y: 2)
                 Text("TYCOON")
-                    .font(.system(size: 42, weight: .black, design: .monospaced))
+                    .font(.system(size: 56, weight: .black, design: .monospaced))
                     .tracking(3.5)
                     .foregroundStyle(Color(hex: "#c4919a"))
                     .shadow(color: Color(hex: "#5a2a35"), radius: 0, x: 2, y: 2)
                 Text("KEEP THE CORPSE BREATHING.")
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.system(size: 15, design: .monospaced))
                     .tracking(3)
                     .foregroundStyle(Color(hex: "#888780"))
                     .padding(.top, 8)
@@ -115,7 +115,7 @@ struct StartScreenView: View {
                 collapse is a losing run. The goal is the long, slow middle — a mall that \
                 should have closed years ago but somehow hasn't.
                 """)
-                    .font(.system(size: 12, design: .serif))
+                    .font(.system(size: 17, design: .serif))
                     .italic()
                     .foregroundStyle(Color(hex: "#c4b4a0"))
                     .multilineTextAlignment(.center)
@@ -125,7 +125,7 @@ struct StartScreenView: View {
                 Button("Begin Run · Jan 1982") {
                     onStart()
                 }
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .font(.system(size: 20, weight: .bold, design: .monospaced))
                 .tracking(1.2)
                 .foregroundStyle(Color(hex: "#2a0a15"))
                 .padding(.horizontal, 36).padding(.vertical, 14)
@@ -135,7 +135,7 @@ struct StartScreenView: View {
                 .buttonStyle(.plain)
                 .padding(.top, 20)
                 Button("How to Play") { showingTutorial = true }
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .tracking(0.8)
                     .foregroundStyle(Color(hex: "#c4919a"))
                     .padding(.horizontal, 10).padding(.vertical, 3)
@@ -157,11 +157,11 @@ struct TutorialView: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("HOW TO PLAY")
-                    .font(.system(size: 20, weight: .black, design: .monospaced))
+                    .font(.system(size: 28, weight: .black, design: .monospaced))
                     .tracking(1.6)
                     .foregroundStyle(Color(hex: "#c4919a"))
                 Text("THE CONTROLLED DECLINE")
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(size: 14, design: .monospaced))
                     .tracking(2.4)
                     .foregroundStyle(Color(hex: "#888780"))
             }
@@ -178,7 +178,7 @@ struct TutorialView: View {
                 "The bank takes the mall when your debt exceeds $25,000. That's the only failure state. Until then, every month alive adds to your score. The best runs are the ones that should have ended a decade ago but didn't.")
 
             Button("Got It") { onClose() }
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.system(size: 17, weight: .bold, design: .monospaced))
                 .tracking(1)
                 .foregroundStyle(Color(hex: "#2a0a15"))
                 .padding(.horizontal, 24).padding(.vertical, 10)
@@ -197,11 +197,11 @@ struct TutorialView: View {
     private func section(_ title: String, _ body: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title.uppercased())
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(0.8)
                 .foregroundStyle(Color(hex: "#FAC775"))
             Text(body)
-                .font(.system(size: 13, design: .serif))
+                .font(.system(size: 18, design: .serif))
                 .foregroundStyle(Color(hex: "#c4b4a0"))
                 .lineSpacing(2)
         }
@@ -216,28 +216,28 @@ struct GameOverView: View {
     var body: some View {
         VStack(spacing: 12) {
             Text("FORECLOSED")
-                .font(.system(size: 32, weight: .black, design: .monospaced))
+                .font(.system(size: 42, weight: .black, design: .monospaced))
                 .tracking(1.8)
                 .foregroundStyle(Color(hex: "#e24b4a"))
             Text("The bank took the mall. The lights go dark.")
-                .font(.system(size: 13, design: .serif)).italic()
+                .font(.system(size: 18, design: .serif)).italic()
                 .foregroundStyle(Color(hex: "#c4b4a0"))
             Text("FINAL SCORE")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(2.4)
                 .foregroundStyle(Color(hex: "#888780"))
                 .padding(.top, 20)
             Text(vm.state.score.formatted())
-                .font(.system(size: 48, weight: .black, design: .monospaced))
+                .font(.system(size: 64, weight: .black, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(Color(hex: "#FAC775"))
             Text("\(vm.state.year - GameConstants.startingYear) years, \(vm.state.month) months survived")
-                .font(.system(size: 13, design: .serif)).italic()
+                .font(.system(size: 18, design: .serif)).italic()
                 .foregroundStyle(Color(hex: "#c4b4a0"))
             Button("Try Again") {
                 vm.restart()
             }
-            .font(.system(size: 14, weight: .bold, design: .monospaced))
+            .font(.system(size: 20, weight: .bold, design: .monospaced))
             .tracking(1.2)
             .foregroundStyle(Color(hex: "#2a0a15"))
             .padding(.horizontal, 36).padding(.vertical, 14)

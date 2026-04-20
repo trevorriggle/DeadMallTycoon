@@ -67,7 +67,7 @@ struct ContentView: View {
     private var goalStrip: some View {
         HStack(spacing: 12) {
             Text("GOAL")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(1.2)
                 .foregroundStyle(Color(hex: "#c4919a"))
             Text("Keep the mall ")
@@ -79,13 +79,13 @@ struct ContentView: View {
                 .foregroundStyle(Color(hex: "#c4b4a0"))
             Spacer()
             Button("How to Play") { showingTutorial = true }
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .tracking(0.8)
                 .foregroundStyle(Color(hex: "#c4919a"))
                 .padding(.horizontal, 10).padding(.vertical, 3)
                 .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#5a2a35")))
         }
-        .font(.system(size: 11, design: .serif))
+        .font(.system(size: 15, design: .serif))
         .italic()
         .padding(.horizontal, 14).padding(.vertical, 8)
         .background(
@@ -116,7 +116,7 @@ struct TabBar: View {
                 let on = tab == current
                 Button(action: { onSelect(tab) }) {
                     Text(name.uppercased())
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(.system(size: 15, weight: .bold, design: .monospaced))
                         .tracking(0.6)
                         .padding(.horizontal, 14).padding(.vertical, 6)
                         .foregroundStyle(on ? Color(hex: "#FAC775") : Color(hex: "#888780"))

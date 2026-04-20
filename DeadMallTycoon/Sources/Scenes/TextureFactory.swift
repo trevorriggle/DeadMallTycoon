@@ -214,24 +214,25 @@ enum TextureFactory {
 
     // MARK: - Visitor
 
-    // v8 visitor body: 10x14 with a 8x7 circle head and a 10x8 rounded-top torso.
+    // Visitor body: scaled up ~2.6x from v8's 10x14 so visitors are actually tappable on iPad.
+    // 26x36 with a 20x18 circle head and a 26x20 rounded-top torso.
     static func visitorTexture(bodyColor: UIColor, headColor: UIColor) -> SKTexture {
         let key = "visitor_\(bodyColor.hashValue)_\(headColor.hashValue)"
         return cached(key) {
-            SKTexture(image: renderImage(size: CGSize(width: 10, height: 14)) { ctx, size in
-                // head
+            SKTexture(image: renderImage(size: CGSize(width: 26, height: 36)) { ctx, size in
+                // head — 20x18 circle centered horizontally at top
                 headColor.setFill()
                 UIColor.black.withAlphaComponent(0.4).setStroke()
-                ctx.setLineWidth(1)
-                let head = CGRect(x: 1, y: 0, width: 8, height: 7)
+                ctx.setLineWidth(2)
+                let head = CGRect(x: 3, y: 0, width: 20, height: 18)
                 ctx.fillEllipse(in: head)
                 ctx.strokeEllipse(in: head)
                 // torso — rounded top
                 bodyColor.setFill()
-                let torso = CGRect(x: 0, y: 6, width: 10, height: 8)
+                let torso = CGRect(x: 0, y: 16, width: 26, height: 20)
                 let path = UIBezierPath(roundedRect: torso,
                                         byRoundingCorners: [.topLeft, .topRight],
-                                        cornerRadii: CGSize(width: 2, height: 2))
+                                        cornerRadii: CGSize(width: 5, height: 5))
                 ctx.addPath(path.cgPath)
                 ctx.fillPath()
                 ctx.addPath(path.cgPath)
