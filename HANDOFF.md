@@ -18,60 +18,7 @@ Hand-off from the Linux-codespace scaffold to Mac testing. Written at the end of
 
 ## To run on Mac
 
-The `.xcodeproj` is **not** checked in. Attempts to hand-author one from the
-Linux codespace failed. Create it on the Mac — takes ~2 minutes.
-
-### One-time setup
-
-1. **Create a new Xcode project**, temporarily on your Desktop (we'll move it):
-   - File → New → Project → iOS → **App** → Next
-   - Product Name: `DeadMallTycoon`
-   - Organization Identifier: `com.rigtech`
-   - Interface: SwiftUI · Language: Swift · Storage: None
-   - ✅ Include Tests
-   - Save to `~/Desktop` → Create
-
-2. **Move just the `.xcodeproj` into the repo:**
-   ```bash
-   mv ~/Desktop/DeadMallTycoon/DeadMallTycoon.xcodeproj \
-      <repo>/DeadMallTycoon/
-   rm -rf ~/Desktop/DeadMallTycoon       # discard the rest
-   ```
-
-3. **Open the relocated `DeadMallTycoon.xcodeproj`.** In the project
-   navigator you'll see `DeadMallTycoon` and `DeadMallTycoonTests`
-   groups with auto-generated boilerplate. Right-click each → **Delete
-   → Move to Trash**. We replace them with our real code next.
-
-4. **Add the existing source folder:**
-   - Right-click the project root (blue icon) → **Add Files to "DeadMallTycoon"…**
-   - Select `Sources/` in the repo.
-   - Options: **UNcheck "Copy items if needed"**, select "Create groups",
-     "Add to targets" → check `DeadMallTycoon` **only** (uncheck the test target).
-   - Click Add.
-
-5. **Add the tests folder** — same dialog:
-   - Select `Tests/`.
-   - UNcheck "Copy items if needed", "Create groups", "Add to targets" →
-     check `DeadMallTycoonTests` **only**.
-
-6. **Target settings** (project root → DeadMallTycoon target → **General**):
-   - Minimum Deployments → iOS: **17.0**
-   - Supported Destinations → remove iPhone, leave **iPad** only
-   - Deployment Info → Device Orientation: uncheck Portrait, keep
-     **Landscape Left** and **Landscape Right**; ✅ Requires full screen
-   - Identity → Bundle Identifier: `com.rigtech.deadmalltycoon`
-   - Identity → Display Name: `Dead Mall Tycoon`
-
-7. **⌘R**, pick an iPad simulator in the destination dropdown.
-
-8. **Commit the working `.xcodeproj`:**
-   ```bash
-   git add DeadMallTycoon/DeadMallTycoon.xcodeproj
-   git commit -m "Working .xcodeproj created in Xcode"
-   git push
-   ```
-   After this, every subsequent session is a normal `git pull` + double-click the `.xcodeproj`.
+Clone the repo, open `DeadMallTycoon/DeadMallTycoon.xcodeproj`, ⌘R on an iPad simulator. The project and shared scheme are checked in — no generator step, no setup.
 
 ### Run tests
 
