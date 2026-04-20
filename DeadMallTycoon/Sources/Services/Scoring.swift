@@ -35,9 +35,16 @@ enum Scoring {
         return min(1.0, Double(state.currentTraffic) / 100.0)
     }
 
-    // v8 curve. Phase 5 replaces with the progressive curve that targets ~1× at y1,
-    // 3× at y5, 8× at y10, 15× at y15, 25× at y20, uncapped.
+    // v9: progressive, uncapped year curve.
+    // Quadratic fit through target anchors:
+    //   y=0  → ~1.0×    y=1  → ~1.18×
+    //   y=5  → ~3.0×
+    //   y=10 → ~7.7×   (≈ 8× target)
+    //   y=15 → ~15.2×
+    //   y=20 → ~25.4×   (uncapped; continues rising)
+    // Rewards long-term survival dramatically more than v8's cap of 4× at year 25.
+    // Old v8 curve for reference: `1.0 + min(yr * 0.12, 3.0)`
     static func yearMultiplier(yearsElapsed yr: Double) -> Double {
-        1.0 + min(yr * 0.12, 3.0)
+        0.055 * yr * yr + 0.12 * yr + 1.0
     }
 }

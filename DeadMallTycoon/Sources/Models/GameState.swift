@@ -15,10 +15,12 @@ struct GameState: Equatable {
     var lastMonthlyScore: Int = 0
     var hazardFines: Int = 0
 
-    // world — v8: G.stores, G.decorations, G.visitors
+    // world — v8: G.stores, G.decorations
+    // Visitors are *presentation* state only — owned by MallScene, not GameState.
+    // This keeps 60fps position updates out of the Observation loop. Identity (age,
+    // personality, memory) is surfaced on selection via GameViewModel.recordVisitorInteraction.
     var stores: [Store] = []
     var decorations: [Decoration] = []
-    var visitors: [Visitor] = []
 
     // operations — v8: G.spd, G.activePromos, G.activeAdDeals, G.activeStaff
     var speed: Speed = .x1

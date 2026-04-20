@@ -86,20 +86,20 @@ final class GameViewModel {
 
     // ---------- selection ----------
 
-    func selectVisitor(_ id: UUID) {
-        state.selectedVisitorId = id
+    // Called by MallScene when a visitor sprite is tapped. The scene owns visitor
+    // positions so it hands us the visitor object.
+    func selectVisitor(_ visitor: Visitor) {
+        state.selectedVisitorId = visitor.id
         state.selectedStoreId = nil
         state.selectedDecorationId = nil
-        if let v = state.visitors.first(where: { $0.id == id }) {
-            let thought = PersonalityPicker.pickMemory(for: v, in: state, rng: &rng)
-            state.selectedVisitorThought = thought
-            state.thoughtsLog.insert(
-                ThoughtLogEntry(visitorName: v.name, personality: v.personality, text: thought),
-                at: 0
-            )
-            if state.thoughtsLog.count > 6 {
-                state.thoughtsLog = Array(state.thoughtsLog.prefix(6))
-            }
+        let thought = PersonalityPicker.pickMemory(for: visitor, in: state, rng: &rng)
+        state.selectedVisitorThought = thought
+        state.thoughtsLog.insert(
+            ThoughtLogEntry(visitorName: visitor.name, personality: visitor.personality, text: thought),
+            at: 0
+        )
+        if state.thoughtsLog.count > 6 {
+            state.thoughtsLog = Array(state.thoughtsLog.prefix(6))
         }
     }
 

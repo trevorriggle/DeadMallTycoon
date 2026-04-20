@@ -178,10 +178,11 @@ struct GameState {
     var score: Int
     var lastMonthlyScore: Int
 
-    // world
+    // world — visitors are NOT in GameState. They're scene-local in MallScene so 60fps
+    // position writes don't churn the @Observable invalidation loop. Identity surfaces
+    // to the VM via GameViewModel.selectVisitor(_ visitor: Visitor) on tap.
     var stores: [Store]
     var decorations: [Decoration]
-    var visitors: [Visitor]
 
     // operations
     var speed: Speed                     // paused, x1, x2, x4, x8

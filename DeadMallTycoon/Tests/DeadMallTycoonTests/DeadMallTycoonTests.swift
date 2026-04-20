@@ -142,12 +142,26 @@ final class ScoringTests: XCTestCase {
         XCTAssertEqual(Scoring.monthlyScore(s), 0)
     }
 
-    func testYearMultiplierMatchesV8Curve() {
-        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed:  0),  1.00, accuracy: 0.001)
-        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed:  3),  1.36, accuracy: 0.001)
-        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed: 10),  2.20, accuracy: 0.001)
-        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed: 25),  4.00, accuracy: 0.001)   // v8 cap
-        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed: 50),  4.00, accuracy: 0.001)
+    // v9 progressive year curve: quadratic, uncapped. Targets per Trevor's spec:
+    // y=1 ~1×, y=5 ~3×, y=10 ~8×, y=15 ~15×, y=20 ~25×.
+    func testYearMultiplierV9Curve() {
+        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed:  0),  1.00, accuracy: 0.05)
+        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed:  1),  1.18, accuracy: 0.05)
+        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed:  5),  2.98, accuracy: 0.20)   // target 3
+        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed: 10),  7.70, accuracy: 0.50)   // target 8
+        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed: 15), 15.18, accuracy: 0.50)   // target 15
+        XCTAssertEqual(Scoring.yearMultiplier(yearsElapsed: 20), 25.40, accuracy: 0.50)   // target 25
+    }
+
+    // v9 curve is uncapped and monotonic — year 30 should score dramatically more
+    // than year 20 (v8 would have been flat at 4×).
+    func testYearMultiplierIsUncappedAndMonotonic() {
+        let a = Scoring.yearMultiplier(yearsElapsed: 20)
+        let b = Scoring.yearMultiplier(yearsElapsed: 30)
+        let c = Scoring.yearMultiplier(yearsElapsed: 40)
+        XCTAssertGreaterThan(b, a)
+        XCTAssertGreaterThan(c, b)
+        XCTAssertGreaterThan(c, 50)   // we intentionally let this scale
     }
 }
 
@@ -206,11 +220,13 @@ final class DecayTests: XCTestCase {
 
 final class PersonalityWeightingTests: XCTestCase {
 
+    // v8 regular weights are used pre-year-5. Thriving still peaks at Suburban Mom.
     func testThrivingFavorsSuburbanMom() {
         var rng = SeededGenerator(seed: 2026)
         var counts: [String: Int] = [:]
         for _ in 0..<10_000 {
-            let p = PersonalityPicker.weightedPick(state: .thriving, rng: &rng)
+            let p = PersonalityPicker.weightedPick(state: .thriving,
+                                                   year: GameConstants.startingYear, rng: &rng)
             counts[p, default: 0] += 1
         }
         let top = counts.max { $0.value < $1.value }!.key
@@ -218,16 +234,18 @@ final class PersonalityWeightingTests: XCTestCase {
                        "Thriving weights top out at Suburban Mom (18). Got: \(counts)")
     }
 
-    func testDeadFavorsUrbex() {
+    func testDeadPreYear5FavorsUrbex() {
         var rng = SeededGenerator(seed: 2026)
         var counts: [String: Int] = [:]
         for _ in 0..<10_000 {
-            let p = PersonalityPicker.weightedPick(state: .dead, rng: &rng)
+            let p = PersonalityPicker.weightedPick(state: .dead,
+                                                   year: GameConstants.startingYear + 2,
+                                                   rng: &rng)
             counts[p, default: 0] += 1
         }
         let top = counts.max { $0.value < $1.value }!.key
         XCTAssertEqual(top, "Urbex Explorer",
-                       "Dead weights top out at Urbex Explorer (25). Got: \(counts)")
+                       "Pre-year-5 dead pool should still use v8 weights. Got: \(counts)")
     }
 
     func testZeroWeightPersonalityNeverPicked() {
@@ -235,11 +253,61 @@ final class PersonalityWeightingTests: XCTestCase {
         var rng = SeededGenerator(seed: 1)
         var urbexCount = 0
         for _ in 0..<5_000 {
-            if PersonalityPicker.weightedPick(state: .thriving, rng: &rng) == "Urbex Explorer" {
+            if PersonalityPicker.weightedPick(state: .thriving,
+                                               year: GameConstants.startingYear, rng: &rng) == "Urbex Explorer" {
                 urbexCount += 1
             }
         }
         XCTAssertEqual(urbexCount, 0)
+    }
+
+    // v9 Ghost Mall: at year 5+ in struggling/dying/dead, the new personalities
+    // appear. Pre-year-5 they don't, even if the mall is already dead.
+    func testGhostPersonalitiesLockedBeforeYear5() {
+        var rng = SeededGenerator(seed: 77)
+        var ghostCount = 0
+        let ghostNames: Set<String> = ["Paranormal Investigator","Urbex Pilgrim","Fashion Photographer"]
+        for _ in 0..<5_000 {
+            let p = PersonalityPicker.weightedPick(state: .dying,
+                                                   year: GameConstants.startingYear + 3,
+                                                   rng: &rng)
+            if ghostNames.contains(p) { ghostCount += 1 }
+        }
+        XCTAssertEqual(ghostCount, 0,
+                       "Ghost Mall personalities must not appear before year 5")
+    }
+
+    func testGhostPersonalitiesUnlockedAtYear5Dying() {
+        var rng = SeededGenerator(seed: 77)
+        let ghostNames: Set<String> = ["Paranormal Investigator","Urbex Pilgrim","Fashion Photographer"]
+        var ghostCount = 0
+        var total = 0
+        for _ in 0..<10_000 {
+            let p = PersonalityPicker.weightedPick(state: .dying,
+                                                   year: GameConstants.startingYear + 5,
+                                                   rng: &rng)
+            if ghostNames.contains(p) { ghostCount += 1 }
+            total += 1
+        }
+        // Ghost weights for dying are PI:12, UP:10, FP:8 (total 30) out of ~96. Expect >20% ghost.
+        let ghostShare = Double(ghostCount) / Double(total)
+        XCTAssertGreaterThan(ghostShare, 0.20,
+                             "Ghost Mall should meaningfully appear in year-5+ dying. Got \(ghostShare)")
+    }
+
+    func testGhostPersonalitiesAbsentWhenMallIsThriving() {
+        // Even at year 10, a thriving mall shouldn't summon ghost visitors — they're
+        // specifically drawn to decay.
+        var rng = SeededGenerator(seed: 77)
+        let ghostNames: Set<String> = ["Paranormal Investigator","Urbex Pilgrim","Fashion Photographer"]
+        var ghostCount = 0
+        for _ in 0..<5_000 {
+            let p = PersonalityPicker.weightedPick(state: .thriving,
+                                                   year: GameConstants.startingYear + 10,
+                                                   rng: &rng)
+            if ghostNames.contains(p) { ghostCount += 1 }
+        }
+        XCTAssertEqual(ghostCount, 0)
     }
 }
 

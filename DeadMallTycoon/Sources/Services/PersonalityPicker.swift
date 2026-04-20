@@ -5,9 +5,15 @@ import Foundation
 // so picks are deterministic under a seeded RNG.
 enum PersonalityPicker {
 
-    // v8: weightedPersonality()
-    static func weightedPick(state: MallState, rng: inout some RandomNumberGenerator) -> String {
-        let table = Personalities.weights[state] ?? []
+    // v8: weightedPersonality() + v9 Ghost Mall gate.
+    // At year 5+ when the mall is struggling/dying/dead, switches to the ghost weights
+    // table (which adds Paranormal Investigator, Urbex Pilgrim, Fashion Photographer).
+    static func weightedPick(state: MallState, year: Int,
+                             rng: inout some RandomNumberGenerator) -> String {
+        let useGhost = Personalities.useGhostWeights(year: year, state: state)
+        let table = useGhost
+            ? (Personalities.weightsGhost[state] ?? Personalities.weights[state] ?? [])
+            : (Personalities.weights[state] ?? [])
         let total = table.reduce(0) { $0 + $1.1 }
         guard total > 0 else { return "Casual Browser" }
         // v8: r = Math.random() * total; then r -= w for each; return when r <= 0

@@ -175,6 +175,84 @@ enum Personalities {
                 .dead:       ["\"Even the signs are on clearance.\""],
             ]
         ),
+
+        // v9 Ghost Mall unlocks — appear at year 5+ when the mall is struggling or worse.
+        // A different kind of person who shows up specifically BECAUSE it's dying.
+
+        "Paranormal Investigator": Personality(
+            key: "Paranormal Investigator", type: .adult, color: "#2f4858", headColor: "#6a8ba0",
+            ageRange: 28...52,
+            preferredStores: [],
+            thoughts: [
+                .thriving:   ["\"Too much foot traffic to pick anything up.\""],
+                .fading:     ["\"Sensitivity's creeping up. Give it a year.\""],
+                .struggling: [
+                    "\"The EMF reader keeps spiking near the old Orange Julius.\"",
+                    "\"Three separate visitors reported the woman in the JCPenney uniform.\"",
+                    "\"I can hear the elevator moving. The elevator was removed in 1994.\"",
+                ],
+                .dying: [
+                    "\"This is a hotspot. Confirmed hotspot.\"",
+                    "\"The air drops eight degrees by the sealed wing. I've measured it.\"",
+                    "\"Whatever is here is not malicious. Just lonely.\"",
+                ],
+                .dead: [
+                    "\"I've been coming here twelve years. It talks back now.\"",
+                    "\"We got a clear EVP last night. A child's voice said 'Cinnabon.'\"",
+                    "\"The mall is remembering itself. That's the theory I'm working.\"",
+                ],
+            ]
+        ),
+
+        "Urbex Pilgrim": Personality(
+            key: "Urbex Pilgrim", type: .adult, color: "#6a4a8a", headColor: "#9a80b8",
+            ageRange: 24...41,
+            preferredStores: [],
+            thoughts: [
+                .thriving:   ["\"Just scouting. Way too alive.\""],
+                .fading:     ["\"Filing this one away for two years from now.\""],
+                .struggling: [
+                    "\"Drove six hours. Worth it. Barely-open malls are the holy grail.\"",
+                    "\"Anyone who says YouTube ruined urbex hasn't been here.\"",
+                    "\"The discord isn't going to believe the fountain.\"",
+                ],
+                .dying: [
+                    "\"Eleven states crossed off. This one's top three.\"",
+                    "\"I've been dreaming about this mall for months. I'm not joking.\"",
+                    "\"Brought the Mamiya. Film only. You don't shoot this on digital.\"",
+                ],
+                .dead: [
+                    "\"Flew in just for today. The boards in Hot Topic — I HAVE to photograph them.\"",
+                    "\"This isn't content anymore. This is a pilgrimage.\"",
+                    "\"The stillness is the thing. I've never heard stillness this loud.\"",
+                ],
+            ]
+        ),
+
+        "Fashion Photographer": Personality(
+            key: "Fashion Photographer", type: .adult, color: "#3a3a3a", headColor: "#a89484",
+            ageRange: 26...44,
+            preferredStores: [],
+            thoughts: [
+                .thriving:   ["\"Too clean. Too lit. Can't shoot here.\""],
+                .fading:     ["\"The patina is almost there. Give it three years.\""],
+                .struggling: [
+                    "\"The decay under the fluorescents is perfect. Can you hold that pose?\"",
+                    "\"Vogue Italia loved the last set. This one's going to Harper's.\"",
+                    "\"I'm gonna need the stylist to rethink everything. This wins.\"",
+                ],
+                .dying: [
+                    "\"Look at the carpet. No one designs like this anymore. No one.\"",
+                    "\"Model, step into the broken skylight light. There. Hold.\"",
+                    "\"The whole shoot is about the specific failure of this architecture.\"",
+                ],
+                .dead: [
+                    "\"This is the location. This is THE location.\"",
+                    "\"I told the stylist to theme the looks around Sbarro.\"",
+                    "\"I don't want the mall in the background. I want it as the subject.\"",
+                ],
+            ]
+        ),
     ]
 
     // v8: P_WEIGHTS — stored as ordered tuple arrays so weighted picking is deterministic
@@ -211,4 +289,43 @@ enum Personalities {
             ("Goth Kid", 14), ("Casual Browser", 2), ("Photographer", 20),
         ],
     ]
+
+    // v9: Ghost Mall weights — active at year 5+ when mall is struggling/dying/dead.
+    // Adds three new personalities to the pool: Paranormal Investigator, Urbex Pilgrim,
+    // Fashion Photographer. Regular visitors still appear, just share the distribution
+    // with the late-game types. In `dead`, the ghost crew dominates heavily — the mall
+    // has become something specific and a specific kind of person shows up for it.
+    static let weightsGhost: [MallState: [(String, Int)]] = [
+        .struggling: [
+            ("Teen Rebel", 6), ("Teen Shopper", 3), ("Mall Walker", 10),
+            ("Nostalgic Dad", 8), ("Suburban Mom", 4), ("Food Court Regular", 6),
+            ("Bargain Hunter", 12), ("Urbex Explorer", 7), ("Little Kid", 2),
+            ("Goth Kid", 8), ("Casual Browser", 6), ("Photographer", 4),
+            ("Paranormal Investigator", 8), ("Urbex Pilgrim", 6), ("Fashion Photographer", 5),
+        ],
+        .dying: [
+            ("Teen Rebel", 2), ("Teen Shopper", 1), ("Mall Walker", 8),
+            ("Nostalgic Dad", 10), ("Suburban Mom", 1), ("Food Court Regular", 3),
+            ("Bargain Hunter", 5), ("Urbex Explorer", 12), ("Little Kid", 0),
+            ("Goth Kid", 10), ("Casual Browser", 2), ("Photographer", 8),
+            ("Paranormal Investigator", 12), ("Urbex Pilgrim", 10), ("Fashion Photographer", 8),
+        ],
+        .dead: [
+            ("Teen Rebel", 1), ("Teen Shopper", 0), ("Mall Walker", 4),
+            ("Nostalgic Dad", 8), ("Suburban Mom", 0), ("Food Court Regular", 1),
+            ("Bargain Hunter", 2), ("Urbex Explorer", 18), ("Little Kid", 0),
+            ("Goth Kid", 12), ("Casual Browser", 1), ("Photographer", 14),
+            ("Paranormal Investigator", 15), ("Urbex Pilgrim", 14), ("Fashion Photographer", 12),
+        ],
+    ]
+
+    // v9: Ghost Mall unlock condition.
+    // Year-5 threshold + mall must be struggling or worse. Ghost visitors don't appear
+    // in a thriving/fading mall even late — they're drawn to the specific atmosphere
+    // of controlled decay.
+    static func useGhostWeights(year: Int, state: MallState) -> Bool {
+        let yearsElapsed = year - GameConstants.startingYear
+        guard yearsElapsed >= 5 else { return false }
+        return state == .struggling || state == .dying || state == .dead
+    }
 }

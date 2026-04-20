@@ -5,10 +5,13 @@ import Foundation
 // only responsible for *creating* a visitor with a sensible initial target.
 enum VisitorFactory {
 
-    // v8: spawnVisitor()
+    // v8: spawnVisitor() — v9 Ghost Mall kicks in automatically via the year passed
+    // into PersonalityPicker.weightedPick.
     static func spawn(state: GameState, rng: inout some RandomNumberGenerator) -> Visitor {
         let mallState = Mall.state(state)
-        let personalityKey = PersonalityPicker.weightedPick(state: mallState, rng: &rng)
+        let personalityKey = PersonalityPicker.weightedPick(state: mallState,
+                                                             year: state.year,
+                                                             rng: &rng)
         let personality = Personalities.all[personalityKey] ?? Personalities.all["Casual Browser"]!
         let names = Personalities.names(for: personality.type)
         let name = rng.pick(names) ?? "Visitor"

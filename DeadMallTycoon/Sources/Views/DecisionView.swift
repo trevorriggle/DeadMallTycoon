@@ -1,0 +1,254 @@
+import SwiftUI
+
+// v8: the yellow/red decision strip that appears pinned at the top of the world view
+// when a tenant offer or flavor event needs a choice. Play is paused until resolved.
+struct DecisionBanner: View {
+    @Bindable var vm: GameViewModel
+    let decision: Decision
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            switch decision {
+            case .tenant(let offer):
+                tenantOffer(offer)
+            case .event(let event):
+                flavorEvent(event)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: 440)
+        .background(backgroundColor)
+        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(borderColor, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .shadow(color: .black.opacity(0.6), radius: 10, y: 3)
+    }
+
+    private func tenantOffer(_ o: TenantOffer) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("TENANT OFFER · PAUSED")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .tracking(0.6)
+                .foregroundStyle(Color(hex: "#FAC775"))
+            Text(o.name).font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color(hex: "#f4e4b0"))
+            Text(o.pitch)
+                .font(.system(size: 11, design: .serif))
+                .foregroundStyle(Color(hex: "#c4b4a0"))
+            Text("$\(o.rent)/mo · \(o.lease)mo")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(Color(hex: "#FAC775"))
+            HStack {
+                Button("Sign") { vm.acceptDecision() }
+                    .buttonStyle(.borderedProminent).tint(.green)
+                Button("Decline") { vm.declineDecision() }
+                    .buttonStyle(.bordered)
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    private func flavorEvent(_ ev: FlavorEvent) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("DISASTER · PAUSED")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .tracking(0.6)
+                .foregroundStyle(Color(hex: "#F09595"))
+            Text(ev.name).font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color(hex: "#f4e4b0"))
+            Text(ev.description)
+                .font(.system(size: 11, design: .serif))
+                .foregroundStyle(Color(hex: "#c4b4a0"))
+            HStack {
+                Button(ev.acceptLabel) { vm.acceptDecision() }
+                    .buttonStyle(.borderedProminent).tint(.green)
+                Button(ev.declineLabel) { vm.declineDecision() }
+                    .buttonStyle(.bordered).tint(.red)
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch decision {
+        case .tenant: return Color(hex: "#2a2520")
+        case .event:  return Color(hex: "#2a1515")
+        }
+    }
+    private var borderColor: Color {
+        switch decision {
+        case .tenant: return Color(hex: "#FAC775")
+        case .event:  return Color(hex: "#F09595")
+        }
+    }
+}
+
+// MARK: - Start screen
+
+struct StartScreenView: View {
+    let onStart: () -> Void
+    @State private var showingTutorial = false
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(hex: "#0a0908"), Color(hex: "#1a1410"), Color(hex: "#0a0908")],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
+            VStack(spacing: 16) {
+                Text("DEAD MALL")
+                    .font(.system(size: 42, weight: .black, design: .monospaced))
+                    .tracking(3.5)
+                    .foregroundStyle(Color(hex: "#c4919a"))
+                    .shadow(color: Color(hex: "#5a2a35"), radius: 0, x: 2, y: 2)
+                Text("TYCOON")
+                    .font(.system(size: 42, weight: .black, design: .monospaced))
+                    .tracking(3.5)
+                    .foregroundStyle(Color(hex: "#c4919a"))
+                    .shadow(color: Color(hex: "#5a2a35"), radius: 0, x: 2, y: 2)
+                Text("KEEP THE CORPSE BREATHING.")
+                    .font(.system(size: 11, design: .monospaced))
+                    .tracking(3)
+                    .foregroundStyle(Color(hex: "#888780"))
+                    .padding(.top, 8)
+                Text("""
+                You inherit the mall. Score grows with empty stores, sealed wings, and visible \
+                decay. Cash comes only from tenants. Full occupancy is a losing run. Total \
+                collapse is a losing run. The goal is the long, slow middle — a mall that \
+                should have closed years ago but somehow hasn't.
+                """)
+                    .font(.system(size: 12, design: .serif))
+                    .italic()
+                    .foregroundStyle(Color(hex: "#c4b4a0"))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .frame(maxWidth: 520)
+                    .padding(.top, 8)
+                Button("Begin Run · Jan 1982") {
+                    onStart()
+                }
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .tracking(1.2)
+                .foregroundStyle(Color(hex: "#2a0a15"))
+                .padding(.horizontal, 36).padding(.vertical, 14)
+                .background(Color(hex: "#c4919a"))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#8a4a5a"), lineWidth: 2))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .buttonStyle(.plain)
+                .padding(.top, 20)
+                Button("How to Play") { showingTutorial = true }
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(Color(hex: "#c4919a"))
+                    .padding(.horizontal, 10).padding(.vertical, 3)
+                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#5a2a35")))
+            }
+        }
+        .sheet(isPresented: $showingTutorial) {
+            TutorialView(onClose: { showingTutorial = false })
+        }
+    }
+}
+
+// MARK: - Tutorial
+
+struct TutorialView: View {
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("HOW TO PLAY")
+                    .font(.system(size: 20, weight: .black, design: .monospaced))
+                    .tracking(1.6)
+                    .foregroundStyle(Color(hex: "#c4919a"))
+                Text("THE CONTROLLED DECLINE")
+                    .font(.system(size: 10, design: .monospaced))
+                    .tracking(2.4)
+                    .foregroundStyle(Color(hex: "#888780"))
+            }
+
+            section("The Core Loop",
+                "You run a dying mall. Score comes from empty stores, sealed wings, and visible decay — the mall looking abandoned is what the game rewards. Cash comes only from tenants paying rent. Operating costs always exceed the rent a small mall generates, so you're always bleeding something.")
+            section("Why \"Barely Open\" Wins",
+                "A fully occupied mall produces zero score — nothing empty to count. A fully abandoned mall also produces zero score — no one to witness it. The sweet spot is somewhere in the middle: enough tenants to keep the lights on and traffic walking through, enough vacancy and decay to feel like a tomb.")
+            section("Score = Empty × Time × Decay × Life",
+                "Each month you earn points for every empty storefront and sealed wing, multiplied by how long you've survived, multiplied by the aesthetic decay of your decorations, multiplied by how \"alive\" the mall still is (traffic-based). Survive longer = more score. Let things rot = more score. But you must stay open.")
+            section("Threat & Warnings",
+                "The Threat meter fills based on your decisions: unrepaired hazards, sealed wings without security, prolonged low traffic. The Watch List tells you what's building. Warnings appear before disasters — read them. High threat = consequences incoming.")
+            section("Ending The Run",
+                "The bank takes the mall when your debt exceeds $25,000. That's the only failure state. Until then, every month alive adds to your score. The best runs are the ones that should have ended a decade ago but didn't.")
+
+            Button("Got It") { onClose() }
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .tracking(1)
+                .foregroundStyle(Color(hex: "#2a0a15"))
+                .padding(.horizontal, 24).padding(.vertical, 10)
+                .background(Color(hex: "#c4919a"))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#8a4a5a"), lineWidth: 2))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .buttonStyle(.plain)
+        }
+        .padding(30)
+        .frame(maxWidth: 680)
+        .background(Color(hex: "#1a1917"))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#5a2a35"), lineWidth: 2))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func section(_ title: String, _ body: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased())
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(0.8)
+                .foregroundStyle(Color(hex: "#FAC775"))
+            Text(body)
+                .font(.system(size: 13, design: .serif))
+                .foregroundStyle(Color(hex: "#c4b4a0"))
+                .lineSpacing(2)
+        }
+    }
+}
+
+// MARK: - Game over
+
+struct GameOverView: View {
+    @Bindable var vm: GameViewModel
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("FORECLOSED")
+                .font(.system(size: 32, weight: .black, design: .monospaced))
+                .tracking(1.8)
+                .foregroundStyle(Color(hex: "#e24b4a"))
+            Text("The bank took the mall. The lights go dark.")
+                .font(.system(size: 13, design: .serif)).italic()
+                .foregroundStyle(Color(hex: "#c4b4a0"))
+            Text("FINAL SCORE")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(2.4)
+                .foregroundStyle(Color(hex: "#888780"))
+                .padding(.top, 20)
+            Text(vm.state.score.formatted())
+                .font(.system(size: 48, weight: .black, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(Color(hex: "#FAC775"))
+            Text("\(vm.state.year - GameConstants.startingYear) years, \(vm.state.month) months survived")
+                .font(.system(size: 13, design: .serif)).italic()
+                .foregroundStyle(Color(hex: "#c4b4a0"))
+            Button("Try Again") {
+                vm.restart()
+            }
+            .font(.system(size: 14, weight: .bold, design: .monospaced))
+            .tracking(1.2)
+            .foregroundStyle(Color(hex: "#2a0a15"))
+            .padding(.horizontal, 36).padding(.vertical, 14)
+            .background(Color(hex: "#c4919a"))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#8a4a5a"), lineWidth: 2))
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .buttonStyle(.plain)
+            .padding(.top, 20)
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.97))
+    }
+}
