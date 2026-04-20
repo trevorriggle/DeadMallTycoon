@@ -20,7 +20,7 @@ struct OpsTabsView: View {
             }
             .padding(16)
         }
-        .frame(height: 520)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(hex: "#0a0908"))
         .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#3a3935")))
         .clipShape(RoundedRectangle(cornerRadius: 6))

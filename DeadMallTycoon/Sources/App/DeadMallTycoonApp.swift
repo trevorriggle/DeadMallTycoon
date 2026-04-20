@@ -16,6 +16,7 @@ struct DeadMallTycoonApp: App {
 struct ContentView: View {
     @Bindable var vm: GameViewModel
     @State private var showingTutorial = false
+    @Environment(\.horizontalSizeClass) private var hSize
     // Collected from .coachmarkAnchor(...) modifiers throughout the game body.
     // Used by CoachmarkOverlay to position arrows over real UI element frames.
     @State private var coachmarkAnchors: [CoachmarkAnchor: CGRect] = [:]
@@ -84,14 +85,27 @@ struct ContentView: View {
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(1.2)
                 .foregroundStyle(Color(hex: "#c4919a"))
-            Text("Keep the mall ")
-                .foregroundStyle(Color(hex: "#c4b4a0"))
-            + Text("barely open")
-                .foregroundStyle(Color(hex: "#FAC775"))
-                .fontWeight(.bold)
-            + Text(" as long as possible. Empty spaces score. Tenants pay the bills. Find the edge.")
-                .foregroundStyle(Color(hex: "#c4b4a0"))
-            Spacer()
+            // Full pitch on iPad-scale widths; short version on iPhone / narrow split.
+            if hSize == .compact {
+                (Text("Keep the mall ")
+                    .foregroundStyle(Color(hex: "#c4b4a0"))
+                 + Text("barely open")
+                    .foregroundStyle(Color(hex: "#FAC775"))
+                    .fontWeight(.bold)
+                 + Text(".")
+                    .foregroundStyle(Color(hex: "#c4b4a0")))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            } else {
+                Text("Keep the mall ")
+                    .foregroundStyle(Color(hex: "#c4b4a0"))
+                + Text("barely open")
+                    .foregroundStyle(Color(hex: "#FAC775"))
+                    .fontWeight(.bold)
+                + Text(" as long as possible. Empty spaces score. Tenants pay the bills. Find the edge.")
+                    .foregroundStyle(Color(hex: "#c4b4a0"))
+            }
+            Spacer(minLength: 0)
             Button("How to Play") { showingTutorial = true }
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .tracking(0.8)
@@ -114,6 +128,7 @@ struct ContentView: View {
 struct TabBar: View {
     let current: Tab
     let onSelect: (Tab) -> Void
+    @Environment(\.horizontalSizeClass) private var hSize
 
     private let tabs: [(Tab, String)] = [
         (.mall, "Mall"),
@@ -124,26 +139,39 @@ struct TabBar: View {
     ]
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(tabs, id: \.0) { pair in
-                let (tab, name) = pair
-                let on = tab == current
-                Button(action: { onSelect(tab) }) {
-                    Text(name.uppercased())
-                        .font(.system(size: 15, weight: .bold, design: .monospaced))
-                        .tracking(0.6)
-                        .padding(.horizontal, 14).padding(.vertical, 6)
-                        .foregroundStyle(on ? Color(hex: "#FAC775") : Color(hex: "#888780"))
-                        .background(on ? Color(hex: "#2a2520") : Color(hex: "#1a1917"))
-                        .overlay(
-                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 6, topTrailing: 6))
-                                .strokeBorder(on ? Color(hex: "#5a4a3a") : Color(hex: "#3a3935"))
-                        )
-                        .clipShape(UnevenRoundedRectangle(cornerRadii: .init(topLeading: 6, topTrailing: 6)))
-                }
-                .buttonStyle(.plain)
+        if hSize == .compact {
+            // Horizontal scroll so all five tabs stay tappable on iPhone-width screens.
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 2) { tabButtons }
+                    .padding(.trailing, 12)
             }
-            Spacer()
+        } else {
+            HStack(spacing: 2) {
+                tabButtons
+                Spacer()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tabButtons: some View {
+        ForEach(tabs, id: \.0) { pair in
+            let (tab, name) = pair
+            let on = tab == current
+            Button(action: { onSelect(tab) }) {
+                Text(name.uppercased())
+                    .font(.system(size: 15, weight: .bold, design: .monospaced))
+                    .tracking(0.6)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .foregroundStyle(on ? Color(hex: "#FAC775") : Color(hex: "#888780"))
+                    .background(on ? Color(hex: "#2a2520") : Color(hex: "#1a1917"))
+                    .overlay(
+                        UnevenRoundedRectangle(cornerRadii: .init(topLeading: 6, topTrailing: 6))
+                            .strokeBorder(on ? Color(hex: "#5a4a3a") : Color(hex: "#3a3935"))
+                    )
+                    .clipShape(UnevenRoundedRectangle(cornerRadii: .init(topLeading: 6, topTrailing: 6)))
+            }
+            .buttonStyle(.plain)
         }
     }
 }
