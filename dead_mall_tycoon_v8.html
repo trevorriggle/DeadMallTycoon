@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Dead Mall Tycoon v0.6</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0908;color:#e8dcc8;font-family:'Courier New',monospace;padding:12px;}
+.game{max-width:1400px;margin:0 auto;position:relative;}
+
+.goal-strip{display:flex;align-items:center;gap:12px;padding:8px 14px;background:linear-gradient(90deg,#2a1515 0%,#1a1410 50%,#2a1515 100%);border:1px solid #5a2a35;border-radius:6px;margin-bottom:8px;font-size:11px;}
+.goal-strip .g-label{color:#c4919a;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:10px;white-space:nowrap;}
+.goal-strip .g-text{color:#c4b4a0;font-style:italic;font-family:'Georgia',serif;line-height:1.4;flex:1;}
+.goal-strip .g-btn{padding:3px 10px;font-size:9px;font-weight:700;background:transparent;color:#c4919a;border:1px solid #5a2a35;border-radius:3px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;font-family:inherit;}
+.goal-strip .g-btn:hover{background:#5a2a35;color:#f4c8d0;}
+
+.threat-band{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:2px 8px;border-radius:3px;min-width:62px;text-align:center;}
+.threat-band.stable{background:#0f3b2a;color:#9FE1CB;border:1px solid #1d9e75;}
+.threat-band.uneasy{background:#3b2a0f;color:#FAC775;border:1px solid #EF9F27;}
+.threat-band.risky{background:#4a2a10;color:#f4a574;border:1px solid #d97040;}
+.threat-band.critical{background:#4a1515;color:#F09595;border:1px solid #e24b4a;animation:critical-pulse 1.5s ease-in-out infinite;}
+@keyframes critical-pulse{0%,100%{box-shadow:0 0 0 0 rgba(226,75,74,0.5);}50%{box-shadow:0 0 0 6px rgba(226,75,74,0);}}
+.threat-reason{font-size:9px;color:#888780;font-style:italic;margin-left:6px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+.warning-item{padding:6px 8px;background:#1a1410;border-left:3px solid #EF9F27;margin-bottom:4px;font-size:10px;color:#c4b4a0;line-height:1.35;border-radius:0 3px 3px 0;}
+.warning-item.sev-watch{border-left-color:#5a9490;}
+.warning-item.sev-warn{border-left-color:#EF9F27;}
+.warning-item.sev-danger{border-left-color:#e24b4a;background:#2a1515;}
+.warning-empty{color:#555;font-style:italic;font-size:10px;padding:6px 4px;}
+
+.thought-display{background:linear-gradient(135deg,#2a2520 0%,#1a1410 100%);border:1px solid #5a4a3a;border-left:3px solid #c4919a;border-radius:3px;padding:8px 10px;margin-top:6px;font-family:'Georgia',serif;font-style:italic;font-size:11px;color:#e8dcc8;line-height:1.5;}
+.thought-display .t-label{font-size:8px;font-family:'Courier New',monospace;color:#888780;text-transform:uppercase;letter-spacing:0.1em;font-style:normal;margin-bottom:4px;display:block;}
+
+.role-tag{display:inline-block;padding:1px 5px;font-size:8px;background:#3a3530;border:1px solid #5a4a3a;border-radius:2px;color:#c4b4a0;text-transform:uppercase;letter-spacing:0.04em;margin-right:3px;margin-top:2px;font-weight:700;}
+.role-tag.good{color:#9FE1CB;border-color:#1d9e75;}
+.role-tag.mid{color:#FAC775;border-color:#8a6a3a;}
+.role-tag.bad{color:#F09595;border-color:#8a4a4a;}
+
+.hud-flash{animation:hud-flash 0.6s ease-out;}
+@keyframes hud-flash{0%{background:#FAC775;color:#2a1a0a;}100%{background:transparent;}}
+
+.tab-header{padding:8px 12px;background:#2a2520;border:1px solid #5a4a3a;border-radius:3px;margin-bottom:10px;font-size:11px;color:#c4b4a0;font-style:italic;font-family:'Georgia',serif;line-height:1.4;}
+.tab-header .th-title{color:#FAC775;font-family:'Courier New',monospace;font-weight:700;font-style:normal;text-transform:uppercase;letter-spacing:0.08em;font-size:10px;margin-bottom:3px;display:block;}
+
+.tutorial-overlay{position:fixed;inset:0;background:rgba(10,9,8,0.92);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.tutorial-box{background:#1a1917;border:2px solid #5a2a35;border-radius:8px;padding:30px 36px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;}
+.tutorial-title{font-size:20px;color:#c4919a;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;}
+.tutorial-sub{font-size:10px;color:#888780;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:20px;}
+.tutorial-section{margin-bottom:16px;}
+.tutorial-heading{font-size:10px;color:#FAC775;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;font-weight:700;}
+.tutorial-body{font-size:13px;color:#c4b4a0;line-height:1.55;font-family:'Georgia',serif;}
+.tutorial-body strong{color:#e8dcc8;font-weight:700;font-style:normal;}
+.tutorial-close{margin-top:12px;padding:10px 24px;font-size:12px;font-weight:700;background:#c4919a;color:#2a0a15;border:2px solid #8a4a5a;border-radius:4px;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;font-family:inherit;}
+.tutorial-close:hover{background:#d4a1aa;}
+
+.thoughts-log{max-height:140px;overflow-y:auto;}
+.log-item{padding:4px 6px;background:#1a1410;border-left:2px solid #5a4a3a;margin-bottom:3px;font-family:'Georgia',serif;font-style:italic;font-size:10px;color:#a89484;line-height:1.35;}
+.log-item .log-who{color:#888780;font-family:'Courier New',monospace;font-style:normal;font-size:8px;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:1px;}
+
+.hud{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#1a1917;border:1px solid #3a3935;border-radius:6px;margin-bottom:8px;font-size:12px;flex-wrap:wrap;}
+.hud-date{color:#c4919a;font-variant-numeric:tabular-nums;min-width:75px;}
+.hud-stat{display:flex;gap:5px;align-items:baseline;}
+.hud-lbl{color:#888780;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;}
+.hud-val{font-weight:700;font-variant-numeric:tabular-nums;}
+.cash-pos{color:#9FE1CB;}.cash-neg{color:#F09595;}.cash-warn{color:#FAC775;}
+.hud-score{color:#FAC775;}
+.hud-sep{color:#444441;}
+
+.threat-meter{display:flex;align-items:center;gap:6px;min-width:150px;}
+.threat-bar{flex:1;height:12px;background:#0a0908;border:1px solid #2a2a22;border-radius:6px;position:relative;overflow:hidden;}
+.threat-fill{position:absolute;left:0;top:0;bottom:0;transition:width 0.5s,background 0.5s;}
+.threat-marker{position:absolute;top:-2px;width:2px;height:16px;background:#FAC775;pointer-events:none;}
+
+.spd{padding:3px 8px;font-size:11px;border:1px solid #444441;border-radius:3px;cursor:pointer;background:transparent;color:#888780;font-variant-numeric:tabular-nums;font-family:inherit;}
+.spd.on{background:#2a4a5a;color:#9FE1CB;border-color:#085041;}
+.spd:hover:not(.on){background:#2a2a27;}
+.spd-grp{margin-left:auto;display:flex;gap:3px;}
+
+.tabs{display:flex;gap:2px;margin-bottom:8px;}
+.tab{padding:6px 14px;font-size:11px;font-family:inherit;background:#1a1917;color:#888780;border:1px solid #3a3935;border-bottom:none;border-radius:6px 6px 0 0;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;position:relative;}
+.tab.on{background:#2a2520;color:#FAC775;border-color:#5a4a3a;}
+.tab:hover:not(.on){background:#2a2520;color:#c4b4a0;}
+.tab-badge{position:absolute;top:2px;right:4px;background:#e24b4a;color:#fff;font-size:8px;padding:1px 4px;border-radius:8px;font-weight:700;}
+
+.world-outer{position:relative;width:100%;height:520px;border:1px solid #3a3935;border-radius:0 6px 6px 6px;overflow:hidden;background:#0a0908;}
+.stage{position:absolute;inset:0;}
+
+.floor-corridor{position:absolute;left:0;top:130px;width:100%;height:260px;background:#c8bca0;background-image:radial-gradient(circle at 15% 25%,#a8818a 0.8px,transparent 1.5px),radial-gradient(circle at 65% 55%,#5a9490 0.8px,transparent 1.5px),radial-gradient(circle at 35% 75%,#7a6a5a 0.8px,transparent 1.5px);background-size:30px 30px,40px 40px,50px 50px;transition:filter 1s;}
+.floor-bg{position:absolute;left:0;width:100%;height:130px;background:#2a2520;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:30px 30px;transition:filter 1s;}
+.wall{position:absolute;left:0;width:100%;height:3px;background:#4a7a75;border-top:1px solid #2a4a45;border-bottom:1px solid #2a4a45;}
+
+.mall-dim-1 .floor-corridor{filter:brightness(0.92);}
+.mall-dim-2 .floor-corridor{filter:brightness(0.82) saturate(0.9);}
+.mall-dim-3 .floor-corridor{filter:brightness(0.7) saturate(0.75);}
+.mall-dim-4 .floor-corridor{filter:brightness(0.55) saturate(0.5);}
+
+.wing-closed{position:absolute;background:repeating-linear-gradient(45deg,rgba(26,20,16,0.75) 0,rgba(26,20,16,0.75) 10px,rgba(58,42,32,0.75) 10px,rgba(58,42,32,0.75) 20px);border:2px dashed #5a4a3a;pointer-events:none;z-index:15;display:flex;align-items:center;justify-content:center;color:#c4919a;font-weight:700;font-size:14px;letter-spacing:0.2em;text-transform:uppercase;}
+
+.storefront{position:absolute;border:2px solid #8a4a5a;border-radius:2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:4px 3px;transition:filter 0.2s,opacity 1s;overflow:hidden;}
+.storefront:hover{filter:brightness(1.15);z-index:5;}
+.storefront.anchor{background:#e8b888;border-color:#8a5a3a;}
+.storefront.standard{background:#c4919a;border-color:#8a4a5a;}
+.storefront.kiosk{background:#a8c8d4;border-color:#4a7a8a;}
+.storefront.sketchy{background:#9a8a7a;border-color:#5a4a3a;}
+.storefront.vacant{background:#1a1814;border-color:#0a0908;}
+.storefront.vacant.boarded{background:#2a1a10;border-color:#1a0a05;}
+.storefront.vacant.boarded .sf-window{background:repeating-linear-gradient(90deg,#4a3a2a 0,#4a3a2a 4px,#2a1a10 4px,#2a1a10 8px);}
+.storefront.vacant.long-abandoned{background:#0a0605;border-color:#050302;opacity:0.75;}
+.storefront.closing{animation:warn 1.3s ease-in-out infinite;}
+@keyframes warn{0%,100%{border-color:#e24b4a;}50%{border-color:#f7c1c1;}}
+.storefront.downgraded{filter:brightness(0.5) saturate(0.5);}
+.storefront.promoting{box-shadow:0 0 10px #FAC775;}
+.storefront.lights-off{filter:brightness(0.45) saturate(0.6);}
+
+.sf-sign{width:92%;height:14px;background:#e8dcc8;border:1px solid #2a2520;border-radius:1px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#2a2520;text-transform:uppercase;letter-spacing:0.04em;overflow:hidden;white-space:nowrap;padding:0 2px;margin-top:2px;}
+.storefront.vacant .sf-sign{background:#2a2520;color:#4a4540;}
+.storefront.vacant.boarded .sf-sign{background:#1a0a05;color:#3a2a20;}
+.sf-window{width:92%;flex:1;margin-top:3px;background:#f4e4b0;border:1px solid #2a2520;position:relative;overflow:hidden;}
+.storefront.vacant .sf-window{background:#0a0908;}
+.sf-gate{position:absolute;inset:0;background:repeating-linear-gradient(to bottom,#2a2520 0px,#2a2520 2px,#4a4540 2px,#4a4540 4px);}
+
+.billboard{position:absolute;background:#2a2520;border:2px solid #FAC775;padding:2px 6px;font-size:8px;color:#FAC775;font-weight:700;z-index:3;}
+
+.decoration{position:absolute;cursor:pointer;transition:filter 0.2s;}
+.decoration:hover{filter:brightness(1.3);z-index:6;}
+.decoration.hazard{animation:hazard-flash 1.5s ease-in-out infinite;}
+@keyframes hazard-flash{0%,100%{filter:drop-shadow(0 0 4px #e24b4a);}50%{filter:drop-shadow(0 0 8px #e24b4a) brightness(1.2);}}
+.kugel{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#a8a8a0,#3a3a32);border:2px solid #1a1914;}
+.kugel.working{animation:spin 15s linear infinite;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.fountain{width:46px;height:46px;border-radius:50%;background:radial-gradient(circle,#4a7a8a,#1a3a45);border:3px solid #7a6a5a;}
+.fountain.broken{background:radial-gradient(circle,#4a3a2a,#1a1a12);}
+.bench{width:36px;height:10px;background:#4a3a2a;border-radius:1px;border:1px solid #2a1a0a;}
+.plant{width:18px;height:18px;background:radial-gradient(circle,#3a6a3a,#1a3a1a);border-radius:50%;border:2px solid #2a1a0a;}
+.plant.dead{background:radial-gradient(circle,#6a5a3a,#3a2a1a);}
+.neon{width:40px;height:14px;background:#c4919a;border:1px solid #5a2a35;border-radius:2px;box-shadow:0 0 8px #c4919a;}
+.neon.flicker{animation:flicker 0.3s linear infinite;}
+@keyframes flicker{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.neon.dark{background:#2a1a20;box-shadow:none;}
+.directory-light{width:22px;height:30px;background:#5a4a3a;border:2px solid #7a6a5a;border-radius:1px;box-shadow:inset 0 0 4px #fac775;}
+
+.dec-badge{position:absolute;top:-8px;right:-8px;font-size:8px;padding:1px 4px;border-radius:8px;background:#2a2520;border:1px solid #5a4a3a;color:#fac775;pointer-events:none;font-weight:700;}
+.dec-badge.hazard-badge{background:#a32d2d;color:#fcebeb;border-color:#e24b4a;animation:hazard-pulse 1s ease-in-out infinite;}
+@keyframes hazard-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+
+.visitor{position:absolute;cursor:pointer;transition:opacity 0.4s,transform 0.15s;z-index:10;}
+.visitor:hover{transform:scale(1.3);z-index:20;}
+.visitor.selected{animation:selected-pulse 1s ease-in-out infinite;}
+@keyframes selected-pulse{0%,100%{transform:scale(1.2);}50%{transform:scale(1.4);}}
+.v-body{position:relative;width:10px;height:14px;}
+.v-head{position:absolute;top:0;left:1px;width:8px;height:7px;border-radius:50%;border:1px solid rgba(0,0,0,0.4);}
+.v-torso{position:absolute;top:6px;left:0;width:10px;height:8px;border-radius:2px 2px 0 0;border:1px solid rgba(0,0,0,0.4);}
+
+.thought-bubble{position:absolute;background:#fff;border:2px solid #2a2520;border-radius:8px;padding:6px 10px;font-size:11px;color:#2a2520;max-width:220px;line-height:1.4;pointer-events:none;z-index:30;box-shadow:0 3px 10px rgba(0,0,0,0.6);font-style:italic;font-family:'Georgia',serif;animation:thought-pop 0.3s ease-out;}
+@keyframes thought-pop{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.sidebar{display:grid;grid-template-columns:220px 1fr 260px;gap:8px;margin-top:8px;}
+.side-panel{background:#1a1917;border:1px solid #3a3935;border-radius:6px;padding:10px 12px;font-size:11px;min-width:0;max-height:380px;overflow-y:auto;}
+.sp-title{font-size:10px;color:#888780;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.sp-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #2a2a22;font-variant-numeric:tabular-nums;}
+.sp-row:last-of-type{border:none;}
+.sp-lbl{color:#888780;}
+.sp-val.g{color:#9FE1CB;}
+.sp-val.r{color:#F09595;}
+.sp-val.a{color:#FAC775;}
+
+.selected-card{background:#2a2520;border:1px solid #5a4a3a;border-radius:4px;padding:8px 10px;}
+.sc-name{font-size:12px;font-weight:700;color:#FAC775;margin-bottom:1px;}
+.sc-type{font-size:9px;color:#888780;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.sc-personality{font-size:10px;color:#c4919a;margin-bottom:6px;font-style:italic;}
+.sc-action{font-size:9px;color:#888780;font-style:italic;}
+
+.decision{background:#2a2520;border:1px solid #FAC775;border-radius:4px;padding:10px 12px;font-size:11px;animation:slide-in 0.4s ease-out;}
+.decision.danger{border-color:#F09595;background:#2a1515;}
+@keyframes slide-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+.d-type{font-size:9px;color:#FAC775;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;}
+.decision.danger .d-type{color:#F09595;}
+.d-name{font-size:13px;font-weight:700;margin-bottom:4px;color:#f4e4b0;}
+.d-desc{color:#c4b4a0;margin-bottom:8px;line-height:1.4;}
+.d-btns{display:flex;gap:5px;flex-wrap:wrap;}
+.d-btn{padding:4px 10px;font-size:10px;border-radius:3px;cursor:pointer;font-weight:700;background:transparent;color:#e8dcc8;border:1px solid #5a4a3a;font-family:inherit;text-transform:uppercase;letter-spacing:0.04em;}
+.d-btn.primary{background:#1d9e75;color:#041f17;border-color:#0f6e56;}
+.d-btn.danger{background:#a32d2d;color:#fcebeb;border-color:#791f1f;}
+.d-btn:hover{opacity:0.85;}
+.d-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+.action-btn{padding:6px 10px;font-size:10px;border-radius:3px;cursor:pointer;background:#2a2520;color:#e8dcc8;border:1px solid #5a4a3a;font-family:inherit;text-transform:uppercase;letter-spacing:0.04em;font-weight:700;width:100%;margin-top:4px;text-align:left;}
+.action-btn:hover{background:#3a3530;}
+.action-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.action-btn.special{background:#5a2a35;color:#f4c8d0;border-color:#8a4a5a;}
+.action-btn.active{background:#2a4a3a;color:#9FE1CB;border-color:#0f6e56;}
+
+.rent-control{display:flex;align-items:center;gap:4px;margin-top:4px;}
+.rent-btn{width:24px;height:24px;border-radius:3px;border:1px solid #5a4a3a;background:#2a2520;color:#e8dcc8;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;}
+.rent-btn:hover{background:#3a3530;}
+.rent-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.rent-val{flex:1;text-align:center;color:#FAC775;font-weight:700;font-variant-numeric:tabular-nums;font-size:11px;}
+
+.mode-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(250,199,117,0.95);color:#2a1a0a;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;z-index:50;cursor:pointer;}
+
+.crisis-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(162,45,45,0.95);color:#fcebeb;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;z-index:50;animation:crisis-pulse 1.5s ease-in-out infinite;}
+@keyframes crisis-pulse{0%,100%{box-shadow:0 0 0 0 rgba(226,75,74,0.7);}50%{box-shadow:0 0 0 8px rgba(226,75,74,0);}}
+
+.headline{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);background:rgba(10,9,8,0.96);color:#f4e4b0;padding:14px 20px;border-radius:4px;font-size:14px;font-weight:700;z-index:40;text-align:center;max-width:320px;line-height:1.4;animation:headline 4s ease-out forwards;pointer-events:none;border:2px solid #5a4a3a;}
+@keyframes headline{0%{opacity:0;}15%{opacity:1;}85%{opacity:1;}100%{opacity:0;}}
+
+.start-screen{position:absolute;inset:0;background:linear-gradient(135deg,#0a0908 0%,#1a1410 50%,#0a0908 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.ss-title{font-size:42px;font-weight:900;color:#c4919a;letter-spacing:0.08em;text-align:center;margin-bottom:4px;text-shadow:2px 2px 0 #5a2a35,4px 4px 0 #2a0a15;}
+.ss-sub{font-size:11px;color:#888780;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:40px;}
+.ss-flavor{font-size:12px;color:#c4b4a0;font-style:italic;max-width:480px;text-align:center;line-height:1.7;margin-bottom:36px;font-family:'Georgia',serif;}
+.ss-btn{padding:14px 36px;font-size:14px;font-weight:700;background:#c4919a;color:#2a0a15;border:2px solid #8a4a5a;border-radius:4px;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;font-family:inherit;transition:all 0.2s;}
+.ss-btn:hover{background:#d4a1aa;transform:translateY(-2px);}
+
+.gameover-screen{position:absolute;inset:0;background:rgba(10,9,8,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.go-title{font-size:32px;font-weight:900;color:#e24b4a;letter-spacing:0.06em;margin-bottom:12px;}
+.go-sub{font-size:13px;color:#c4b4a0;margin-bottom:4px;text-align:center;max-width:400px;line-height:1.5;font-family:'Georgia',serif;font-style:italic;}
+.go-score{font-size:48px;font-weight:900;color:#FAC775;margin:8px 0 20px;font-variant-numeric:tabular-nums;}
+
+.section-head{font-size:9px;color:#FAC775;text-transform:uppercase;letter-spacing:0.1em;margin:10px 0 4px;border-top:1px solid #3a3935;padding-top:8px;font-weight:700;}
+.section-head:first-child{border-top:none;padding-top:0;margin-top:0;}
+.subtle{font-size:9px;color:#888780;font-style:italic;margin-bottom:4px;}
+
+.threat-label{font-size:9px;color:#888780;text-transform:uppercase;letter-spacing:0.06em;}
+</style></head>
+<body>
+<div class="game">
+
+<div class="goal-strip">
+  <span class="g-label">Goal</span>
+  <span class="g-text">Keep the mall <strong style="color:#FAC775;font-style:normal;">barely open</strong> as long as possible. Empty spaces score. Tenants pay the bills. Find the edge.</span>
+  <button class="g-btn" onclick="showTutorial()">How to Play</button>
+</div>
+
+<div class="hud">
+  <span class="hud-date" id="date">Jan 1982</span>
+  <span class="hud-sep">·</span>
+  <div class="hud-stat"><span class="hud-lbl">Cash</span><span class="hud-val cash-pos" id="cash">$3,500</span></div>
+  <div class="hud-stat"><span class="hud-lbl">Debt</span><span class="hud-val" id="debt">$0</span></div>
+  <div class="hud-stat"><span class="hud-lbl">Score</span><span class="hud-val hud-score" id="score">0</span></div>
+  <div class="hud-stat"><span class="hud-lbl">Mult</span><span class="hud-val hud-score" id="mult">1.0×</span></div>
+  <div class="threat-meter">
+    <span class="threat-label">Threat</span>
+    <div class="threat-bar"><div class="threat-fill" id="threat-fill"></div></div>
+    <span class="threat-band stable" id="threat-band">Stable</span>
+    <span class="threat-reason" id="threat-reason">Steady</span>
+  </div>
+  <div class="spd-grp">
+    <button class="spd" id="spd0" onclick="setSpd(0)">II</button>
+    <button class="spd on" id="spd1" onclick="setSpd(1)">1×</button>
+    <button class="spd" id="spd2" onclick="setSpd(2)">2×</button>
+    <button class="spd" id="spd3" onclick="setSpd(3)">4×</button>
+    <button class="spd" id="spd4" onclick="setSpd(4)">8×</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab on" data-tab="mall" onclick="switchTab('mall')">Mall</div>
+  <div class="tab" data-tab="operations" onclick="switchTab('operations')">Operations</div>
+  <div class="tab" data-tab="tenants" onclick="switchTab('tenants')">Tenants</div>
+  <div class="tab" data-tab="promotions" onclick="switchTab('promotions')">Promotions</div>
+  <div class="tab" data-tab="revenue" onclick="switchTab('revenue')">Revenue</div>
+</div>
+
+<div class="world-outer" id="world-outer">
+  <div class="stage" id="stage"></div>
+  <div id="mode-banner-wrap"></div>
+  <div class="start-screen" id="start-screen">
+    <div class="ss-title">DEAD MALL</div>
+    <div class="ss-title" style="margin-top:-8px;">TYCOON</div>
+    <div class="ss-sub">Keep the corpse breathing.</div>
+    <div class="ss-flavor">You inherit the mall. Score grows with empty stores, sealed wings, and visible decay. Cash comes only from tenants. Full occupancy is a losing run. Total collapse is a losing run. The goal is the long, slow middle — a mall that should have closed years ago but somehow hasn't.</div>
+    <button class="ss-btn" onclick="startGame()">Begin Run · Jan 1982</button>
+    <button class="g-btn" style="margin-top:16px;" onclick="showTutorial()">How to Play</button>
+  </div>
+</div>
+
+<div class="sidebar">
+  <div class="side-panel" id="left-panel">
+    <div class="sp-title">Monthly P&amp;L</div>
+    <div class="sp-row"><span class="sp-lbl">Rent</span><span class="sp-val g" id="fin-rent">$18k</span></div>
+    <div class="sp-row"><span class="sp-lbl">Ad</span><span class="sp-val g" id="fin-ad">$0</span></div>
+    <div class="sp-row"><span class="sp-lbl">Operating</span><span class="sp-val r" id="fin-ops">-$20k</span></div>
+    <div class="sp-row"><span class="sp-lbl">Staff</span><span class="sp-val r" id="fin-staff">$0</span></div>
+    <div class="sp-row"><span class="sp-lbl">Promos</span><span class="sp-val r" id="fin-promo">$0</span></div>
+    <div class="sp-row"><span class="sp-lbl">Fines</span><span class="sp-val r" id="fin-haz">$0</span></div>
+    <div class="sp-row" style="border-top:1px solid #5a4a3a;margin-top:4px;padding-top:4px;"><span class="sp-lbl">NET</span><span class="sp-val r" id="fin-net">-$2k</span></div>
+    <div class="sp-title" style="margin-top:10px;">State</div>
+    <div class="sp-row"><span class="sp-lbl">Occupancy</span><span class="sp-val" id="fin-occ">18/20</span></div>
+    <div class="sp-row"><span class="sp-lbl">Visitors</span><span class="sp-val" id="fin-vis">—</span></div>
+    <div class="sp-row"><span class="sp-lbl">Mood</span><span class="sp-val" id="fin-state">thriving</span></div>
+    <div class="sp-title" style="margin-top:10px;">Score Sources</div>
+    <div class="sp-row"><span class="sp-lbl">Empty stores</span><span class="sp-val a" id="score-empty">0</span></div>
+    <div class="sp-row"><span class="sp-lbl">Sealed wings</span><span class="sp-val a" id="score-wings">0</span></div>
+    <div class="sp-row"><span class="sp-lbl">Life factor</span><span class="sp-val" id="score-life">1.0×</span></div>
+    <div class="sp-row"><span class="sp-lbl">This month</span><span class="sp-val a" id="score-month">+0</span></div>
+  </div>
+  <div id="center-panel">
+    <div id="decision-slot"></div>
+    <div class="side-panel">
+      <div class="sp-title">Status</div>
+      <div style="color:#c4b4a0;line-height:1.5;font-style:italic;" id="mood-text">The mall hums. Click anything to interact — visitors, stores, decorations — or explore the tabs above.</div>
+      <div class="sp-title" style="margin-top:12px;">Watch List</div>
+      <div id="warnings-panel"><div class="warning-empty">Nothing urgent. Enjoy it while it lasts.</div></div>
+    </div>
+  </div>
+  <div class="side-panel">
+    <div class="sp-title">Selected</div>
+    <div id="select-panel" style="color:#888780;font-style:italic;font-size:10px;">Click a visitor, store, or decoration.</div>
+    <div class="sp-title" style="margin-top:12px;">Thoughts Overheard</div>
+    <div id="thoughts-log" class="thoughts-log"><div class="warning-empty">Click visitors to overhear them.</div></div>
+  </div>
+</div>
+</div>
+
+<div id="tutorial-overlay" class="tutorial-overlay" style="display:none;">
+  <div class="tutorial-box">
+    <div class="tutorial-title">How To Play</div>
+    <div class="tutorial-sub">The Controlled Decline</div>
+    <div class="tutorial-section">
+      <div class="tutorial-heading">The Core Loop</div>
+      <div class="tutorial-body">You run a dying mall. <strong>Score</strong> comes from empty stores, sealed wings, and visible decay — the mall looking abandoned is what the game rewards. <strong>Cash</strong> comes only from tenants paying rent. Operating costs always exceed the rent a small mall generates, so you're always bleeding something.</div>
+    </div>
+    <div class="tutorial-section">
+      <div class="tutorial-heading">Why "Barely Open" Wins</div>
+      <div class="tutorial-body">A <strong>fully occupied</strong> mall produces <strong>zero score</strong> — nothing empty to count. A <strong>fully abandoned</strong> mall also produces <strong>zero score</strong> — no one to witness it. The sweet spot is somewhere in the middle: enough tenants to keep the lights on and traffic walking through, enough vacancy and decay to feel like a tomb.</div>
+    </div>
+    <div class="tutorial-section">
+      <div class="tutorial-heading">Score = Empty × Time × Decay × Life</div>
+      <div class="tutorial-body">Each month you earn points for every empty storefront and sealed wing, multiplied by how long you've survived, multiplied by the aesthetic decay of your decorations, multiplied by how "alive" the mall still is (traffic-based). Survive longer = more score. Let things rot = more score. But you must stay open.</div>
+    </div>
+    <div class="tutorial-section">
+      <div class="tutorial-heading">Threat &amp; Warnings</div>
+      <div class="tutorial-body">The <strong>Threat meter</strong> fills based on your decisions: unrepaired hazards, sealed wings without security, prolonged low traffic. The <strong>Watch List</strong> tells you what's building. Warnings appear before disasters — read them. High threat = consequences incoming.</div>
+    </div>
+    <div class="tutorial-section">
+      <div class="tutorial-heading">Ending The Run</div>
+      <div class="tutorial-body">The bank takes the mall when your debt exceeds $25,000. That's the only failure state. Until then, every month alive adds to your score. The best runs are the ones that should have ended a decade ago but didn't.</div>
+    </div>
+    <button class="tutorial-close" onclick="closeTutorial()">Got It</button>
+  </div>
+</div>
+
+<script>
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DEBT_CEIL=25000;
+
+const PERSONALITIES={'Teen Rebel':{type:'teen',color:'#c4919a',headColor:'#e8b5b5',age:[14,18],stores:['Hot Topic','Spencer\'s','Sam Goody','Vape Shop','GameStop'],thoughts:{thriving:['"This place is sick."','"Hot Topic has the new NIN shirt."'],fading:['"Everyone\'s going to the other mall."'],struggling:['"This place has aura though."'],dying:['"This is a backrooms level."'],dead:['"Peak liminal."']}},'Teen Shopper':{type:'teen',color:'#d4a1a8',headColor:'#f0c5c5',age:[13,17],stores:['Claire\'s','Hot Topic','Foot Locker','Auntie Anne\'s'],thoughts:{thriving:['"Mom gave me forty bucks."'],fading:['"Claire\'s is always empty now."'],struggling:['"My mom says this used to be nice."'],dying:['"There\'s nothing here anymore."'],dead:['"Can we leave?"']}},'Mall Walker':{type:'elder',color:'#e8b888',headColor:'#f4d0a0',age:[65,82],stores:[],thoughts:{thriving:['"Fourth lap today."'],fading:['"Not as many walkers anymore."'],struggling:['"I\'ll walk until they turn off the lights."'],dying:['"Here the day it opened."'],dead:['"I like the quiet."']}},'Nostalgic Dad':{type:'adult',color:'#6aada8',headColor:'#a0c8c4',age:[35,48],stores:['Radio Shack','B. Dalton','Foot Locker'],thoughts:{thriving:['"My dad used to bring me here."'],fading:['"Where did Waldenbooks go?"'],struggling:['"Had my first job at Sam Goody."'],dying:['"My kids will never know what a mall felt like."'],dead:['"Goodbye, old friend."']}},'Suburban Mom':{type:'adult',color:'#a8c4b8',headColor:'#d0e0d4',age:[30,45],stores:['Kay Jewelers','Bath & Body Works','Cinnabon','Sears'],thoughts:{thriving:['"Kids, stop running."'],fading:['"Well it\'s still cheaper."'],struggling:['"Kids want to go to the new mall."'],dying:['"I only come out of habit."'],dead:['"Why did I come?"']}},'Urbex Explorer':{type:'teen',color:'#7f77dd',headColor:'#a8a0e8',age:[19,26],stores:[],thoughts:{thriving:['"Too alive for my content."'],fading:['"Starting to get the vibe."'],struggling:['"Subscribers will love this."'],dying:['"THIS is the footage."'],dead:['"Drove four states for this."']}},'Goth Kid':{type:'teen',color:'#3a2a3a',headColor:'#6a5a6a',age:[15,19],stores:['Hot Topic','Spencer\'s'],thoughts:{thriving:['"Everyone here is a normie."'],fading:['"The decay is aesthetic."'],struggling:['"Liminal decay. Incredible."'],dying:['"I dream about this place."'],dead:['"I\'m home."']}},'Little Kid':{type:'kid',color:'#f4c8a8',headColor:'#ffdcc0',age:[5,9],stores:['Claire\'s','Cinnabon','Orange Julius'],thoughts:{thriving:['"MOM CAN I GET THIS"','"THE KUGEL BALL!"'],fading:['"Where\'s the toy store?"'],struggling:['"It\'s kind of boring."'],dying:['"Is the mall broken?"'],dead:['"I\'m scared."']}},'Casual Browser':{type:'adult',color:'#a0a0a0',headColor:'#c8c8c8',age:[25,55],stores:[],thoughts:{thriving:['"Just killing time."'],fading:['"Is there a point?"'],struggling:['"Needed to get out."'],dying:['"Bored."'],dead:['"Nothing to do."']}},'Photographer':{type:'adult',color:'#2a5a5a',headColor:'#6a9a9a',age:[22,38],stores:[],thoughts:{thriving:['"Too much activity."'],fading:['"Light through the skylight is perfect."'],struggling:['"These empty storefronts are cinematic."'],dying:['"This is my best work."'],dead:['"A ghost mall. My dream."']}},'Food Court Regular':{type:'adult',color:'#d4a874',headColor:'#e8c898',age:[45,65],stores:['Cinnabon','Orange Julius','Auntie Anne\'s'],thoughts:{thriving:['"Same as yesterday, Linda."'],fading:['"What do I eat now?"'],struggling:['"The food court is half closed."'],dying:['"Cinnabon lady knows my name."'],dead:['"She told me it\'s her last week."']}},'Bargain Hunter':{type:'adult',color:'#b8a874',headColor:'#d4c898',age:[38,58],stores:['Claire\'s','Waldenbooks','Spencer\'s'],thoughts:{thriving:['"50% off!"'],fading:['"Clearance aisle thinned out."'],struggling:['"Everything\'s liquidation now."'],dying:['"I feel like a vulture."'],dead:['"Even the signs are on clearance."']}}};
+
+const P_WEIGHTS={thriving:{'Teen Rebel':12,'Teen Shopper':15,'Mall Walker':8,'Nostalgic Dad':10,'Suburban Mom':18,'Food Court Regular':8,'Bargain Hunter':10,'Urbex Explorer':0,'Little Kid':10,'Goth Kid':6,'Casual Browser':4,'Photographer':1},fading:{'Teen Rebel':10,'Teen Shopper':10,'Mall Walker':10,'Nostalgic Dad':12,'Suburban Mom':12,'Food Court Regular':10,'Bargain Hunter':14,'Urbex Explorer':1,'Little Kid':6,'Goth Kid':6,'Casual Browser':6,'Photographer':2},struggling:{'Teen Rebel':8,'Teen Shopper':5,'Mall Walker':12,'Nostalgic Dad':10,'Suburban Mom':6,'Food Court Regular':8,'Bargain Hunter':16,'Urbex Explorer':5,'Little Kid':3,'Goth Kid':10,'Casual Browser':8,'Photographer':6},dying:{'Teen Rebel':4,'Teen Shopper':2,'Mall Walker':10,'Nostalgic Dad':12,'Suburban Mom':2,'Food Court Regular':5,'Bargain Hunter':8,'Urbex Explorer':15,'Little Kid':1,'Goth Kid':12,'Casual Browser':4,'Photographer':12},dead:{'Teen Rebel':2,'Teen Shopper':0,'Mall Walker':6,'Nostalgic Dad':12,'Suburban Mom':1,'Food Court Regular':2,'Bargain Hunter':3,'Urbex Explorer':25,'Little Kid':0,'Goth Kid':14,'Casual Browser':2,'Photographer':20}};
+const TEEN_NAMES=['Brittany','Jason','Amber','Tyler','Jessica','Brandon','Heather','Kevin'];
+const ADULT_NAMES=['Linda','David','Susan','Mike','Karen','Greg','Debbie','Steve'];
+const ELDER_NAMES=['Eleanor','Harold','Betty','Frank','Dorothy','Walter','Ruth','Arthur'];
+const KID_NAMES=['Tommy','Emma','Billy','Sarah','Jake','Lily','Max','Chloe'];
+
+const DECORATION_TYPES={kugel:{name:'Kugel Ball',baseMult:0.15,ruinMult:0.30,size:[28,28],cost:3500,repair:800,description:'Granite sphere on water.'},fountain:{name:'Fountain',baseMult:0.10,ruinMult:0.25,size:[46,46],cost:2500,repair:600,description:'Pennies stay when it stops.'},plant:{name:'Planter',baseMult:0.03,ruinMult:0.08,size:[18,18],cost:400,repair:100,description:'A ficus.'},neon:{name:'Neon Sign',baseMult:0.08,ruinMult:0.20,size:[40,14],cost:1200,repair:300,description:'Flickering is peak liminal.'},bench:{name:'Bench',baseMult:0.02,ruinMult:0.05,size:[36,10],cost:600,repair:150,description:'Mall walkers rest here.'},directory:{name:'Directory Board',baseMult:0.05,ruinMult:0.15,size:[22,30],cost:1500,repair:400,description:'Never update it.'}};
+const CONDITIONS=['Pristine','Worn','Damaged','Deteriorating','Ruin'];
+
+const PROMOTIONS=[{id:'marketing',name:'Marketing Campaign',cost:3000,duration:3,desc:'+25% traffic for 3 months. +$2k/mo operating.',monthlyCost:2000,effect:'traffic'},{id:'sale',name:'Mall-Wide Sale',cost:1500,duration:2,desc:'+15% traffic, tenants pay -20% rent.',monthlyCost:0,effect:'sale'},{id:'holiday',name:'Holiday Decor',cost:2000,duration:4,desc:'+20% traffic for 4 months. Score multiplier drops.',monthlyCost:0,effect:'holiday'},{id:'carshow',name:'Parking Lot Car Show',cost:800,duration:1,desc:'One-time: +40% traffic. $3k revenue.',monthlyCost:0,effect:'oneshot',bonus:3000},{id:'fleamarket',name:'Weekend Flea Market',cost:500,duration:2,desc:'+10% traffic, +$1.5k/mo. Reputation penalty.',monthlyCost:-1500,effect:'flea'},{id:'ghosttour',name:'Ghost Tour Rental',cost:0,duration:3,desc:'No cost. +$1k/mo. Weird visitors.',monthlyCost:-1000,effect:'ghost'}];
+const AD_DEALS=[{id:'billboard',name:'Interior Billboard',cost:0,income:1500,aestheticPenalty:0.15,desc:'$1.5k/mo. Large billboard.'},{id:'naming',name:'Sell Naming Rights',cost:0,income:3000,aestheticPenalty:0.4,desc:'$3k/mo. "The Cingular Experience."'},{id:'floor',name:'Floor Decals',cost:0,income:800,aestheticPenalty:0.08,desc:'$800/mo. Sticker ads.'}];
+const STAFF_TYPES={security:{name:'Security',cost:2000,desc:'Prevents gang events. Reduces shoplifting.'},janitorial:{name:'Janitorial',cost:1500,desc:'Slows decoration decay by 50%.'},maintenance:{name:'Maintenance',cost:1800,desc:'Reduces disaster frequency.'},marketing:{name:'Marketing Dept.',cost:1200,desc:'+5% traffic baseline.'}};
+const TENANT_TARGETS_ALL=[{name:'The Limited',tier:'standard',rent:1100,traffic:60,thresh:30,lease:36,approachCost:2000,reqState:['thriving','fading']},{name:'Bath & Body Works',tier:'standard',rent:1200,traffic:70,thresh:35,lease:36,approachCost:2500,reqState:['thriving','fading']},{name:'GameStop',tier:'standard',rent:750,traffic:50,thresh:25,lease:24,approachCost:1200,reqState:['thriving','fading','struggling']},{name:'Cingular',tier:'standard',rent:800,traffic:40,thresh:20,lease:24,approachCost:1500,reqState:['fading','struggling']},{name:'Sbarro',tier:'kiosk',rent:400,traffic:32,thresh:18,lease:18,approachCost:800,reqState:['thriving','fading','struggling']},{name:'Spirit Halloween',tier:'kiosk',rent:250,traffic:22,thresh:15,lease:4,approachCost:300,reqState:['struggling','dying','dead']},{name:'Escape Room',tier:'sketchy',rent:400,traffic:16,thresh:5,lease:24,approachCost:500,reqState:['struggling','dying','dead']},{name:'Pawn Outlet',tier:'sketchy',rent:220,traffic:10,thresh:0,lease:12,approachCost:200,reqState:['dying','dead']},{name:'Vape Shop',tier:'sketchy',rent:180,traffic:8,thresh:0,lease:12,approachCost:100,reqState:['struggling','dying','dead']}];
+
+const G={
+  m:0,y:1982,cash:3500,debt:0,score:0,spd:1,ticker:null,
+  stores:[],visitors:[],decorations:[],decision:null,
+  paused:false,gameover:false,started:false,animFrame:null,
+  selectedVisitor:null,selectedStore:null,selectedDec:null,
+  thoughtBubbles:[],hazardFines:0,
+  placingDecoration:null,
+  activePromos:[],
+  activeAdDeals:[],
+  activeStaff:{security:false,janitorial:false,maintenance:false,marketing:false},
+  wingsClosed:{north:false,south:false},
+  wingsDowngraded:{north:false,south:false},
+  gangMonths:0,
+  currentTab:'mall',
+  threatMeter:0,
+  currentTraffic:0,
+  consecutiveLowTrafficMonths:0,
+  openingCrisis:true,
+  warnings:[],
+  thoughtsLog:[],
+  lastMonthlyScore:0,
+  selectedVisitorThought:''
+};
+
+const STORE_POSITIONS=[{x:20,y:20,w:100,h:90,wing:'north'},{x:128,y:20,w:100,h:90,wing:'north'},{x:236,y:20,w:100,h:90,wing:'north'},{x:344,y:20,w:140,h:90,wing:'north'},{x:492,y:20,w:100,h:90,wing:'north'},{x:600,y:20,w:100,h:90,wing:'north'},{x:708,y:20,w:100,h:90,wing:'north'},{x:816,y:20,w:100,h:90,wing:'north'},{x:924,y:20,w:100,h:90,wing:'north'},{x:1032,y:20,w:130,h:90,wing:'north'},{x:20,y:410,w:100,h:90,wing:'south'},{x:128,y:410,w:100,h:90,wing:'south'},{x:236,y:410,w:100,h:90,wing:'south'},{x:344,y:410,w:100,h:90,wing:'south'},{x:452,y:410,w:140,h:90,wing:'south'},{x:600,y:410,w:100,h:90,wing:'south'},{x:708,y:410,w:100,h:90,wing:'south'},{x:816,y:410,w:100,h:90,wing:'south'},{x:924,y:410,w:100,h:90,wing:'south'},{x:1032,y:410,w:130,h:90,wing:'south'}];
+const STARTING_STORES=[{name:"Sears",tier:"anchor",rent:4500,traffic:300,thresh:150,lease:96},{name:"Sam Goody",tier:"standard",rent:1200,traffic:70,thresh:40,lease:36},{name:"Waldenbooks",tier:"standard",rent:1000,traffic:50,thresh:28,lease:30},{name:"Foot Locker",tier:"standard",rent:1400,traffic:80,thresh:45,lease:36},{name:"Hot Topic",tier:"standard",rent:900,traffic:60,thresh:35,lease:24},{name:"Claire's",tier:"standard",rent:700,traffic:45,thresh:22,lease:30},{name:"Radio Shack",tier:"standard",rent:800,traffic:50,thresh:28,lease:36},{name:"Kay Jewelers",tier:"standard",rent:1500,traffic:40,thresh:18,lease:48},{name:"Spencer's",tier:"standard",rent:800,traffic:55,thresh:30,lease:24},{name:"JCPenney",tier:"anchor",rent:4000,traffic:260,thresh:130,lease:96},{name:"B. Dalton",tier:"standard",rent:900,traffic:45,thresh:24,lease:30},{name:"Cinnabon",tier:"kiosk",rent:450,traffic:40,thresh:22,lease:24},{name:"Orange Julius",tier:"kiosk",rent:400,traffic:35,thresh:20,lease:18},{name:"Sunglass Hut",tier:"kiosk",rent:300,traffic:20,thresh:12,lease:24},{name:"Lids",tier:"kiosk",rent:250,traffic:18,thresh:8,lease:18},{name:"Things Remembered",tier:"kiosk",rent:300,traffic:20,thresh:10,lease:18},{name:"",tier:"vacant",rent:0,traffic:0,thresh:0,lease:0},{name:"",tier:"vacant",rent:0,traffic:0,thresh:0,lease:0},{name:"Auntie Anne's",tier:"kiosk",rent:400,traffic:40,thresh:20,lease:18},{name:"Vape Shop",tier:"sketchy",rent:200,traffic:8,thresh:0,lease:18}];
+const STARTING_DECORATIONS=[{type:'kugel',x:585,y:245,condition:2,working:true,hazard:false},{type:'fountain',x:275,y:235,condition:1,working:true,hazard:false},{type:'fountain',x:875,y:235,condition:3,working:false,hazard:true},{type:'neon',x:90,y:200,condition:2,working:true,hazard:false},{type:'neon',x:1080,y:200,condition:1,working:true,hazard:false},{type:'bench',x:460,y:260,condition:1,working:true,hazard:false},{type:'bench',x:710,y:260,condition:0,working:true,hazard:false},{type:'plant',x:160,y:280,condition:2,working:true,hazard:false},{type:'plant',x:1010,y:280,condition:1,working:true,hazard:false},{type:'directory',x:650,y:220,condition:3,working:true,hazard:false}];
+
+function getMallState(){const occ=G.stores.filter(s=>s.tier!=='vacant'&&!isWingClosed(s.wing)).length;const total=G.stores.filter(s=>!isWingClosed(s.wing)).length||1;const r=occ/total;if(r>=0.85)return'thriving';if(r>=0.65)return'fading';if(r>=0.4)return'struggling';if(r>=0.2)return'dying';return'dead';}
+function getMoodText(){return{thriving:'The mall is alive. Fluorescent lights hum.',fading:'Something feels different. A little quieter.',struggling:'Half the corridor is quiet.',dying:'The mall echoes. Most stores are closed.',dead:'You can hear your own footsteps.'}[getMallState()];}
+function isWingClosed(w){return G.wingsClosed[w];}
+
+function startGame(){
+  document.getElementById('start-screen').style.display='none';
+  G.started=true;initStores();initDecorations();initVisitors();
+  renderWorld();renderHUD();renderSelectPanel();renderWarnings();renderThoughtsLog();
+  setSpd(1);
+  if(!G.animFrame)G.animFrame=requestAnimationFrame(animLoop);
+  G.pendingLawsuitMonth=4;
+}
+
+function triggerOpeningLawsuit(){
+  G.decision={kind:'event',event:{name:'Inherited Lawsuit',desc:'A letter from the city arrives. The previous owner left unresolved code violations from three years ago. They want to settle quietly, or drag you into court.',a:'Settle ($1,500)',d:'Fight it (50/50)',fnA:()=>{G.cash-=1500;showHeadline('Settled. Back to the mall.');},fnD:()=>{if(Math.random()<0.5){G.cash-=5000;showHeadline('Lost the case. -$5,000.');}else{showHeadline('Judge threw it out.');}}}};
+  G.paused=true;renderDecision();
+  G.pendingLawsuitMonth=null;
+}
+
+function showTutorial(){document.getElementById('tutorial-overlay').style.display='flex';}
+function closeTutorial(){document.getElementById('tutorial-overlay').style.display='none';}
+
+function addWarning(key,text,severity){
+  if(G.warnings.find(w=>w.key===key))return;
+  G.warnings.push({key,text,severity:severity||'warn',age:0});
+  renderWarnings();
+}
+
+function refreshWarnings(){
+  const seen=new Set();
+  const hazardCount=G.decorations.filter(d=>d.hazard).length;
+  const closedWingsCount=(G.wingsClosed.north?1:0)+(G.wingsClosed.south?1:0);
+  
+  G.decorations.forEach(d=>{
+    if(d.condition===3&&!d.hazard){const k='decay_'+d.id;seen.add(k);addWarning(k,DECORATION_TYPES[d.type].name+' is deteriorating. May become a hazard soon.','watch');}
+    if(d.hazard){const k='hazard_'+d.id;seen.add(k);addWarning(k,DECORATION_TYPES[d.type].name+' is a hazard. Monthly fine active.','warn');}
+  });
+  
+  if(G.consecutiveLowTrafficMonths>=2){const k='low_traffic_2';seen.add(k);addWarning(k,'Foot traffic has been weak for '+G.consecutiveLowTrafficMonths+' months. City scrutiny rising.','warn');}
+  if(G.consecutiveLowTrafficMonths>=4){const k='low_traffic_4';seen.add(k);addWarning(k,'Prolonged low traffic will trigger an inspection soon.','danger');}
+  
+  if(closedWingsCount>0&&!G.activeStaff.security){const k='wing_crime';seen.add(k);addWarning(k,'Sealed wings are attracting trespassers. Hire Security or risk vandalism.','warn');}
+  
+  const state=getMallState();
+  if((state==='dying'||state==='dead')&&!G.warnings.find(w=>w.key==='offer_drought')){const k='offer_drought';seen.add(k);addWarning(k,'Vacancy is discouraging new tenant interest. Offers will be rare.','watch');}
+  
+  G.stores.forEach(s=>{
+    if(s.tier==='vacant'||isWingClosed(s.wing))return;
+    if(s.hw>=2&&!s.closing){const k='struggle_'+s.id;seen.add(k);addWarning(k,s.name+' is struggling to make rent. Traffic below their viability threshold.','watch');}
+    if(s.lease<=3&&s.lease>0&&G.currentTraffic<s.thresh*3){const k='lease_end_'+s.id;seen.add(k);addWarning(k,s.name+"'s lease ends in "+s.lease+' months. Low traffic suggests they may not renew.','warn');}
+  });
+  
+  if(G.threatMeter>=0.7&&!G.warnings.find(w=>w.key==='threat_critical')){const k='threat_critical';seen.add(k);addWarning(k,'Instability is critical. A disaster is likely this month or next.','danger');}
+  
+  G.warnings=G.warnings.filter(w=>{w.age++;if(w.age<=2)return true;if(!seen.has(w.key)&&w.age>4)return false;return w.age<10;});
+  renderWarnings();
+}
+
+function getThreatBand(){const t=G.threatMeter;if(t<0.25)return{name:'Stable',cls:'stable'};if(t<0.5)return{name:'Uneasy',cls:'uneasy'};if(t<0.75)return{name:'Risky',cls:'risky'};return{name:'Critical',cls:'critical'};}
+
+function getThreatReason(){
+  const parts=[];
+  const h=G.decorations.filter(d=>d.hazard).length;
+  const cw=(G.wingsClosed.north?1:0)+(G.wingsClosed.south?1:0);
+  if(h>0)parts.push(h+' hazard'+(h>1?'s':''));
+  if(cw>0)parts.push(cw+' sealed wing'+(cw>1?'s':''));
+  if(G.consecutiveLowTrafficMonths>=2)parts.push('weak traffic '+G.consecutiveLowTrafficMonths+'mo');
+  const vacRatio=G.stores.filter(s=>s.tier==='vacant'&&!isWingClosed(s.wing)).length/Math.max(1,G.stores.filter(s=>!isWingClosed(s.wing)).length);
+  if(vacRatio>0.4)parts.push('high vacancy');
+  return parts.length?parts.join(' · '):'Steady';
+}
+
+function renderWarnings(){
+  const p=document.getElementById('warnings-panel');
+  if(!p)return;
+  if(G.warnings.length===0){p.innerHTML='<div class="warning-empty">Nothing urgent. Enjoy it while it lasts.</div>';return;}
+  const sorted=[...G.warnings].sort((a,b)=>{const order={danger:0,warn:1,watch:2};return order[a.severity]-order[b.severity];});
+  p.innerHTML=sorted.slice(0,6).map(w=>`<div class="warning-item sev-${w.severity}">${w.text}</div>`).join('');
+}
+
+function addThoughtToLog(name,personality,text){
+  G.thoughtsLog.unshift({name,personality,text,ts:Date.now()});
+  if(G.thoughtsLog.length>6)G.thoughtsLog=G.thoughtsLog.slice(0,6);
+  renderThoughtsLog();
+}
+
+function renderThoughtsLog(){
+  const p=document.getElementById('thoughts-log');
+  if(!p)return;
+  if(G.thoughtsLog.length===0){p.innerHTML='<div class="warning-empty">Click visitors to overhear them.</div>';return;}
+  p.innerHTML=G.thoughtsLog.map(t=>`<div class="log-item"><span class="log-who">${t.name} · ${t.personality}</span>${t.text}</div>`).join('');
+}
+
+function flashHUD(elementId){
+  const el=document.getElementById(elementId);
+  if(!el)return;
+  el.classList.remove('hud-flash');
+  void el.offsetWidth;
+  el.classList.add('hud-flash');
+}
+
+function initStores(){G.stores=STARTING_STORES.map((s,i)=>({...s,id:i,hw:0,closing:false,leaving:false,monthsOccupied:0,rentMultiplier:1.0,promotionActive:false,originalRent:s.rent,monthsVacant:0,...STORE_POSITIONS[i]}));}
+function initDecorations(){G.decorations=STARTING_DECORATIONS.map((d,i)=>({...d,id:i,monthsAtCondition:0}));}
+function weightedPersonality(state){const weights=P_WEIGHTS[state];const total=Object.values(weights).reduce((a,b)=>a+b,0);let r=Math.random()*total;for(const[p,w]of Object.entries(weights)){r-=w;if(r<=0)return p;}return'Casual Browser';}
+function spawnVisitor(){const state=getMallState();const pname=weightedPersonality(state);const p=PERSONALITIES[pname];const names={teen:TEEN_NAMES,adult:ADULT_NAMES,elder:ELDER_NAMES,kid:KID_NAMES};const side=Math.random()<0.5?'left':'right';const v={id:Math.random().toString(36).slice(2),name:names[p.type][Math.floor(Math.random()*names[p.type].length)],personality:pname,type:p.type,color:p.color,headColor:p.headColor,age:p.age[0]+Math.floor(Math.random()*(p.age[1]-p.age[0])),x:side==='left'?-20:1200,y:220+Math.random()*60,vx:0,vy:0,speed:0.35+Math.random()*0.25,target:null,state:'entering',dwellTimer:0,el:null,memory:'',targetType:''};pickTarget(v);G.visitors.push(v);return v;}
+function pickTarget(v){const p=PERSONALITIES[v.personality];const interested=G.stores.filter(s=>s.tier!=='vacant'&&!isWingClosed(s.wing)&&p.stores.includes(s.name));if(interested.length>0&&Math.random()<0.7){const store=interested[Math.floor(Math.random()*interested.length)];v.target={x:store.x+store.w/2,y:store.wing==='north'?store.y+store.h+15:store.y-15,storeId:store.id};v.targetType='store';}else{v.target={x:50+Math.random()*1100,y:210+Math.random()*70};v.targetType='wander';}}
+function initVisitors(){G.visitors=[];for(let i=0;i<12;i++){const v=spawnVisitor();v.x=50+Math.random()*1100;v.y=220+Math.random()*60;v.state='wandering';}}
+
+function getAbandonmentLevel(){const state=getMallState();return{thriving:0,fading:1,struggling:2,dying:3,dead:4}[state];}
+
+function renderWorld(){
+  const stage=document.getElementById('stage');stage.innerHTML='';
+  const dimLevel=getAbandonmentLevel();
+  stage.className='stage'+(dimLevel>0?' mall-dim-'+dimLevel:'');
+  const bgN=document.createElement('div');bgN.className='floor-bg';bgN.style.top='0';stage.appendChild(bgN);
+  const bgS=document.createElement('div');bgS.className='floor-bg';bgS.style.bottom='0';stage.appendChild(bgS);
+  const floor=document.createElement('div');floor.className='floor-corridor';stage.appendChild(floor);
+  const wallN=document.createElement('div');wallN.className='wall';wallN.style.top='128px';stage.appendChild(wallN);
+  const wallS=document.createElement('div');wallS.className='wall';wallS.style.top='388px';stage.appendChild(wallS);
+  if(G.wingsClosed.north){const w=document.createElement('div');w.className='wing-closed';w.style.cssText='left:0;top:0;width:100%;height:130px;';w.textContent='North Wing Sealed';stage.appendChild(w);}
+  if(G.wingsClosed.south){const w=document.createElement('div');w.className='wing-closed';w.style.cssText='left:0;top:390px;width:100%;height:130px;';w.textContent='South Wing Sealed';stage.appendChild(w);}
+
+  G.decorations.forEach(d=>renderDecoration(d));
+
+  G.stores.forEach(s=>{
+    if(isWingClosed(s.wing))return;
+    const el=document.createElement('div');
+    let cls='storefront '+s.tier;
+    if(s.closing)cls+=' closing';
+    if(s.promotionActive)cls+=' promoting';
+    if(G.wingsDowngraded[s.wing])cls+=' downgraded';
+    if(G.selectedStore&&G.selectedStore.id===s.id)cls+=' selected';
+    if(s.tier==='vacant'){
+      if(s.monthsVacant>=6&&s.monthsVacant<18)cls+=' boarded';
+      else if(s.monthsVacant>=18)cls+=' long-abandoned';
+    }
+    if(dimLevel>=3&&s.tier!=='vacant'&&Math.random()<0.15&&!s.promotionActive)cls+=' lights-off';
+    el.className=cls;
+    el.style.cssText=`left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;`;
+    el.onclick=(e)=>{e.stopPropagation();selectStore(s);};
+    const sign=document.createElement('div');sign.className='sf-sign';sign.textContent=s.tier==='vacant'?(s.monthsVacant>=18?'':s.monthsVacant>=6?'CLOSED':''):s.name;el.appendChild(sign);
+    const win=document.createElement('div');win.className='sf-window';
+    if(s.tier==='vacant'&&s.monthsVacant<6){const gate=document.createElement('div');gate.className='sf-gate';win.appendChild(gate);}
+    el.appendChild(win);
+    stage.appendChild(el);s.el=el;
+  });
+
+  G.activeAdDeals.forEach(d=>{
+    if(d.id==='billboard'){const bb=document.createElement('div');bb.className='billboard';bb.style.cssText='left:560px;top:180px;width:80px;';bb.textContent='AD';stage.appendChild(bb);}
+    if(d.id==='floor'){const bb=document.createElement('div');bb.className='billboard';bb.style.cssText='left:260px;top:290px;width:40px;';bb.textContent='AD';stage.appendChild(bb);const bb2=document.createElement('div');bb2.className='billboard';bb2.style.cssText='left:800px;top:290px;width:40px;';bb2.textContent='AD';stage.appendChild(bb2);}
+  });
+
+  G.visitors.forEach(v=>createVisitorEl(v));
+}
+
+function renderDecoration(d){const stage=document.getElementById('stage');const type=DECORATION_TYPES[d.type];const el=document.createElement('div');let cls='decoration '+d.type;if(d.condition>=4&&d.hazard)cls+=' hazard';if(d.type==='kugel'&&d.working&&d.condition<4)cls+=' working';if(d.type==='neon'&&d.working){cls+=d.condition>=2?' flicker':'';if(d.condition>=4)cls+=' dark';}if(d.type==='fountain'&&!d.working)cls+=' broken';if(d.type==='plant'&&d.condition>=3)cls+=' dead';if(d.type==='directory')cls=cls.replace('directory','directory-light');el.className=cls;el.style.cssText=`left:${d.x}px;top:${d.y}px;`;el.onclick=(e)=>{e.stopPropagation();selectDecoration(d);};if(d.condition>=3){const badge=document.createElement('div');badge.className='dec-badge'+(d.hazard?' hazard-badge':'');badge.textContent=d.hazard?'!':CONDITIONS[d.condition];el.appendChild(badge);}stage.appendChild(el);d.el=el;}
+function redrawDecorations(){G.decorations.forEach(d=>d.el?.remove());G.decorations.forEach(d=>renderDecoration(d));}
+function createVisitorEl(v){const stage=document.getElementById('stage');const el=document.createElement('div');el.className='visitor';el.style.left=v.x+'px';el.style.top=v.y+'px';el.innerHTML=`<div class="v-body"><div class="v-head" style="background:${v.headColor};"></div><div class="v-torso" style="background:${v.color};"></div></div>`;el.onclick=(e)=>{e.stopPropagation();selectVisitor(v);};stage.appendChild(el);v.el=el;}
+function animLoop(){if(!G.started){G.animFrame=null;return;}updateVisitorPositions();G.animFrame=requestAnimationFrame(animLoop);}
+
+function updateVisitorPositions(){const toRemove=[];G.visitors.forEach((v,i)=>{if(!v.target){pickTarget(v);return;}const dx=v.target.x-v.x;const dy=v.target.y-v.y;const dist=Math.sqrt(dx*dx+dy*dy);if(v.state==='leaving'){if(v.x<-30||v.x>1220){toRemove.push(i);return;}v.x+=v.vx;v.y+=v.vy;}else if(dist<3){if(v.targetType==='store'){v.dwellTimer++;if(v.dwellTimer>180){v.dwellTimer=0;if(Math.random()<0.15){v.state='leaving';v.vx=v.x<600?-1.2:1.2;v.vy=0;}else pickTarget(v);}}else pickTarget(v);}else{v.x+=(dx/dist)*v.speed;v.y+=(dy/dist)*v.speed;}if(v.el){v.el.style.left=v.x+'px';v.el.style.top=v.y+'px';}});for(let i=toRemove.length-1;i>=0;i--){const v=G.visitors[toRemove[i]];v.el?.remove();G.visitors.splice(toRemove[i],1);}const state=getMallState();let target={thriving:22,fading:17,struggling:13,dying:8,dead:4}[state];G.activePromos.forEach(p=>{if(p.effect==='traffic')target=Math.floor(target*1.25);if(p.effect==='sale')target=Math.floor(target*1.15);if(p.effect==='holiday')target=Math.floor(target*1.2);if(p.effect==='oneshot')target=Math.floor(target*1.4);if(p.effect==='flea')target=Math.floor(target*1.1);});if(G.activeStaff.marketing)target=Math.floor(target*1.05);if(G.gangMonths>0)target=Math.floor(target*0.65);if(G.visitors.length<target&&Math.random()<0.02){const v=spawnVisitor();createVisitorEl(v);}}
+
+function pickMemory(v){const state=getMallState();const p=PERSONALITIES[v.personality];const pool=p.thoughts[state];return pool[Math.floor(Math.random()*pool.length)];}
+function selectVisitor(v){G.visitors.forEach(x=>x.el?.classList.remove('selected'));G.selectedStore=null;G.selectedDec=null;G.selectedVisitor=v;v.el?.classList.add('selected');const thought=pickMemory(v);v.memory=thought;G.selectedVisitorThought=thought;showThoughtBubble(v,thought);addThoughtToLog(v.name,v.personality,thought);renderWorld();renderSelectPanel();}
+function selectStore(s){G.visitors.forEach(x=>x.el?.classList.remove('selected'));G.selectedVisitor=null;G.selectedDec=null;G.selectedStore=s;renderWorld();renderSelectPanel();}
+function selectDecoration(d){if(G.placingDecoration)return;G.visitors.forEach(x=>x.el?.classList.remove('selected'));G.selectedVisitor=null;G.selectedStore=null;G.selectedDec=d;renderSelectPanel();}
+function showThoughtBubble(v,text){G.thoughtBubbles.forEach(b=>b.remove());G.thoughtBubbles=[];const stage=document.getElementById('stage');const b=document.createElement('div');b.className='thought-bubble';const leftPos=Math.min(v.x+14,970);b.style.left=leftPos+'px';b.style.top=(v.y-50)+'px';b.textContent=text;stage.appendChild(b);G.thoughtBubbles.push(b);setTimeout(()=>{if(b.parentNode){b.style.opacity='0';setTimeout(()=>b.remove(),500);}},5000);}
+
+function getStoreRoles(s){
+  const roles=[];
+  if(s.tier==='anchor')roles.push({text:'anchor',kind:'good'});
+  if(s.traffic>=60)roles.push({text:'high traffic',kind:'good'});
+  else if(s.traffic<=20)roles.push({text:'low traffic',kind:'mid'});
+  if(s.rent>=1200)roles.push({text:'strong revenue',kind:'good'});
+  else if(s.rent<=300)roles.push({text:'weak revenue',kind:'bad'});
+  if(s.tier==='sketchy')roles.push({text:'drags aesthetic',kind:'bad'});
+  if(s.tier==='sketchy'&&s.thresh===0)roles.push({text:'will never leave',kind:'mid'});
+  return roles;
+}
+
+function renderSelectPanel(){
+  const p=document.getElementById('select-panel');
+  if(G.selectedVisitor){
+    const v=G.selectedVisitor;
+    const typeLabel={teen:'Teenager',adult:'Adult',elder:'Senior',kid:'Child'}[v.type];
+    let action='Wandering';
+    if(v.targetType==='store'&&v.target?.storeId!==undefined){const store=G.stores.find(s=>s.id===v.target.storeId);if(store&&store.tier!=='vacant')action='Heading to '+store.name;}
+    p.innerHTML=`<div class="selected-card"><div class="sc-name">${v.name}</div><div class="sc-type">${typeLabel} · ${v.age} · ${v.personality}</div><div class="sc-action">${action}</div><div class="thought-display"><span class="t-label">Overheard</span>${G.selectedVisitorThought||v.memory||'(silent)'}</div></div>`;
+  }else if(G.selectedStore){
+    const s=G.selectedStore;
+    if(s.tier==='vacant'){
+      const label=s.monthsVacant>=18?'Long abandoned':s.monthsVacant>=6?'Boarded up':'Empty storefront';
+      p.innerHTML=`<div class="selected-card"><div class="sc-name" style="color:#888780;">${label}</div><div class="sc-type">${s.wing} wing · ${s.monthsVacant}mo empty</div><div style="font-size:10px;color:#c4b4a0;font-style:italic;margin-top:6px;">This empty space is generating score each month.</div></div>`;
+    }else{
+      const status=s.closing?'Closing':s.leaving?'Lease ending':s.hw>=2?'Struggling':'Open';
+      const statusColor=s.closing?'#F09595':s.hw>=2?'#FAC775':'#9FE1CB';
+      const effectiveRent=Math.round(s.rent);
+      const roles=getStoreRoles(s);
+      const rolesHtml=roles.map(r=>`<span class="role-tag ${r.kind}">${r.text}</span>`).join('');
+      p.innerHTML=`<div class="selected-card"><div class="sc-name">${s.name}</div><div class="sc-type">${s.tier} · ${s.wing}</div><div style="margin-bottom:6px;">${rolesHtml}</div><div class="sp-row"><span class="sp-lbl">Base rent</span><span>${fmt(s.originalRent)}</span></div><div class="sp-row"><span class="sp-lbl">Monthly</span><span class="sp-val a">${fmt(effectiveRent)}</span></div><div class="sp-row"><span class="sp-lbl">Traffic contrib</span><span>${s.traffic}</span></div><div class="sp-row"><span class="sp-lbl">Status</span><span style="color:${statusColor};">${status}</span></div><div class="rent-control"><button class="rent-btn" onclick="adjustRent(${s.id},-0.1)" ${s.rentMultiplier<=0.5?'disabled':''}>−</button><span class="rent-val">Rent ×${s.rentMultiplier.toFixed(1)}</span><button class="rent-btn" onclick="adjustRent(${s.id},0.1)" ${s.rentMultiplier>=2.0?'disabled':''}>+</button></div><div class="sp-row" style="margin-top:6px;"><span class="sp-lbl">Lease</span><span>${s.lease}mo</span></div><button class="action-btn" onclick="runStorePromo(${s.id})" ${G.cash<500||s.promotionActive?'disabled':''}>${s.promotionActive?'Promo Active':'Store Promo ($500)'}</button><button class="action-btn" onclick="evictStore(${s.id})">Force Evict (−20% score)</button></div>`;
+    }
+  }else if(G.selectedDec){
+    const d=G.selectedDec;const type=DECORATION_TYPES[d.type];const mult=d.condition>=4?type.ruinMult:type.baseMult*(1+d.condition*0.2);
+    p.innerHTML=`<div class="selected-card"><div class="sc-name">${type.name}</div><div class="sc-type">${CONDITIONS[d.condition]}${d.hazard?' · HAZARD':''}</div><div class="sc-personality" style="color:#c4b4a0;font-style:italic;">${type.description}</div><div class="sp-row"><span class="sp-lbl">Multiplier</span><span class="sp-val a">+${(mult*100).toFixed(0)}%</span></div>${d.hazard?`<div class="sp-row"><span class="sp-lbl">Monthly fine</span><span class="sp-val r">-$${(500+d.condition*200)}</span></div>`:''}<button class="action-btn" onclick="repairDec(${d.id})" ${G.cash<type.repair?'disabled':''}>Repair ($${type.repair})</button><button class="action-btn" onclick="removeDec(${d.id})">Remove (free)</button></div>`;
+  }else{
+    p.innerHTML='<div style="color:#888780;font-style:italic;font-size:10px;">Click anything.</div>';
+  }
+}
+
+function adjustRent(id,delta){const s=G.stores.find(x=>x.id===id);if(!s)return;const old=s.rentMultiplier;s.rentMultiplier=Math.max(0.5,Math.min(2.0,s.rentMultiplier+delta));s.rent=Math.round(s.originalRent*s.rentMultiplier);if(s.rentMultiplier>1.3)s.hw=Math.min(4,s.hw+0.5);if(s.rentMultiplier>old)showHeadline('Rent raised. Tenant stress rising.');else if(s.rentMultiplier<old)showHeadline('Rent lowered. Revenue down.');renderSelectPanel();renderHUD();}
+function runStorePromo(id){const s=G.stores.find(x=>x.id===id);if(!s||G.cash<500||s.promotionActive)return;G.cash-=500;s.promotionActive=true;showHeadline('Promo running at '+s.name+'.');setTimeout(()=>{if(s)s.promotionActive=false;renderWorld();},30000);renderWorld();renderSelectPanel();renderHUD();}
+
+function rent(){return G.stores.filter(s=>!isWingClosed(s.wing)).reduce((a,s)=>{let r=s.rent;G.activePromos.forEach(p=>{if(p.effect==='sale')r=Math.round(r*0.8);});return a+r;},0);}
+function adRevenue(){return G.activeAdDeals.reduce((a,d)=>a+d.income,0);}
+function promoRevenue(){return G.activePromos.reduce((a,p)=>a+(p.monthlyCost<0?-p.monthlyCost:0),0);}
+function promoCost(){return G.activePromos.reduce((a,p)=>a+(p.monthlyCost>0?p.monthlyCost:0),0);}
+function staffCost(){return Object.entries(G.activeStaff).filter(([k,v])=>v).reduce((a,[k])=>a+STAFF_TYPES[k].cost,0);}
+
+function operatingCost(){
+  const vac=G.stores.filter(s=>s.tier==='vacant'&&!isWingClosed(s.wing)).length;
+  let base=9500;
+  if(G.wingsClosed.north)base-=2500;
+  if(G.wingsClosed.south)base-=2500;
+  let perStore=G.stores.filter(s=>!isWingClosed(s.wing)).length*500;
+  let vacancyPenalty=vac*350;
+  let downgradeSavings=0;
+  if(G.wingsDowngraded.north)downgradeSavings+=1500;
+  if(G.wingsDowngraded.south)downgradeSavings+=1500;
+  return Math.max(2000,base+perStore+vacancyPenalty-downgradeSavings);
+}
+function hazardFines(){return G.decorations.filter(d=>d.hazard).reduce((sum,d)=>sum+500+d.condition*200,0);}
+function rawTraffic(){const occ=G.stores.filter(s=>s.tier!=='vacant'&&!isWingClosed(s.wing)).length;const total=G.stores.filter(s=>!isWingClosed(s.wing)).length||1;const factor=0.55+0.45*(occ/total);let t=Math.floor(G.stores.filter(s=>!isWingClosed(s.wing)).reduce((a,s)=>a+s.traffic,0)*factor);G.activePromos.forEach(p=>{if(p.effect==='traffic')t=Math.floor(t*1.25);if(p.effect==='sale')t=Math.floor(t*1.15);if(p.effect==='holiday')t=Math.floor(t*1.2);if(p.effect==='oneshot')t=Math.floor(t*1.4);if(p.effect==='flea')t=Math.floor(t*1.1);});if(G.wingsDowngraded.north)t=Math.floor(t*0.9);if(G.wingsDowngraded.south)t=Math.floor(t*0.9);if(G.activeStaff.marketing)t=Math.floor(t*1.05);if(G.gangMonths>0)t=Math.floor(t*0.65);return t;}
+function aestheticMult(){let vacMult=1+G.stores.filter(s=>s.tier==='vacant'&&!isWingClosed(s.wing)).length/G.stores.length*1.2;if(isWingClosed('north'))vacMult+=0.3;if(isWingClosed('south'))vacMult+=0.3;let decMult=1+G.decorations.reduce((sum,d)=>{const type=DECORATION_TYPES[d.type];const mult=d.condition>=4?type.ruinMult:type.baseMult*(1+d.condition*0.2);return sum+mult;},0);let adPenalty=G.activeAdDeals.reduce((a,d)=>a+d.aestheticPenalty,0);let promoPenalty=0;G.activePromos.forEach(p=>{if(p.effect==='holiday')promoPenalty+=0.3;if(p.effect==='flea')promoPenalty+=0.2;});return Math.max(0.5,Math.round((vacMult*decMult-adPenalty-promoPenalty)*10)/10);}
+function monthlyScore(){
+  const openStores=G.stores.filter(s=>!isWingClosed(s.wing));
+  const vacantOpen=openStores.filter(s=>s.tier==='vacant').length;
+  const activeTenants=openStores.filter(s=>s.tier!=='vacant').length;
+  const sealedBonus=(isWingClosed('north')?5:0)+(isWingClosed('south')?5:0);
+  const totalEmptiness=vacantOpen+sealedBonus;
+  if(totalEmptiness===0)return 0;
+  if(activeTenants<2)return 0;
+  if(G.currentTraffic<30)return 0;
+  const lifeMultiplier=Math.min(1,G.currentTraffic/100);
+  const yr=(G.y-1982)+(G.m/12);
+  const yearMult=1+Math.min(yr*0.12,3);
+  return Math.floor(totalEmptiness*yearMult*aestheticMult()*2*lifeMultiplier);
+}
+
+function getLifeMultiplier(){
+  const openStores=G.stores.filter(s=>!isWingClosed(s.wing));
+  const activeTenants=openStores.filter(s=>s.tier!=='vacant').length;
+  if(activeTenants<2)return 0;
+  if(G.currentTraffic<30)return 0;
+  return Math.min(1,G.currentTraffic/100);
+}
+
+function calculateThreat(){
+  const hazards=G.decorations.filter(d=>d.hazard).length;
+  const closedWingsCount=(G.wingsClosed.north?1:0)+(G.wingsClosed.south?1:0);
+  const occ=G.stores.filter(s=>s.tier!=='vacant'&&!isWingClosed(s.wing)).length;
+  const total=G.stores.filter(s=>!isWingClosed(s.wing)).length||1;
+  const vacancyRatio=1-(occ/total);
+  const lowTrafficFactor=G.consecutiveLowTrafficMonths*0.03;
+  const maintenanceReduction=G.activeStaff.maintenance?0.5:1;
+  const securityReduction=G.activeStaff.security?0.7:1;
+  const base=0.02;
+  const threat=(base+hazards*0.04+closedWingsCount*0.06+vacancyRatio*0.08+lowTrafficFactor)*maintenanceReduction*securityReduction;
+  return Math.min(1,threat*6);
+}
+
+function showHeadline(text){const outer=document.getElementById('world-outer');const h=document.createElement('div');h.className='headline';h.textContent=text;outer.appendChild(h);setTimeout(()=>h.remove(),4100);}
+
+function tick(){
+  if(G.gameover||G.paused||!G.started)return;
+  G.m++;if(G.m>=12){G.m=0;G.y++;}
+  const totalMonths=(G.y-1982)*12+G.m;
+  if(G.pendingLawsuitMonth&&totalMonths>=G.pendingLawsuitMonth){triggerOpeningLawsuit();return;}
+  const tr=rawTraffic();
+  G.currentTraffic=tr;
+  const totalMaxTraffic=G.stores.reduce((a,s)=>a+(s.originalRent>0?s.traffic:40),0);
+  if(tr<totalMaxTraffic*0.3)G.consecutiveLowTrafficMonths++;else G.consecutiveLowTrafficMonths=Math.max(0,G.consecutiveLowTrafficMonths-1);
+  const closed=[];
+  G.stores.forEach(s=>{
+    if(s.tier==='vacant'){s.monthsVacant++;return;}
+    s.monthsOccupied++;
+    if(isWingClosed(s.wing))return;
+    if(s.closing){closed.push(s.name);Object.assign(s,{name:'',tier:'vacant',rent:0,originalRent:0,rentMultiplier:1.0,traffic:0,thresh:0,lease:0,hw:0,closing:false,leaving:false,monthsOccupied:0,monthsVacant:0});return;}
+    if(s.leaving){Object.assign(s,{name:'',tier:'vacant',rent:0,originalRent:0,rentMultiplier:1.0,traffic:0,thresh:0,lease:0,hw:0,leaving:false,monthsOccupied:0,monthsVacant:0});return;}
+    if(s.lease>0)s.lease--;
+    let threshold=s.thresh*2.2;
+    if(s.rentMultiplier>1.2)threshold*=1.2;
+    if(tr<threshold){s.hw++;if(s.hw>=4)s.closing=true;}else s.hw=Math.max(0,s.hw-1);
+    if(s.lease===0&&!s.closing&&!s.leaving){if(tr<s.thresh*3&&Math.random()<0.6){s.leaving=true;}else if(Math.random()<0.3){s.leaving=true;}else{s.lease=12;}}
+  });
+  const janitorialMult=G.activeStaff.janitorial?0.5:1;
+  G.decorations.forEach(d=>{d.monthsAtCondition++;const decayChance=(0.02+d.condition*0.01)*janitorialMult;if(d.condition<4&&Math.random()<decayChance){d.condition++;d.monthsAtCondition=0;if(d.condition>=4&&!d.hazard&&Math.random()<0.4){d.hazard=true;}}else if(d.condition>=4&&!d.hazard&&Math.random()<0.15){d.hazard=true;}});
+  if(closed.length>0){showHeadline(closed.length===1?closed[0]+' closed':closed.length+' stores closed');}
+  renderWorld();
+  const r=rent();const ad=adRevenue();const ops=operatingCost();const st=staffCost();const pc=promoCost();const pr=promoRevenue();const fines=hazardFines();G.hazardFines=fines;G.cash+=r+ad+pr-ops-st-pc-fines;if(G.cash<0){G.debt+=Math.abs(G.cash);G.cash=0;}
+  const ms=monthlyScore();G.lastMonthlyScore=ms;G.score+=ms;
+  G.activePromos=G.activePromos.map(p=>({...p,remaining:p.remaining-1})).filter(p=>p.remaining>0);
+  if(G.gangMonths>0)G.gangMonths--;
+  G.threatMeter=calculateThreat();
+  refreshWarnings();
+  maybeDecision();
+  if(G.debt>=DEBT_CEIL){endGame('bankruptcy');return;}
+  renderHUD();
+  if(G.currentTab!=='mall')renderTabContent();
+}
+
+function maybeDecision(){
+  if(G.decision)return;
+  const totalMonths=(G.y-1982)*12+G.m;
+  const vac=G.stores.filter(s=>s.tier==='vacant'&&!isWingClosed(s.wing)).length;
+  const state=getMallState();
+  const stateOfferMult={thriving:1.2,fading:1.0,struggling:0.6,dying:0.35,dead:0.15}[state];
+  if(vac>0&&Math.random()<0.09*stateOfferMult){const pool=offerPool(totalMonths/12,state);if(pool.length){G.decision={kind:'tenant',offer:pool[Math.floor(Math.random()*pool.length)]};G.paused=true;renderDecision();return;}}
+  if(totalMonths>=6&&Math.random()<G.threatMeter*0.35){const events=buildEvents();G.decision={kind:'event',event:events[Math.floor(Math.random()*events.length)]};G.paused=true;renderDecision();}
+}
+
+function buildEvents(){
+  const cashNow=G.cash;
+  const hasSecurity=G.activeStaff.security;
+  const hazards=G.decorations.filter(d=>d.hazard);
+  const hazardCount=hazards.length;
+  const closedWings=(G.wingsClosed.north?1:0)+(G.wingsClosed.south?1:0);
+  const events=[];
+  const hadHazardWarning=G.warnings.some(w=>w.key.startsWith('hazard_')||w.key.startsWith('decay_'));
+  const pipeDesc=hadHazardWarning?'A pipe burst overnight. The Watch List had been warning about decay.':'A pipe burst overnight. No one saw this coming.';
+  events.push({name:'Burst Pipes',desc:pipeDesc,a:`Repair ($${Math.max(4000,Math.floor(cashNow*0.25))})`,d:'Leave It',fnA:()=>{G.cash-=Math.max(4000,Math.floor(cashNow*0.25));showHeadline('Pipes repaired.');},fnD:()=>{G.stores.filter(s=>s.wing==='south'&&s.hw<3).slice(0,4).forEach(s=>s.hw+=2);G.decorations.filter(d=>d.y>300).forEach(d=>{if(d.condition<4)d.condition++;});showHeadline('South wing damaged.');}});
+  if(!hasSecurity&&(closedWings>0||G.consecutiveLowTrafficMonths>2)){const hadWingWarning=G.warnings.some(w=>w.key==='wing_crime');events.push({name:'Vandalism in Closed Wing',desc:(hadWingWarning?'As the Watch List predicted, trespassers have hit the sealed wing.':'The sealed wing attracted trespassers.')+' Graffiti, broken glass.',a:'Clean Up ($3,500)',d:'Ignore',fnA:()=>{G.cash-=3500;showHeadline('Cleaned up.');},fnD:()=>{G.decorations.forEach(d=>{if(d.condition<4&&Math.random()<0.4)d.condition++;});showHeadline('Decay spread.');}});}
+  if(!hasSecurity)events.push({name:'Gang Activity',desc:'Police report gang activity in the parking lot.',a:'Hire extra security ($4,000)',d:'Ignore',fnA:()=>{G.cash-=4000;showHeadline('Lot secured.');},fnD:()=>{G.gangMonths=3;showHeadline('Traffic drops for 3 months.');}});
+  if(G.consecutiveLowTrafficMonths>=3){const hadTrafficWarning=G.warnings.some(w=>w.key.startsWith('low_traffic'));events.push({name:'City Inspection',desc:(hadTrafficWarning?'The inspection you were warned about has arrived.':'Low foot traffic flagged the mall for inspection.'),a:'Cooperate ($2,500)',d:'Stonewall',fnA:()=>{G.cash-=2500;showHeadline('Cooperated.');},fnD:()=>{G.decorations.filter(d=>d.condition<4).slice(0,2).forEach(d=>d.hazard=true);showHeadline('Inspector tagged hazards.');}});}
+  events.push({name:'Code Violations',desc:'City inspector cites violations.',a:'Pay ($5,000)',d:'Appeal',fnA:()=>{G.cash-=5000;showHeadline('Paid.');},fnD:()=>{if(Math.random()<0.5){G.cash-=9000;showHeadline('Lost appeal. -$9,000.');}else{showHeadline('Appeal successful.');}}});
+  events.push({name:'HVAC Failure',desc:'Main AC unit is dead.',a:`Repair ($${Math.max(3500,Math.floor(cashNow*0.2))})`,d:'Endure',fnA:()=>{G.cash-=Math.max(3500,Math.floor(cashNow*0.2));showHeadline('AC restored.');},fnD:()=>{G.stores.filter(s=>s.hw<3).slice(0,3).forEach(s=>s.hw++);showHeadline('Tenants complain. Hardship rising.');}});
+  return events;
+}
+
+function offerPool(yr,state){const good=[{name:'The Limited',tier:'standard',rent:1100,traffic:60,thresh:30,lease:36,pitch:'National chain.'},{name:'Bath & Body Works',tier:'standard',rent:1200,traffic:70,thresh:35,lease:36,pitch:'Saturday crowds.'}];const mid=[{name:'GameStop',tier:'standard',rent:750,traffic:50,thresh:25,lease:24,pitch:'Teen traffic.'},{name:'Cingular',tier:'standard',rent:800,traffic:40,thresh:20,lease:24,pitch:'Cell phone store.'},{name:'Sbarro',tier:'kiosk',rent:400,traffic:32,thresh:18,lease:18,pitch:'Food court pizza.'}];const sketchy=[{name:'Spirit Halloween',tier:'kiosk',rent:250,traffic:22,thresh:15,lease:4,pitch:'Seasonal.'},{name:'Escape Room',tier:'sketchy',rent:400,traffic:16,thresh:5,lease:24,pitch:'"The liminal vibe."'}];const desperate=[{name:'Vape Shop',tier:'sketchy',rent:180,traffic:8,thresh:0,lease:12,pitch:'Never leaves.'},{name:'Pawn Outlet',tier:'sketchy',rent:220,traffic:10,thresh:0,lease:12,pitch:'Cash in hand.'}];if(state==='thriving')return[...good,...good,...mid];if(state==='fading')return[...mid,...mid,...good,...sketchy];if(state==='struggling')return[...sketchy,...sketchy,...mid,...desperate];if(state==='dying')return[...desperate,...desperate,...sketchy];return[...desperate];}
+
+function beginPlacement(type){if(G.cash<DECORATION_TYPES[type].cost)return;G.placingDecoration=type;const wrap=document.getElementById('mode-banner-wrap');wrap.innerHTML=`<div class="mode-banner" onclick="cancelPlacement()">Placing ${DECORATION_TYPES[type].name} · Click in corridor · Click here to cancel</div>`;document.getElementById('stage').addEventListener('click',placementClickHandler);}
+function placementClickHandler(e){if(!G.placingDecoration)return;const stage=document.getElementById('stage');const rect=stage.getBoundingClientRect();const scaleX=1200/rect.width;const scaleY=520/rect.height;const x=(e.clientX-rect.left)*scaleX;const y=(e.clientY-rect.top)*scaleY;if(y<200||y>320)return;const type=DECORATION_TYPES[G.placingDecoration];G.cash-=type.cost;G.decorations.push({type:G.placingDecoration,x:x-type.size[0]/2,y:y-type.size[1]/2,condition:0,working:true,hazard:false,id:Date.now(),monthsAtCondition:0});showHeadline(type.name+' placed.');cancelPlacement();renderWorld();renderHUD();renderTabContent();}
+function cancelPlacement(){G.placingDecoration=null;document.getElementById('mode-banner-wrap').innerHTML='';document.getElementById('stage').removeEventListener('click',placementClickHandler);}
+function repairDec(id){const d=G.decorations.find(x=>x.id===id);if(!d)return;const cost=DECORATION_TYPES[d.type].repair;if(G.cash<cost)return;G.cash-=cost;d.condition=Math.max(0,d.condition-2);d.hazard=false;d.monthsAtCondition=0;showHeadline(DECORATION_TYPES[d.type].name+' repaired. Less liminal, lower risk.');redrawDecorations();renderHUD();renderSelectPanel();}
+function removeDec(id){const idx=G.decorations.findIndex(x=>x.id===id);if(idx<0)return;const name=DECORATION_TYPES[G.decorations[idx].type].name;G.decorations.splice(idx,1);G.selectedDec=null;showHeadline(name+' removed.');renderWorld();renderSelectPanel();renderHUD();}
+function launchPromo(id){const promo=PROMOTIONS.find(p=>p.id===id);if(!promo||G.cash<promo.cost)return;if(G.activePromos.find(p=>p.id===id))return;G.cash-=promo.cost;if(promo.bonus)G.cash+=promo.bonus;G.activePromos.push({...promo,remaining:promo.duration});showHeadline(promo.name+' launched. Traffic incoming.');renderHUD();renderTabContent();}
+function toggleAdDeal(id){const deal=AD_DEALS.find(d=>d.id===id);if(!deal)return;const idx=G.activeAdDeals.findIndex(d=>d.id===id);if(idx>=0){G.activeAdDeals.splice(idx,1);showHeadline(deal.name+' removed. Aesthetic restored.');}else{G.activeAdDeals.push(deal);showHeadline(deal.name+' active. +$'+deal.income+'/mo. Uglier.');}renderWorld();renderHUD();renderTabContent();}
+function toggleStaff(type){G.activeStaff[type]=!G.activeStaff[type];const name=STAFF_TYPES[type].name;if(G.activeStaff[type])showHeadline(name+' hired. Monthly burn up.');else showHeadline(name+' dismissed. Savings recovered.');renderHUD();renderTabContent();}
+function toggleWingClosed(wing){G.wingsClosed[wing]=!G.wingsClosed[wing];if(G.wingsClosed[wing]){G.wingsDowngraded[wing]=false;showHeadline(wing.toUpperCase()+' wing sealed. Tenants lost. +5 score/mo.');}else{showHeadline(wing.toUpperCase()+' wing reopened. Slots empty.');}renderWorld();renderHUD();renderTabContent();}
+function toggleWingDowngrade(wing){if(G.wingsClosed[wing])return;G.wingsDowngraded[wing]=!G.wingsDowngraded[wing];if(G.wingsDowngraded[wing])showHeadline(wing.toUpperCase()+' wing dimmed. -$1.5k/mo, weaker traffic.');else showHeadline(wing.toUpperCase()+' wing power restored.');renderWorld();renderHUD();renderTabContent();}
+function approachTenant(idx){const target=TENANT_TARGETS_ALL[idx];if(!target||G.cash<target.approachCost)return;const state=getMallState();if(!target.reqState.includes(state))return;const vi=G.stores.findIndex(s=>s.tier==='vacant'&&!isWingClosed(s.wing));if(vi<0)return;G.cash-=target.approachCost;const trafficMod=G.currentTraffic>target.thresh*3?0.2:G.currentTraffic<target.thresh?-0.3:0;const baseRate=state==='thriving'?0.8:state==='fading'?0.65:state==='struggling'?0.5:state==='dying'?0.35:0.2;const success=Math.random()<(baseRate+trafficMod);if(success){Object.assign(G.stores[vi],{name:target.name,tier:target.tier,rent:target.rent,originalRent:target.rent,rentMultiplier:1.0,traffic:target.traffic,thresh:target.thresh,lease:target.lease,hw:0,closing:false,leaving:false,monthsOccupied:0,promotionActive:false,monthsVacant:0});showHeadline(target.name+' signed! Rent stream added.');renderWorld();}else{showHeadline(target.name+' declined the offer.');}renderHUD();renderTabContent();}
+function acceptTenant(){if(!G.decision||G.decision.kind!=='tenant')return;const vi=G.stores.findIndex(s=>s.tier==='vacant'&&!isWingClosed(s.wing));if(vi<0){resumeDec();return;}const o=G.decision.offer;Object.assign(G.stores[vi],{name:o.name,tier:o.tier,rent:o.rent,originalRent:o.rent,rentMultiplier:1.0,traffic:o.traffic,thresh:o.thresh,lease:o.lease,hw:0,closing:false,leaving:false,monthsOccupied:0,promotionActive:false,monthsVacant:0});showHeadline(o.name+' signed. One less empty space.');renderWorld();resumeDec();}
+function declineTenant(){showHeadline('Offer declined. Slot stays empty. Score preserved.');resumeDec();}
+function acceptEvent(){G.decision.event.fnA();resumeDec();renderHUD();}
+function declineEvent(){G.decision.event.fnD();resumeDec();renderHUD();redrawDecorations();}
+function resumeDec(){G.decision=null;G.paused=false;renderDecision();}
+function evictStore(id){const s=G.stores[id];if(!s||s.tier==='vacant')return;const pen=Math.floor(G.score*0.2+200);const name=s.name;G.score=Math.max(0,G.score-pen);Object.assign(s,{name:'',tier:'vacant',rent:0,originalRent:0,rentMultiplier:1.0,traffic:0,thresh:0,lease:0,hw:0,closing:false,leaving:false,monthsOccupied:0,monthsVacant:0});G.selectedStore=null;showHeadline(name+' evicted. -'+pen+' score. +1 empty.');renderWorld();renderSelectPanel();renderHUD();}
+
+function switchTab(tab){G.currentTab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===tab));renderTabContent();}
+
+function renderTabContent(){
+  const outer=document.getElementById('world-outer');
+  if(G.currentTab==='mall'){outer.style.display='block';if(document.getElementById('tab-content'))document.getElementById('tab-content').style.display='none';return;}
+  outer.style.display='none';
+  if(!document.getElementById('tab-content')){const tc=document.createElement('div');tc.id='tab-content';tc.className='world-outer';tc.style.overflow='auto';tc.style.padding='16px';outer.parentNode.insertBefore(tc,outer.nextSibling);}
+  const tc=document.getElementById('tab-content');tc.style.display='block';
+  let html='';
+  const headers={
+    operations:{title:'Operations',desc:'Wings, staff, infrastructure, decorations. How you physically run the building.'},
+    tenants:{title:'Tenants',desc:'Rent, leases, recruitment. Empty is good for score — just not all of them.'},
+    promotions:{title:'Promotions',desc:'Temporary plays to buy traffic or cash. Every one has a tradeoff.'},
+    revenue:{title:'Revenue',desc:'Where your money is coming from, month to month.'}
+  };
+  const h=headers[G.currentTab];
+  if(h)html+=`<div class="tab-header"><span class="th-title">${h.title}</span>${h.desc}</div>`;
+  if(G.currentTab==='operations'){
+    html+='<div class="section-head">Staff</div><div class="subtle">Monthly retainers.</div>';
+    Object.entries(STAFF_TYPES).forEach(([k,v])=>{const on=G.activeStaff[k];html+=`<button class="action-btn ${on?'active':''}" onclick="toggleStaff('${k}')"><div style="display:flex;justify-content:space-between;"><span>${v.name} · $${v.cost}/mo</span><span>${on?'ACTIVE':'off'}</span></div><div style="font-size:9px;color:#888780;margin-top:3px;">${v.desc}</div></button>`;});
+    html+='<div class="section-head">Wings</div><div class="subtle">Sealing a wing loses tenants but slashes ops and gives +5 score/mo per sealed wing.</div>';
+    ['north','south'].forEach(wing=>{const closed=G.wingsClosed[wing];const down=G.wingsDowngraded[wing];html+=`<div style="margin-top:8px;"><div style="font-size:11px;color:#FAC775;font-weight:700;margin-bottom:4px;text-transform:uppercase;">${wing} Wing</div><button class="action-btn ${down?'active':''}" onclick="toggleWingDowngrade('${wing}')" ${closed?'disabled':''}>${down?'Restore Power':'Downgrade Lighting/HVAC'} (−$1.5k/mo, −10% traffic)</button><button class="action-btn ${closed?'active':''}" onclick="toggleWingClosed('${wing}')">${closed?'Reopen Wing':'Seal Wing'} (−$2.5k/mo ops, tenants lost)</button></div>`;});
+    html+='<div class="section-head">Ad Revenue</div><div class="subtle">Passive income at an aesthetic cost. More ads = uglier mall = lower score multiplier.</div>';
+    AD_DEALS.forEach(d=>{const on=G.activeAdDeals.find(a=>a.id===d.id);html+=`<button class="action-btn ${on?'active':''}" onclick="toggleAdDeal('${d.id}')"><div style="display:flex;justify-content:space-between;"><span>${d.name} · +$${d.income}/mo</span><span>${on?'ACTIVE':'off'}</span></div><div style="font-size:9px;color:#888780;margin-top:3px;">${d.desc} (−${(d.aestheticPenalty*100).toFixed(0)}% aesthetic)</div></button>`;});
+    html+='<div class="section-head">Decorations</div><div class="subtle">Aesthetic multipliers. Decay with time — a ruined fountain scores more than a working one. Click to place.</div>';
+    Object.entries(DECORATION_TYPES).forEach(([k,v])=>{html+=`<button class="action-btn" onclick="beginPlacement('${k}')" ${G.cash<v.cost?'disabled':''}>${v.name} · $${v.cost} <span style="color:#888780;">(+${(v.baseMult*100).toFixed(0)}% mult, ruin +${(v.ruinMult*100).toFixed(0)}%)</span></button>`;});
+  }else if(G.currentTab==='tenants'){
+    html+='<div class="section-head">Active Tenants</div><div class="subtle">Higher rent = more money but more stress. Force-evict to trade score for empty slots.</div>';
+    const active=G.stores.filter(s=>s.tier!=='vacant'&&!isWingClosed(s.wing));
+    active.forEach(s=>{const status=s.closing?'CLOSING':s.leaving?'Lease ending':s.hw>=2?'Struggling':'OK';html+=`<div class="selected-card" style="margin-top:6px;"><div style="display:flex;justify-content:space-between;"><span class="sc-name">${s.name}</span><span style="font-size:9px;color:${s.closing?'#F09595':s.hw>=2?'#FAC775':'#9FE1CB'};">${status}</span></div><div class="sc-type">${s.tier} · ${s.wing} · ${fmt(s.rent)}/mo @ ${(s.rentMultiplier*100).toFixed(0)}% · ${s.lease}mo</div><div class="rent-control"><button class="rent-btn" onclick="adjustRent(${s.id},-0.1)" ${s.rentMultiplier<=0.5?'disabled':''}>−</button><span class="rent-val">${s.rentMultiplier.toFixed(1)}×</span><button class="rent-btn" onclick="adjustRent(${s.id},0.1)" ${s.rentMultiplier>=2.0?'disabled':''}>+</button><button class="action-btn" style="width:auto;margin:0 0 0 8px;padding:4px 10px;" onclick="evictStore(${s.id})">Evict</button></div></div>`;});
+    html+='<div class="section-head">Approach Prospective Tenants</div><div class="subtle">Traffic affects success rate. Low traffic = fewer willing tenants. Late-game offers get desperate.</div>';
+    const state=getMallState();
+    TENANT_TARGETS_ALL.forEach((t,i)=>{const canApproach=t.reqState.includes(state)&&G.cash>=t.approachCost;const baseRate=state==='thriving'?80:state==='fading'?65:state==='struggling'?50:state==='dying'?35:20;html+=`<button class="action-btn" onclick="approachTenant(${i})" ${!canApproach?'disabled':''}><div style="display:flex;justify-content:space-between;"><span>${t.name} · $${t.approachCost}</span><span>~${baseRate}% success</span></div><div style="font-size:9px;color:#888780;margin-top:3px;">${t.tier} · ${fmt(t.rent)}/mo · ${t.lease}mo lease</div></button>`;});
+  }else if(G.currentTab==='promotions'){
+    html+='<div class="section-head">Promotions & Events</div><div class="subtle">Active campaigns run for a set duration. Most trade score aesthetics for traffic or cash.</div>';
+    if(G.activePromos.length){html+='<div style="margin-top:6px;">';G.activePromos.forEach(p=>{html+=`<div class="selected-card" style="margin-top:4px;"><div class="sc-name">${p.name}</div><div class="sc-type">${p.remaining} months remaining</div></div>`;});html+='</div>';}
+    PROMOTIONS.forEach(p=>{const active=G.activePromos.find(ap=>ap.id===p.id);html+=`<button class="action-btn" onclick="launchPromo('${p.id}')" ${active||G.cash<p.cost?'disabled':''}><div style="display:flex;justify-content:space-between;"><span>${p.name} · $${p.cost}</span><span>${active?'ACTIVE':p.duration+'mo'}</span></div><div style="font-size:9px;color:#888780;margin-top:3px;">${p.desc}</div></button>`;});
+  }else if(G.currentTab==='revenue'){
+    html+='<div class="section-head">Revenue by Tenant</div>';
+    const sorted=G.stores.filter(s=>s.tier!=='vacant'&&!isWingClosed(s.wing)).sort((a,b)=>b.rent-a.rent);
+    if(sorted.length===0)html+='<div class="warning-empty">No active tenants.</div>';
+    sorted.forEach(s=>{html+=`<div class="sp-row"><span class="sp-lbl">${s.name}</span><span class="sp-val g">${fmt(s.rent)}</span></div>`;});
+    html+='<div class="section-head">Other Income</div>';
+    if(G.activeAdDeals.length===0&&G.activePromos.filter(p=>p.monthlyCost<0).length===0)html+='<div class="warning-empty">No ad deals or profitable promos active.</div>';
+    G.activeAdDeals.forEach(d=>html+=`<div class="sp-row"><span class="sp-lbl">${d.name}</span><span class="sp-val g">+${fmt(d.income)}</span></div>`);
+    G.activePromos.filter(p=>p.monthlyCost<0).forEach(p=>html+=`<div class="sp-row"><span class="sp-lbl">${p.name}</span><span class="sp-val g">+${fmt(-p.monthlyCost)}</span></div>`);
+  }
+  tc.innerHTML=html;
+}
+
+function endGame(reason){G.gameover=true;clearInterval(G.ticker);G.ticker=null;const outer=document.getElementById('world-outer');const years=(G.y-1982)+' years, '+G.m+' months';const ov=document.createElement('div');ov.className='gameover-screen';ov.innerHTML=`<div class="go-title">FORECLOSED</div><div class="go-sub">The bank took the mall. The lights go dark.</div><div style="font-size:10px;color:#888780;text-transform:uppercase;letter-spacing:0.2em;margin-top:24px;">Final Score</div><div class="go-score">${G.score.toLocaleString()}</div><div class="go-sub">${years} survived</div><button class="ss-btn" onclick="restart()">Try Again</button>`;outer.appendChild(ov);}
+function restart(){document.querySelector('.gameover-screen')?.remove();document.getElementById('tab-content')?.remove();G.m=0;G.y=1982;G.cash=3500;G.debt=0;G.score=0;G.spd=1;G.decision=null;G.paused=false;G.gameover=false;G.selectedVisitor=null;G.selectedStore=null;G.selectedDec=null;G.visitors=[];G.activePromos=[];G.activeAdDeals=[];G.activeStaff={security:false,janitorial:false,maintenance:false,marketing:false};G.wingsClosed={north:false,south:false};G.wingsDowngraded={north:false,south:false};G.gangMonths=0;G.hazardFines=0;G.currentTab='mall';G.threatMeter=0;G.consecutiveLowTrafficMonths=0;G.warnings=[];G.thoughtsLog=[];G.lastMonthlyScore=0;G.selectedVisitorThought='';G.pendingLawsuitMonth=null;document.getElementById('decision-slot').innerHTML='';switchTab('mall');startGame();}
+function setSpd(n){G.spd=n;clearInterval(G.ticker);G.ticker=null;if(n>0&&!G.gameover&&G.started){const ms=[null,4000,2000,1000,500][n];G.ticker=setInterval(tick,ms);}[0,1,2,3,4].forEach(i=>document.getElementById('spd'+i)?.classList.toggle('on',i===n));}
+function fmt(n){return'$'+Math.round(Math.abs(n)).toLocaleString();}
+function fmtK(n){const v=Math.round(Math.abs(n)/100)/10;return'$'+v+'k';}
+
+function renderHUD(){
+  document.getElementById('date').textContent=MONTHS[G.m]+' '+G.y;
+  const ce=document.getElementById('cash');ce.textContent=fmt(G.cash);ce.className='hud-val '+(G.cash>5000?'cash-pos':G.cash>1500?'cash-warn':'cash-neg');
+  document.getElementById('debt').textContent=fmt(G.debt);document.getElementById('debt').className='hud-val '+(G.debt>15000?'cash-neg':G.debt>0?'cash-warn':'cash-pos');
+  document.getElementById('score').textContent=G.score.toLocaleString();
+  document.getElementById('mult').textContent=aestheticMult().toFixed(1)+'×';
+  const tf=document.getElementById('threat-fill');
+  const tp=G.threatMeter*100;
+  tf.style.width=tp+'%';
+  tf.style.background=tp>66?'#e24b4a':tp>33?'#EF9F27':'#5DCAA5';
+  const band=getThreatBand();
+  const tb=document.getElementById('threat-band');
+  tb.textContent=band.name;
+  tb.className='threat-band '+band.cls;
+  document.getElementById('threat-reason').textContent=getThreatReason();
+  const r=rent();const ad=adRevenue();const ops=operatingCost();const st=staffCost();const pc=promoCost();const pr=promoRevenue();const fines=hazardFines();const net=r+ad+pr-ops-st-pc-fines;
+  document.getElementById('fin-rent').textContent=fmtK(r);document.getElementById('fin-ad').textContent=ad>0?'+'+fmtK(ad):'$0';document.getElementById('fin-ops').textContent='-'+fmtK(ops);document.getElementById('fin-staff').textContent=st>0?'-'+fmtK(st):'$0';document.getElementById('fin-promo').textContent=pc>pr?'-'+fmtK(pc-pr):pr>pc?'+'+fmtK(pr-pc):'$0';document.getElementById('fin-haz').textContent=fines>0?'-'+fmtK(fines):'$0';
+  const ne=document.getElementById('fin-net');ne.textContent=(net>=0?'+':'-')+fmtK(net);ne.className='sp-val '+(net>=0?'g':'r');
+  const occ=G.stores.filter(s=>s.tier!=='vacant'&&!isWingClosed(s.wing)).length;const total=G.stores.filter(s=>!isWingClosed(s.wing)).length;
+  document.getElementById('fin-occ').textContent=occ+'/'+total;
+  document.getElementById('fin-vis').textContent=G.visitors.length;
+  document.getElementById('fin-state').textContent=getMallState();
+  const moodEl=document.getElementById('mood-text');if(moodEl)moodEl.textContent=getMoodText();
+  const emptyCount=G.stores.filter(s=>s.tier==='vacant'&&!isWingClosed(s.wing)).length;
+  const sealedBonus=(isWingClosed('north')?5:0)+(isWingClosed('south')?5:0);
+  document.getElementById('score-empty').textContent=emptyCount;
+  document.getElementById('score-wings').textContent=sealedBonus;
+  const lm=getLifeMultiplier();
+  const lifeEl=document.getElementById('score-life');
+  lifeEl.textContent=lm.toFixed(2)+'×';
+  lifeEl.className='sp-val '+(lm===0?'r':lm<0.5?'a':'g');
+  const sm=document.getElementById('score-month');
+  sm.textContent=(G.lastMonthlyScore>=0?'+':'')+G.lastMonthlyScore;
+  sm.className='sp-val '+(G.lastMonthlyScore>0?'a':'');
+}
+
+function renderDecision(){
+  const ds=document.getElementById('decision-slot');
+  if(!ds)return;
+  if(!G.decision){ds.innerHTML='';return;}
+  const d=G.decision;
+  if(d.kind==='tenant'){const o=d.offer;ds.innerHTML=`<div class="decision" style="margin-bottom:8px;"><div class="d-type">Tenant Offer · Paused</div><div class="d-name">${o.name}</div><div class="d-desc">${o.pitch}<br><span style="color:#FAC775;font-weight:700;">${fmt(o.rent)}/mo · ${o.lease}mo</span></div><div class="d-btns"><button class="d-btn primary" onclick="acceptTenant()">Sign</button><button class="d-btn" onclick="declineTenant()">Decline</button></div></div>`;}
+  else if(d.kind==='event'){const ev=d.event;ds.innerHTML=`<div class="decision danger" style="margin-bottom:8px;"><div class="d-type">Disaster · Paused</div><div class="d-name">${ev.name}</div><div class="d-desc">${ev.desc}</div><div class="d-btns"><button class="d-btn primary" onclick="acceptEvent()">${ev.a}</button><button class="d-btn danger" onclick="declineEvent()">${ev.d}</button></div></div>`;}
+}
+
+renderHUD();renderSelectPanel();
+setInterval(()=>{if(G.selectedVisitor&&Math.random()<0.25){const memory=pickMemory(G.selectedVisitor);G.selectedVisitor.memory=memory;showThoughtBubble(G.selectedVisitor,memory);renderSelectPanel();}},7000);
+</script>
+</body></html>
