@@ -29,15 +29,15 @@ enum CoachmarkScript {
             return [
                 CoachmarkFrame(
                     anchor: .cash, header: "YOUR MONEY",
-                    body: "This is your cash and debt. Operating costs hit every month. If debt exceeds $25k, you lose."
+                    body: "Cash and (if you owe) debt. Operating costs hit every month. Tap for the monthly P&L — score and history live there."
                 ),
                 CoachmarkFrame(
                     anchor: .score, header: "YOUR SCORE",
-                    body: "Score climbs when stores are empty. More empty stores = more points per month."
+                    body: "Score grows every month you keep the mall barely open. Empty stores score, sealed wings score, decay scores. Tap Cash for the breakdown."
                 ),
                 CoachmarkFrame(
                     anchor: .threatMeter, header: "THREAT",
-                    body: "This tracks how close you are to collapse. Keep it out of the red."
+                    body: "Tracks how close you are to collapse. Green = stable, yellow = risky, red = critical. Keep it out of the red."
                 )
             ]
         case .corridor:
@@ -62,28 +62,28 @@ enum CoachmarkScript {
             return [
                 CoachmarkFrame(
                     anchor: .pnlPanel, header: "MONTHLY P&L",
-                    body: "Rent comes in. Operating costs, staff, and promo costs go out. Net is what you keep. Watch this panel every month."
+                    body: "Tap Cash to open the full P&L — rent, operating costs, staff, promos, score breakdown, 12-month trend. All in one place."
                 )
             ]
         case .watchList:
             return [
                 CoachmarkFrame(
-                    anchor: .watchList, header: "WATCH LIST",
-                    body: "Problems live here. Hazards cost monthly fines. Decorations decay. Ignore at your own risk."
+                    anchor: .watchList, header: "WATCH THE MALL",
+                    body: "Problems show up in the scene itself. Yellow dot = store about to close. Red dot = hazardous decoration. Red wing tint = wing failing. The mall tells you what's wrong."
                 )
             ]
         case .tabs:
             return [
                 CoachmarkFrame(
-                    anchor: .tabBar, header: "THE TABS",
-                    body: "Operations manages staff and wings. Tenants shows who's paying rent. Promotions runs marketing. Revenue breaks down income. Mall is where the game lives."
+                    anchor: .tabBar, header: "MANAGE",
+                    body: "Rent, staff, wings, promos, ad deals, and decorations all live in the MANAGE drawer. Tap to open it."
                 )
             ]
         case .scoreSources:
             return [
                 CoachmarkFrame(
                     anchor: .scoreSources, header: "WHY YOU SCORED",
-                    body: "This shows why your score ticked. Empty stores, sealed wings, and the life factor multiply together. Longer you survive, higher the multiplier."
+                    body: "Tap Cash — the P&L modal shows why your score ticked. Empty stores, sealed wings, life factor. Longer you survive, higher the multiplier."
                 )
             ]
         case .graduation:

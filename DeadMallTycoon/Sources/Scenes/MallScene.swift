@@ -13,6 +13,13 @@ final class MallScene: SKScene {
 
     weak var vm: GameViewModel?
 
+    // Phase C — SwiftUI info-card pinning. MallView sets these closures and
+    // receives SKView-local anchor points (top-left coord system) whenever the
+    // selected store/decoration moves, the view resizes, or selection changes.
+    // Cards use these to position themselves adjacent to the tapped node.
+    var onStoreAnchorChange: ((CGPoint?) -> Void)?
+    var onDecorationAnchorChange: ((CGPoint?) -> Void)?
+
     // MARK: Private
 
     private let worldNode = SKNode()     // background + corridor + nodes (y-down coord system)
@@ -35,12 +42,23 @@ final class MallScene: SKScene {
     private var lastStartedFlag: Bool = false
     private var lastGameoverFlag: Bool = false
 
+    // Phase C — threat band transition tracking + published anchor memoization.
+    private var lastThreatBand: ThreatBand = .stable
+    private var lastStoreAnchor: CGPoint?
+    private var lastDecorationAnchor: CGPoint?
+
     // MARK: Lifecycle
 
     override func didMove(to view: SKView) {
         backgroundColor = Palette.backgroundNight
         anchorPoint = CGPoint(x: 0, y: 0)
-        scaleMode = .resizeFill
+        // MUST stay aspectFit — the scene is authored at 1200×520 (CSS world coords)
+        // and csToScene() flips y relative to size.height. `.resizeFill` would stretch
+        // size to the SKView bounds, making csToScene map the south wing off-screen
+        // whenever the SKView ends up shorter than 520pt (which is the common case
+        // now that MallView fits to world aspect). MallSceneView already sets this on
+        // present; repeating here so a future refactor can't silently regress.
+        scaleMode = .aspectFit
 
         buildStaticBackground()
         addChild(worldNode)
@@ -181,11 +199,99 @@ final class MallScene: SKScene {
         reconcileStores(state)
         reconcileDecorations(state)
         reconcileSealedWings(state)
+        reconcileWingTint(state)        // Phase C — red tint on wings about to fail
+        reconcileThreatFlash(state)     // Phase C — vignette flash when entering critical
         reconcileDim(state)
+        publishSelectionAnchors(state)  // Phase C — SwiftUI card pinning
         // visitor selection highlight (visitors themselves are scene-local)
         for (id, node) in visitorNodes {
             node.markSelected(state.selectedVisitorId == id)
         }
+    }
+
+    // Phase C — subtle red tint on a wing background when any store in the wing
+    // is `closing`. Surfaces the "wing about to fail" signal in-scene so the
+    // player doesn't need the old Watch List panel to spot it.
+    private func reconcileWingTint(_ state: GameState) {
+        overlayLayer.children
+            .filter { $0.name?.hasPrefix("wingTint:") == true }
+            .forEach { $0.removeFromParent() }
+
+        for wing in Wing.allCases {
+            guard !Mall.isWingClosed(wing, in: state) else { continue }
+            let closingInWing = state.stores.contains { $0.wing == wing && $0.closing }
+            guard closingInWing else { continue }
+
+            let (cssY, height): (CGFloat, CGFloat) = {
+                if wing == .north {
+                    return (0, GameConstants.corridorTop)
+                }
+                return (GameConstants.corridorBottom,
+                        GameConstants.worldHeight - GameConstants.corridorBottom)
+            }()
+            let tint = SKSpriteNode(
+                color: SKColor(red: 0.89, green: 0.29, blue: 0.29, alpha: 0.12),
+                size: CGSize(width: GameConstants.worldWidth, height: height)
+            )
+            tint.position = csToScene(x: GameConstants.worldWidth / 2, y: cssY + height / 2)
+            tint.zPosition = 45
+            tint.name = "wingTint:\(wing.rawValue)"
+            overlayLayer.addChild(tint)
+        }
+    }
+
+    // Phase C — red vignette flash when the threat meter first crosses into
+    // the Critical band. One-shot; the flash removes itself after fading out.
+    private func reconcileThreatFlash(_ state: GameState) {
+        let band = Threat.band(state.threatMeter)
+        if band == .critical && lastThreatBand != .critical {
+            triggerCriticalVignetteFlash()
+        }
+        lastThreatBand = band
+    }
+
+    private func triggerCriticalVignetteFlash() {
+        let border = SKShapeNode(
+            rect: CGRect(x: 0, y: 0,
+                         width: GameConstants.worldWidth,
+                         height: GameConstants.worldHeight)
+        )
+        border.strokeColor = SKColor(red: 0.89, green: 0.29, blue: 0.29, alpha: 1.0)
+        border.lineWidth = 60
+        border.glowWidth = 30
+        border.fillColor = .clear
+        border.alpha = 0
+        border.zPosition = 150
+        border.name = "criticalFlash"
+        overlayLayer.addChild(border)
+
+        border.run(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.7, duration: 0.18),
+            SKAction.fadeAlpha(to: 0.0, duration: 0.7),
+            SKAction.removeFromParent(),
+        ]))
+    }
+
+    // Phase C — publish the SKView-local (top-left) position of the selected
+    // store / decoration so SwiftUI can pin info cards next to the tapped node.
+    // Called from reconcile (selection changes) and update(_:) (view resize /
+    // rotation tracked frame-by-frame). Memoizes to avoid spamming @State.
+    private func publishSelectionAnchors(_ state: GameState) {
+        let storePt = anchorInView(for: state.selectedStoreId.flatMap { storeNodes[$0] })
+        if storePt != lastStoreAnchor {
+            lastStoreAnchor = storePt
+            onStoreAnchorChange?(storePt)
+        }
+        let decPt = anchorInView(for: state.selectedDecorationId.flatMap { decorationNodes[$0] })
+        if decPt != lastDecorationAnchor {
+            lastDecorationAnchor = decPt
+            onDecorationAnchorChange?(decPt)
+        }
+    }
+
+    private func anchorInView(for node: SKNode?) -> CGPoint? {
+        guard let node, let view else { return nil }
+        return view.convert(node.position, from: self)
     }
 
     private func reconcileStores(_ state: GameState) {
@@ -306,6 +412,13 @@ final class MallScene: SKScene {
         let s = vm.state
         // Seed visitors lazily once the game has actually started and populated stores.
         seedInitialVisitors()
+
+        // Phase C — re-publish SwiftUI card anchors every frame while a selection
+        // exists. Cheap: the anchor is memoized and the callback only fires on a
+        // real coordinate change (e.g. orientation change, SKView resize).
+        if s.selectedStoreId != nil || s.selectedDecorationId != nil {
+            publishSelectionAnchors(s)
+        }
 
         // Seed this frame once on VM startup; don't reseed every frame or picks correlate.
         // The `visitorRNG` persists across frames.

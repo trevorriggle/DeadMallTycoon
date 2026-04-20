@@ -7,6 +7,7 @@ final class DecorationNode: SKSpriteNode {
     let decorationId: Int
     private let kind: DecorationKind
     private var badgeNode: SKLabelNode?
+    private var hazardDot: SKShapeNode?   // Phase C — ambient hazard indicator
 
     init(decoration: Decoration) {
         self.decorationId = decoration.id
@@ -24,6 +25,7 @@ final class DecorationNode: SKSpriteNode {
         texture = Self.texture(for: d)
         updateAnimations(for: d)
         updateBadge(for: d)
+        updateHazardDot(d.hazard)
     }
 
     private static func texture(for d: Decoration) -> SKTexture {
@@ -63,7 +65,9 @@ final class DecorationNode: SKSpriteNode {
             alpha = 1.0
         }
 
-        // Hazard glow/pulse (red drop-shadow simulation)
+        // Hazard scale pulse kept as secondary motion. The red colorize on the
+        // whole sprite was dropped in Phase C — the pulsing red dot below is the
+        // canonical ambient hazard indicator per the UI overhaul spec.
         if d.hazard {
             if action(forKey: "hazard") == nil {
                 let pulse = SKAction.sequence([
@@ -72,12 +76,37 @@ final class DecorationNode: SKSpriteNode {
                 ])
                 run(SKAction.repeatForever(pulse), withKey: "hazard")
             }
-            colorBlendFactor = 0.3
-            color = Palette.threatDanger
         } else {
             removeAction(forKey: "hazard")
             setScale(1.0)
-            colorBlendFactor = 0
+        }
+        colorBlendFactor = 0
+    }
+
+    // Phase C — ambient hazard indicator: a pulsing red dot pinned to the
+    // top-right of the decoration sprite. Replaces the old full-sprite red
+    // colorize, which competed with decoration art and was inconsistent with
+    // the storefront closing dot.
+    private func updateHazardDot(_ hazard: Bool) {
+        if hazard {
+            if hazardDot == nil {
+                let dot = SKShapeNode(circleOfRadius: 4)
+                dot.fillColor = SKColor(red: 0.89, green: 0.29, blue: 0.29, alpha: 1.0) // red
+                dot.strokeColor = SKColor.black.withAlphaComponent(0.8)
+                dot.lineWidth = 1
+                dot.position = CGPoint(x: size.width / 2 + 3, y: size.height / 2 + 3)
+                dot.zPosition = 60
+                let pulse = SKAction.repeatForever(SKAction.sequence([
+                    SKAction.scale(to: 1.4, duration: 0.4),
+                    SKAction.scale(to: 1.0, duration: 0.4),
+                ]))
+                dot.run(pulse)
+                addChild(dot)
+                hazardDot = dot
+            }
+        } else {
+            hazardDot?.removeFromParent()
+            hazardDot = nil
         }
     }
 

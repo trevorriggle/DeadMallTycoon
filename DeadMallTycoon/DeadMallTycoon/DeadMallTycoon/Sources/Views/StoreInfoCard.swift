@@ -1,40 +1,139 @@
 import SwiftUI
 
 // Floating card that appears when a storefront is tapped.
-// Phase A stub — fixed bottom-center position + "TK" body. Phase B lifts the real
-// detail view from old MallView.SelectedDetailView and positions the card near the
-// tapped storefront using scene→screen coord conversion.
+// Content lifted from the Phase 1-5 MallView.SelectedDetailView.storeDetail.
+// Phase B positions the card at bottom-center of the scene; Phase C will pin
+// it near the tapped storefront via scene→SwiftUI coordinate conversion.
 struct StoreInfoCard: View {
     @Bindable var vm: GameViewModel
     let storeId: Int
 
     var body: some View {
-        let store = vm.state.stores.first(where: { $0.id == storeId })
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text((store?.tier == .vacant ? "VACANT" : store?.name ?? "STORE").uppercased())
-                    .font(.system(size: 15, weight: .black, design: .monospaced))
-                    .tracking(1)
-                    .foregroundStyle(Color(hex: "#FAC775"))
-                Spacer()
-                Button(action: { vm.clearSelection() }) {
-                    Text("×")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Color(hex: "#888780"))
-                        .frame(width: 22, height: 22)
-                }
-                .buttonStyle(.plain)
-            }
-            Text("Store info · Phase B")
-                .font(.system(size: 13, design: .serif))
-                .italic()
-                .foregroundStyle(Color(hex: "#888780"))
+        if let store = vm.state.stores.first(where: { $0.id == storeId }) {
+            card(store)
+        } else {
+            EmptyView()
         }
-        .padding(12)
-        .frame(maxWidth: 320)
+    }
+
+    @ViewBuilder private func card(_ s: Store) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            header(s)
+            if s.tier == .vacant {
+                vacantBody(s)
+            } else {
+                activeBody(s)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: 360)
         .background(Color(hex: "#1a1917"))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#5a4a3a"), lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .shadow(color: .black.opacity(0.6), radius: 10, y: 4)
+        .shadow(color: .black.opacity(0.6), radius: 12, y: 4)
+    }
+
+    // MARK: - Header with close affordance
+
+    private func header(_ s: Store) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titleText(s))
+                    .font(.system(size: 17, weight: .black, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(titleColor(s))
+                Text(subtitleText(s))
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(Color(hex: "#888780"))
+            }
+            Spacer(minLength: 4)
+            Button(action: { vm.clearSelection() }) {
+                Text("×")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color(hex: "#888780"))
+                    .frame(width: 26, height: 26)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func titleText(_ s: Store) -> String {
+        if s.tier == .vacant {
+            if s.monthsVacant >= 18 { return "LONG ABANDONED" }
+            if s.monthsVacant >= 6  { return "BOARDED UP" }
+            return "EMPTY STOREFRONT"
+        }
+        return s.name.uppercased()
+    }
+
+    private func titleColor(_ s: Store) -> Color {
+        s.tier == .vacant ? Color(hex: "#888780") : Color(hex: "#FAC775")
+    }
+
+    private func subtitleText(_ s: Store) -> String {
+        if s.tier == .vacant {
+            return "\(s.wing.rawValue) wing · \(s.monthsVacant)mo empty"
+        }
+        return "\(s.tier.rawValue) · \(s.wing.rawValue) wing"
+    }
+
+    // MARK: - Vacant body: explain the score contribution
+
+    private func vacantBody(_ s: Store) -> some View {
+        Text("This empty space is generating score every month.")
+            .font(.system(size: 14, design: .serif))
+            .italic()
+            .foregroundStyle(Color(hex: "#c4b4a0"))
+    }
+
+    // MARK: - Active tenant body: rent, rent adjust, promo, evict
+
+    private func activeBody(_ s: Store) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            statLine(label: "Rent", value: "$\(s.rent.formatted())/mo", color: .yellow)
+            if s.closing {
+                statLine(label: "Status", value: "CLOSING", color: Color(hex: "#e24b4a"))
+            } else if s.leaving {
+                statLine(label: "Status", value: "Lease ending", color: Color(hex: "#EF9F27"))
+            } else if s.hardship >= 2 {
+                statLine(label: "Status", value: "Struggling", color: Color(hex: "#EF9F27"))
+            }
+            statLine(label: "Lease", value: "\(s.lease) months", color: Color(hex: "#c4b4a0"))
+
+            // Rent adjustment row
+            HStack(spacing: 6) {
+                Button("−") { vm.adjustRent(storeId: s.id, delta: -0.1) }
+                    .buttonStyle(.bordered).disabled(s.rentMultiplier <= 0.5)
+                Text(String(format: "Rent ×%.1f", s.rentMultiplier))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.yellow).frame(maxWidth: .infinity)
+                Button("+") { vm.adjustRent(storeId: s.id, delta: 0.1) }
+                    .buttonStyle(.bordered).disabled(s.rentMultiplier >= 2.0)
+            }
+            .padding(.top, 2)
+
+            // Store-local promo
+            Button(s.promotionActive ? "Promo Active" : "Run Store Promo ($500)") {
+                vm.runStorePromo(s.id)
+            }
+            .buttonStyle(.bordered)
+            .disabled(vm.state.cash < 500 || s.promotionActive)
+            .frame(maxWidth: .infinity)
+
+            // Force evict
+            Button("Force Evict (−20% score)") { vm.evictStore(s.id) }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func statLine(label: String, value: String, color: Color) -> some View {
+        HStack {
+            Text(label).foregroundStyle(Color(hex: "#888780"))
+            Spacer()
+            Text(value).foregroundStyle(color).monospacedDigit()
+        }
+        .font(.system(size: 14, design: .monospaced))
     }
 }

@@ -25,7 +25,8 @@ struct HUDView: View {
             Spacer(minLength: 8)
             threatMeter
                 .coachmarkAnchor(.threatMeter)
-                .coachmarkAnchor(.watchList)     // re-anchored — warnings are ambient now (Phase C)
+                // .watchList anchor lives on MallView now (Phase C) — warnings are ambient
+                // on the scene via hazard/closing dots + wing tints.
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
