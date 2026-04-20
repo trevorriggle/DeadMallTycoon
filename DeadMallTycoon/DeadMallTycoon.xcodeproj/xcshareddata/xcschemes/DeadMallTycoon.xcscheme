@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1530"
+   LastUpgradeVersion = "1500"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "000000000000000000100057"
+               BlueprintIdentifier = "A1B2C3D4E5F6789012340057"
                BuildableName = "DeadMallTycoon.app"
                BlueprintName = "DeadMallTycoon"
                ReferencedContainer = "container:DeadMallTycoon.xcodeproj">
@@ -32,7 +32,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "00000000000000000010005C"
+               BlueprintIdentifier = "A1B2C3D4E5F678901234005C"
                BuildableName = "DeadMallTycoonTests.xctest"
                BlueprintName = "DeadMallTycoonTests"
                ReferencedContainer = "container:DeadMallTycoon.xcodeproj">
@@ -54,7 +54,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "000000000000000000100057"
+            BlueprintIdentifier = "A1B2C3D4E5F6789012340057"
             BuildableName = "DeadMallTycoon.app"
             BlueprintName = "DeadMallTycoon"
             ReferencedContainer = "container:DeadMallTycoon.xcodeproj">
@@ -71,7 +71,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "000000000000000000100057"
+            BlueprintIdentifier = "A1B2C3D4E5F6789012340057"
             BuildableName = "DeadMallTycoon.app"
             BlueprintName = "DeadMallTycoon"
             ReferencedContainer = "container:DeadMallTycoon.xcodeproj">
