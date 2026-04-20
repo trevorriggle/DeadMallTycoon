@@ -1,0 +1,35 @@
+## Build output
+build/
+DerivedData/
+.build/
+.swiftpm/
+
+## Xcode user state
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+## XcodeGen output — project is generated from project.yml, don't commit
+*.xcodeproj/
+
+## Workspaces (except shared schemes if added later)
+*.xcworkspace/
+!**/contents.xcworkspacedata
+
+## Swift Package Manager
+Packages/
+Package.resolved
+
+## CocoaPods (unused, but belt-and-suspenders)
+Pods/
+
+## System / tooling
+.DS_Store
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
