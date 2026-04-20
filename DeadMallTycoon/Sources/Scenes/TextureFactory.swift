@@ -180,35 +180,23 @@ enum TextureFactory {
         }
     }
 
-    // MARK: - Storefront background (by tier and state)
+    // MARK: - Storefront (placeholder art from Assets.xcassets)
 
-    static func storefrontTexture(tier: StoreTier, state: StorefrontVisualState,
-                                  size: CGSize) -> SKTexture {
-        let key = "store_\(tier.rawValue)_\(state.rawValue)_\(Int(size.width))x\(Int(size.height))"
-        return cached(key) {
-            SKTexture(image: renderImage(size: size) { ctx, size in
-                let (fill, border): (UIColor, UIColor) = {
-                    if tier == .vacant {
-                        switch state {
-                        case .boarded:       return (Palette.storeBoarded,   Palette.storeBoardedBorder)
-                        case .longAbandoned: return (Palette.storeAbandoned, Palette.storeVacantBorder)
-                        default:             return (Palette.storeVacant,    Palette.storeVacantBorder)
-                        }
-                    }
-                    switch tier {
-                    case .anchor:   return (Palette.storeAnchor,   Palette.storeAnchorBorder)
-                    case .standard: return (Palette.storeStandard, Palette.storeStandardBorder)
-                    case .kiosk:    return (Palette.storeKiosk,    Palette.storeKioskBorder)
-                    case .sketchy:  return (Palette.storeSketchy,  Palette.storeSketchyBorder)
-                    default:        return (Palette.storeStandard, Palette.storeStandardBorder)
-                    }
-                }()
-                fill.setFill()
-                ctx.fill(CGRect(origin: .zero, size: size))
-                border.setStroke()
-                ctx.setLineWidth(2)
-                ctx.stroke(CGRect(x: 1, y: 1, width: size.width - 2, height: size.height - 2))
-            })
+    // Placeholder sprites from Christian's temporary 128x128 pixel art.
+    // Open.png → any operating tier (anchor/standard/kiosk/sketchy) and
+    // freshly-vacated stores (< 6 months, still look "open" per v8).
+    // Closed.png → boarded + long-abandoned vacant stores.
+    // Tier-specific / state-specific art is a TODO for the final art pass.
+    static func storefrontTexture(tier: StoreTier, state: StorefrontVisualState) -> SKTexture {
+        let imageName: String
+        switch state {
+        case .boarded, .longAbandoned: imageName = "Closed"
+        case .open:                    imageName = "Open"
+        }
+        return cached("store_image_\(imageName)") {
+            let tex = SKTexture(imageNamed: imageName)
+            tex.filteringMode = .nearest   // pixel art — no smoothing when stretched
+            return tex
         }
     }
 
