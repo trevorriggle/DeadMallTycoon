@@ -7,15 +7,19 @@ enum ArtifactFactory {
 
     // v9: Build an artifact with the caller-supplied id. Mirrors how Decoration
     // ids are assigned by callers (see DecorationActions.place).
-    // Defaults: condition 0 (Pristine), memoryWeight 0.
+    // Defaults: condition 0 (Pristine), memoryWeight 0, no slot/tenant ref.
     // thoughtTriggers default to the type's placeholder pool; callers may pass
     // overrides for event- or tenant-specific flavor.
+    // Prompt 2: storeSlotId and tenantId optional parameters added for
+    // boardedStorefront artifacts that anchor to a specific slot / tenant.
     static func make(id: Int,
                      type: ArtifactType,
                      name: String,
                      origin: ArtifactOrigin,
                      yearCreated: Int,
-                     thoughtTriggers: [String]? = nil) -> Artifact {
+                     thoughtTriggers: [String]? = nil,
+                     storeSlotId: Int? = nil,
+                     tenantId: Int? = nil) -> Artifact {
         Artifact(
             id: id,
             name: name,
@@ -24,7 +28,9 @@ enum ArtifactFactory {
             condition: 0,
             memoryWeight: 0,
             origin: origin,
-            thoughtTriggers: thoughtTriggers ?? defaultThoughtTriggers(for: type)
+            thoughtTriggers: thoughtTriggers ?? defaultThoughtTriggers(for: type),
+            storeSlotId: storeSlotId,
+            tenantId: tenantId
         )
     }
 

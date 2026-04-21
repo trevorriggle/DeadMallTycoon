@@ -53,13 +53,16 @@ enum StoreActions {
     }
 
     // v8: evictStore()
+    // v9: slot vacate routed through TenantLifecycle so an evicted tenant also
+    // leaves behind a memorial boardedStorefront artifact. Score penalty,
+    // selection clearing, and slot transition mechanics are unchanged.
     static func evict(storeId: Int, _ state: GameState) -> GameState {
         var s = state
         guard let idx = s.stores.firstIndex(where: { $0.id == storeId }) else { return s }
         if s.stores[idx].tier == .vacant { return s }
         let penalty = Int(Double(s.score) * 0.2) + 200
         s.score = max(0, s.score - penalty)
-        s.stores[idx] = Store.vacant(id: s.stores[idx].id, at: s.stores[idx].position)
+        s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
         if s.selectedStoreId == storeId { s.selectedStoreId = nil }
         return s
     }

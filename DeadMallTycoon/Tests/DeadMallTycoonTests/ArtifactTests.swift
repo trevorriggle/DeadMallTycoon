@@ -118,44 +118,19 @@ final class ArtifactGameStateIntegrationTests: XCTestCase {
                       "Prompt 1 does not seed artifacts. Later prompts add the closure pipeline.")
     }
 
-    // Regression guard: if any later prompt quietly wires a mechanic into
-    // state.artifacts before its own prompt, this test fails and the offending
-    // change is visible. A year of ticks with a seeded RNG must not mutate the
-    // artifact list in Prompt 1.
-    func testTickEngineDoesNotMutateArtifactsInPrompt1() {
-        var s = StartingMall.initialState()
-        s.pendingLawsuitMonth = nil
-        var rng = SeededGenerator(seed: 17)
-        for _ in 0..<24 {
-            s = TickEngine.tick(s, rng: &rng)
-            if s.decision != nil { s.decision = nil; s.paused = false }
-        }
-        XCTAssertTrue(s.artifacts.isEmpty,
-                      "no code path in Prompt 1 should write to state.artifacts")
-    }
-
-    // Direct-insert sanity: manually adding an Artifact should round-trip
-    // through tick and remain unchanged (proving the field is inert, not
-    // accidentally cleared by some unrelated reset).
-    func testArtifactsArePreservedAcrossTicks() {
-        var s = StartingMall.initialState()
-        s.pendingLawsuitMonth = nil
-        s.artifacts.append(ArtifactFactory.make(
-            id: 1, type: .flickeringNeon,
-            name: "Marquee Neon",
-            origin: .event(name: "Seed"),
-            yearCreated: 1982
-        ))
-        var rng = SeededGenerator(seed: 31)
-        for _ in 0..<12 {
-            s = TickEngine.tick(s, rng: &rng)
-            if s.decision != nil { s.decision = nil; s.paused = false }
-        }
-        XCTAssertEqual(s.artifacts.count, 1)
-        XCTAssertEqual(s.artifacts.first?.id, 1)
-        XCTAssertEqual(s.artifacts.first?.condition, 0,
-                       "Prompt 1 does not age artifacts; decay wiring comes later")
-        XCTAssertEqual(s.artifacts.first?.memoryWeight, 0,
-                       "Prompt 1 does not accumulate weight; accumulation comes later")
-    }
+    // v9 Prompt 2 update: the Prompt 1 "TickEngine does not mutate artifacts"
+    // invariant is superseded — TickEngine now routes tenant closure through
+    // TenantLifecycle.vacateSlot which spawns boardedStorefront artifacts.
+    // Equivalent-but-correct coverage lives in ArtifactSpawnTests.swift:
+    //   - testNoClosuresMeansNoArtifactsInPrompt2 — a healthy-tenant mall
+    //     still produces no artifacts (no closure path taken).
+    //   - testArtifactSpawnIsDeterministicUnderSameSeed — same-seed determinism.
+    //
+    // The "preserve an existing artifact across ticks" check is covered by
+    // the deterministic-seed test in the spawn suite (appended artifacts
+    // survive tick).
+    //
+    // Prompt 1-era assertions that expected state.artifacts to stay empty
+    // across arbitrary ticks would flake as soon as an RNG-driven closure
+    // fired; retired deliberately.
 }

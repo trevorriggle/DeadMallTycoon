@@ -323,6 +323,79 @@ enum TextureFactory {
         }
     }
 
+    // MARK: - Artifact overlays (v9, Prompt 2)
+
+    // v9: Procedural pixel-art plywood panel for boardedStorefront artifacts.
+    // Drawn as an overlay on top of the existing StoreNode sprite. Three to
+    // four horizontal planks with nail dots + one prominent diagonal board —
+    // the universal "boarded up" visual language.
+    //
+    // Size is caller-provided (matches the host storefront) so one slot's
+    // overlay always fits its slot. Cached by dimension.
+    static func boardedStorefrontOverlayTexture(size: CGSize) -> SKTexture {
+        let key = "boardedOverlay_\(Int(size.width))x\(Int(size.height))"
+        return cached(key) {
+            SKTexture(image: renderImage(size: size) { ctx, size in
+                let rect = CGRect(origin: .zero, size: size)
+
+                // Dark weathered plywood fill.
+                UIColor(red: 0.23, green: 0.17, blue: 0.11, alpha: 0.92).setFill()
+                ctx.fill(rect)
+
+                // Horizontal plank divisions — 3 planks on short nodes, 4 on tall.
+                let plankCount: Int = size.height > 100 ? 4 : 3
+                let plankHeight = size.height / CGFloat(plankCount)
+                UIColor(red: 0.14, green: 0.10, blue: 0.06, alpha: 1.0).setStroke()
+                ctx.setLineWidth(1.5)
+                for i in 1..<plankCount {
+                    let y = plankHeight * CGFloat(i)
+                    ctx.move(to: CGPoint(x: 0, y: y))
+                    ctx.addLine(to: CGPoint(x: size.width, y: y))
+                    ctx.strokePath()
+                }
+
+                // Woodgrain streaks — thin lighter horizontal lines scattered.
+                UIColor(red: 0.32, green: 0.24, blue: 0.16, alpha: 0.45).setStroke()
+                ctx.setLineWidth(0.5)
+                let streakCount = max(3, Int(size.height / 18))
+                for i in 0..<streakCount {
+                    let y = CGFloat(i + 1) * (size.height / CGFloat(streakCount + 1)) + 2
+                    ctx.move(to: CGPoint(x: 2, y: y))
+                    ctx.addLine(to: CGPoint(x: size.width - 2, y: y))
+                    ctx.strokePath()
+                }
+
+                // Nail dots at plank ends — two per plank, inset from edges.
+                UIColor(red: 0.08, green: 0.06, blue: 0.04, alpha: 1.0).setFill()
+                let nailRadius: CGFloat = 1.5
+                for p in 0..<plankCount {
+                    let cy = plankHeight * CGFloat(p) + plankHeight / 2
+                    for x in [CGFloat(6), size.width - 6] {
+                        ctx.fillEllipse(in: CGRect(x: x - nailRadius,
+                                                    y: cy - nailRadius,
+                                                    width: nailRadius * 2,
+                                                    height: nailRadius * 2))
+                    }
+                }
+
+                // Diagonal "X" board — corner-to-corner + opposite corner.
+                UIColor(red: 0.18, green: 0.13, blue: 0.09, alpha: 0.9).setStroke()
+                ctx.setLineWidth(3)
+                ctx.move(to: CGPoint(x: 0, y: 0))
+                ctx.addLine(to: CGPoint(x: size.width, y: size.height))
+                ctx.move(to: CGPoint(x: size.width, y: 0))
+                ctx.addLine(to: CGPoint(x: 0, y: size.height))
+                ctx.strokePath()
+
+                // Outer border — thin darker outline so the overlay reads as a
+                // distinct panel applied on top of the storefront.
+                UIColor.black.withAlphaComponent(0.6).setStroke()
+                ctx.setLineWidth(1.5)
+                ctx.stroke(rect.insetBy(dx: 0.75, dy: 0.75))
+            })
+        }
+    }
+
     // MARK: - Helpers
 
     private static func renderImage(size: CGSize,

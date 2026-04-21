@@ -37,6 +37,10 @@ enum ArtifactOrigin: Equatable, Codable {
 // Decoration condition scale. Memory weight starts at 0 and is intended to
 // accumulate each month the artifact persists — the multiplier that will feed
 // into scoring and visitor thought salience in later prompts.
+//
+// Prompt 2: added storeSlotId (for boardedStorefront artifacts anchored to a
+// specific slot) and tenantId (reserved for future tenant-identity system —
+// left nil until tenants become first-class entities with distinct ids).
 struct Artifact: Identifiable, Equatable, Codable {
     let id: Int
     var name: String
@@ -46,4 +50,15 @@ struct Artifact: Identifiable, Equatable, Codable {
     var memoryWeight: Double      // starts at 0, accumulates later
     var origin: ArtifactOrigin
     var thoughtTriggers: [String] // pool specific to this artifact instance
+
+    // v9: Optional — set for artifacts anchored to a specific storefront slot
+    // (e.g. boardedStorefront). Nil for ambient artifacts (stoppedFountain,
+    // waterStainedCeiling, etc.). Matches Store.id for direct lookup.
+    var storeSlotId: Int? = nil
+
+    // v9: Reserved for the future tenant-identity system. Left nil in Prompt 2
+    // — tenants currently have no id separate from their slot. When tenant
+    // identity lands (a later prompt), this becomes the cross-reference for
+    // visitor thoughts like "remember when Waldenbooks was here from '84 to '87?"
+    var tenantId: Int? = nil
 }

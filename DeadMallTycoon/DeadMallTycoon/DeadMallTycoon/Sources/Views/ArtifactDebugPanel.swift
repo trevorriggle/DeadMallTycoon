@@ -85,6 +85,10 @@ struct ArtifactDebugPanel: View {
                 label("COND", "\(a.condition)/4")
                 label("WEIGHT", String(format: "%.2f", a.memoryWeight))
             }
+            HStack(spacing: 12) {
+                label("SLOT", a.storeSlotId.map(String.init) ?? "—")
+                label("TENANT", a.tenantId.map(String.init) ?? "—")
+            }
             Text(originText(a.origin))
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(Color(hex: "#9090a0"))

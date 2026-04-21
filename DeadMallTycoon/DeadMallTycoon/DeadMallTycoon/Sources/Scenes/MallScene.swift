@@ -29,10 +29,16 @@ final class MallScene: SKScene {
     private let entrancesLayer = SKNode()
     private let visitorsLayer = SKNode()
     private let overlayLayer = SKNode()
+    // v9: Artifact overlays (Prompt 2) — z above stores, below visitors. The
+    // boardedStorefront overlay must cover the StoreNode sprite so the boards
+    // read as physically applied on top of the storefront.
+    private let artifactsLayer = SKNode()
 
     private var storeNodes: [Int: StoreNode] = [:]
     private var decorationNodes: [Int: DecorationNode] = [:]
     private var visitorNodes: [UUID: VisitorNode] = [:]
+    // v9: Diff-reconciled against state.artifacts each pass. Keyed by Artifact.id.
+    private var artifactNodes: [Int: ArtifactNode] = [:]
     private var northEntranceNode: EntranceNode?
     private var southEntranceNode: EntranceNode?
 
@@ -106,9 +112,13 @@ final class MallScene: SKScene {
         addChild(worldNode)
         worldNode.addChild(corridorNode)
 
-        // Layer order: corridor floor, decorations, stores, entrances, visitors, overlays
+        // Layer order: corridor floor, decorations, stores, artifacts,
+        // entrances, visitors, overlays. Artifacts sit above stores so the
+        // boardedStorefront overlay covers the StoreNode sprite; below
+        // visitors so people still walk in front.
         worldNode.addChild(decorationsLayer)
         worldNode.addChild(storesLayer)
+        worldNode.addChild(artifactsLayer)
         worldNode.addChild(entrancesLayer)
         worldNode.addChild(visitorsLayer)
         worldNode.addChild(overlayLayer)
@@ -209,6 +219,7 @@ final class MallScene: SKScene {
             // Touch everything we care about so changes trigger re-registration.
             _ = vm.state.stores
             _ = vm.state.decorations
+            _ = vm.state.artifacts          // v9 (Prompt 2) — artifact overlays
             _ = vm.state.wingsClosed
             _ = vm.state.wingsDowngraded
             _ = vm.state.northEntranceSealed
@@ -247,8 +258,14 @@ final class MallScene: SKScene {
     // MARK: Reconciliation — diff nodes against state
 
     private func reconcile(state: GameState) {
+        // DIAG (Prompt 2 verification) — broad "is reconcile running at all"
+        // signal. Fires on every observation change. Remove alongside the
+        // [ARTIFACT] logs once overlay rendering is confirmed.
+        print("[RECONCILE] fired — stores=\(state.stores.count) artifacts=\(state.artifacts.count)")
+
         reconcileStores(state)
         reconcileDecorations(state)
+        reconcileArtifacts(state)       // v9 Prompt 2 — boarded overlays + future ambient types
         reconcileEntrances(state)
         reconcileSealedWings(state)
         reconcileWingTint(state)        // Phase C — red tint on wings about to fail
@@ -411,6 +428,56 @@ final class MallScene: SKScene {
                 node.zPosition = 5
                 decorationsLayer.addChild(node)
                 decorationNodes[d.id] = node
+            }
+        }
+    }
+
+    // v9 Prompt 2 — reconcile artifact overlays against state.artifacts.
+    // Only boardedStorefront currently renders; it anchors to a specific
+    // storefront slot via Artifact.storeSlotId. Hidden when the slot's wing
+    // is sealed (the wing overlay handles that visual separately).
+    private func reconcileArtifacts(_ state: GameState) {
+        // DIAG (Prompt 2 verification) — remove these log lines once overlay
+        // rendering is confirmed working end-to-end.
+        print("[ARTIFACT] reconcileArtifacts called: \(state.artifacts.count) artifact(s) in state")
+
+        let seen = Set(state.artifacts.map { $0.id })
+        // Remove dropped artifacts.
+        for id in artifactNodes.keys where !seen.contains(id) {
+            artifactNodes[id]?.removeFromParent()
+            artifactNodes.removeValue(forKey: id)
+        }
+        // Upsert. Position + size are derived from the host storefront slot.
+        for a in state.artifacts {
+            guard a.type == .boardedStorefront else {
+                print("[ARTIFACT] skipped id=\(a.id) type=\(a.type) (not boardedStorefront)")
+                continue
+            }
+            guard let slotId = a.storeSlotId,
+                  let store = state.stores.first(where: { $0.id == slotId }) else {
+                print("[ARTIFACT] skipped id=\(a.id) — no storeSlotId match (slotId=\(String(describing: a.storeSlotId)))")
+                continue
+            }
+            let hidden = Mall.isWingClosed(store.wing, in: state)
+            let size = CGSize(width: store.position.w, height: store.position.h)
+            let scenePos = csToScene(x: store.position.x + store.position.w / 2,
+                                     y: store.position.y + store.position.h / 2)
+            if let node = artifactNodes[a.id] {
+                node.isHidden = hidden
+                node.position = scenePos
+                node.size = size
+                print("[ARTIFACT] updated id=\(a.id) slot=\(slotId) pos=\(scenePos) size=\(size) hidden=\(hidden)")
+            } else if !hidden {
+                let node = ArtifactNode(artifact: a, size: size)
+                node.position = scenePos
+                // z above the StoreNode (zPosition 10) so boards cover the
+                // storefront sprite; below visitors.
+                node.zPosition = 11
+                artifactsLayer.addChild(node)
+                artifactNodes[a.id] = node
+                print("[ARTIFACT] ADDED id=\(a.id) slot=\(slotId) name=\(a.name) pos=\(scenePos) size=\(size) z=11 parent=artifactsLayer")
+            } else {
+                print("[ARTIFACT] not added id=\(a.id) — hidden by wing seal")
             }
         }
     }

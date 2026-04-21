@@ -46,12 +46,17 @@ enum TickEngine {
             s.stores[i].monthsOccupied += 1
             if Mall.isWingClosed(s.stores[i].wing, in: s) { continue }
 
+            // v8: s.stores[i] = vacant(...) — inline vacate on closing/leaving.
+            // v9: routed through TenantLifecycle.vacateSlot so both paths also
+            // spawn a memorial boardedStorefront artifact. Mechanics unchanged —
+            // TenantLifecycle does the same Store.vacant(...) transition inside
+            // and appends to state.artifacts.
             if s.stores[i].closing {
-                s.stores[i] = Store.vacant(id: s.stores[i].id, at: s.stores[i].position)
+                s = TenantLifecycle.vacateSlot(storeIndex: i, state: s)
                 continue
             }
             if s.stores[i].leaving {
-                s.stores[i] = Store.vacant(id: s.stores[i].id, at: s.stores[i].position)
+                s = TenantLifecycle.vacateSlot(storeIndex: i, state: s)
                 continue
             }
 
