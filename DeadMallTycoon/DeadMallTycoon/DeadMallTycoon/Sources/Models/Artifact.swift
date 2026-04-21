@@ -1,64 +1,125 @@
 import Foundation
 
-// v9: Artifacts are the primary memorial entity. Prompt 1 introduces the model
-// only — Prompts 2+ wire it into tenant closure, decay, scoring, and visitor
-// thoughts. Do not couple to mechanics in this file. If you are a future
-// Claude Code session opening this file and wondering why nothing reads from
-// GameState.artifacts, that is intentional: the staged rollout is model-first,
-// consumers-later. Introducing mechanics here prematurely will conflict with
-// subsequent prompts in the sequence.
+// v9: Artifacts are the primary memorial entity. Prompt 3 expands Artifact into
+// the unified type for every placed physical feature in the mall — subsuming
+// what was previously the separate Decoration model. The Decoration struct,
+// DecorationType, and DecorationKind enum have all been deleted; their fields
+// and responsibilities live here now.
+//
+// Future prompt: memory weight accumulation (Prompt 5), thought-bubble salience
+// consumes thoughtTriggers (Prompt 5+), tenant-identity system may populate
+// tenantId (later). If you are opening this file and wondering why some fields
+// seem speculative, the rollout is staged: model first, consumers later.
 
-// v9: Type taxonomy for artifacts. `custom` is an escape hatch for artifacts
-// created by events or scripted content that don't fit a preset template —
-// the display name lives on `Artifact.name`, not the enum.
+// v8: CONDITIONS array.
+// v9 Prompt 3 — migrated from the deleted Decoration.swift. Same ladder,
+// same display names. Read by ArtifactInfoCard + ArtifactDebugPanel.
+enum Condition: Int, CaseIterable {
+    case pristine = 0, worn, damaged, deteriorating, ruin
+
+    var name: String {
+        switch self {
+        case .pristine: return "Pristine"
+        case .worn: return "Worn"
+        case .damaged: return "Damaged"
+        case .deteriorating: return "Deteriorating"
+        case .ruin: return "Ruin"
+        }
+    }
+}
+
+// v8: DECORATION_TYPES keys (kugel, fountain, plant, neon, bench, directory)
+//     merged with Prompt 1's speculative ambient-artifact taxonomy.
+// v9 Prompt 3 — unified taxonomy. The Prompt 1 speculative state-variant cases
+// (stoppedFountain, flickeringNeon, ruinedKugelBall, outdatedDirectory) were
+// deleted; ruin is now expressed via the condition/working fields on the
+// unified object type (e.g. fountain + condition 4 = a stopped fountain).
 enum ArtifactType: String, Codable, CaseIterable, Equatable {
-    case boardedStorefront
-    case stoppedFountain
-    case sealedEntrance
-    case flickeringNeon
-    case deterioratingSkylight
-    case emptyFoodCourt
-    case outdatedDirectory
-    case ruinedKugelBall
-    case waterStainedCeiling
-    case custom
+    // Placeable — formerly DecorationKind cases (same stats, new home).
+    case kugelBall           // v8: DECORATION_TYPES.kugel
+    case fountain            // v8: DECORATION_TYPES.fountain
+    case planter             // v8: DECORATION_TYPES.plant
+    case neonSign            // v8: DECORATION_TYPES.neon
+    case bench               // v8: DECORATION_TYPES.bench
+    case directoryBoard      // v8: DECORATION_TYPES.directory
+
+    // Placeable — period-appropriate seed set (Prompt 3, also pre-placed in StartingMall).
+    case skylight            // v9 Prompt 3 — new
+    case terrazzoFlooring    // v9 Prompt 3 — new
+
+    // Placeable — Prompt 3 roster expansion.
+    case payPhoneBank                 // v9 Prompt 3 — new
+    case cigaretteVendingMachine      // v9 Prompt 3 — new
+    case coinOperatedHorseRide        // v9 Prompt 3 — new
+    case photoBooth                   // v9 Prompt 3 — new
+    case massageChair                 // v9 Prompt 3 — new
+    case brassRailing                 // v9 Prompt 3 — new
+    case terrazzoInlay                // v9 Prompt 3 — new
+    case sunkenSeatingPit             // v9 Prompt 3 — new
+    case deadFicus                    // v9 Prompt 3 — new (planter with dead ficus; distinct type for flavor)
+    case waterStainedCeiling          // v9 Prompt 3 — new (ceiling tile)
+    case flickeringFluorescent        // v9 Prompt 3 — new
+    case emergencyExitSign            // v9 Prompt 3 — new
+    case arcadeCabinet                // v9 Prompt 3 — new (decommissioned pay-to-play)
+    case christmasLeftUp              // v9 Prompt 3 — new (decorations left up past February)
+    case lostAndFoundCabinet          // v9 Prompt 3 — new
+    case pretzelRemnant               // v9 Prompt 3 — new (pretzel kiosk remnant)
+    case crackedTile                  // v9 Prompt 3 — new
+    case memorialBench                // v9 Prompt 3 — new (bench with a plaque to someone nobody remembers)
+
+    // Ambient / event-spawned (not player-placeable; cost == 0 in catalog).
+    case boardedStorefront   // v9 Prompt 2 — tenant closure memorial
+    case sealedEntrance      // v9 Prompt 1 — reserved; not spawned in mechanics yet
+    case emptyFoodCourt      // v9 Prompt 1 — reserved
+    case custom              // escape hatch for scripted / event content
 }
 
 // v9: Origin tracks what caused an artifact to exist. Kept as a three-case
-// enum rather than a String so downstream prompts (e.g. anchor-ripple cascade
-// artifact generation) can pattern-match without re-parsing strings.
+// enum so downstream prompts can pattern-match on .tenant(name:) vs
+// .event(name:) vs .playerAction(…) without re-parsing strings.
 enum ArtifactOrigin: Equatable, Codable {
     case tenant(name: String)
     case event(name: String)
     case playerAction(String)
 }
 
-// v9: The artifact itself. Condition is 0..4 and mirrors the existing
-// Decoration condition scale. Memory weight starts at 0 and is intended to
-// accumulate each month the artifact persists — the multiplier that will feed
-// into scoring and visitor thought salience in later prompts.
+// v8: G.decorations entries + PROMPT-1 Artifact fields, merged.
+// v9 Prompt 3 — unified struct. The x / y / working / hazard / monthsAtCondition
+// fields migrated from the deleted Decoration struct. The storeSlotId +
+// tenantId fields are Prompt 2 additions for slot-anchored memorial artifacts.
 //
-// Prompt 2: added storeSlotId (for boardedStorefront artifacts anchored to a
-// specific slot) and tenantId (reserved for future tenant-identity system —
-// left nil until tenants become first-class entities with distinct ids).
+// Spatial fields (x, y) are optional: populated for corridor-placed artifacts,
+// nil for slot-anchored (boardedStorefront uses storeSlotId) or ambient
+// (emptyFoodCourt, sealedEntrance) artifacts.
 struct Artifact: Identifiable, Equatable, Codable {
     let id: Int
     var name: String
     var type: ArtifactType
     var yearCreated: Int
-    var condition: Int            // 0..4, parallel to Condition enum on Decoration
-    var memoryWeight: Double      // starts at 0, accumulates later
+    var condition: Int            // 0..4, parallel to Condition enum
+    var memoryWeight: Double      // starts at 0, accumulates later (Prompt 5)
     var origin: ArtifactOrigin
     var thoughtTriggers: [String] // pool specific to this artifact instance
 
-    // v9: Optional — set for artifacts anchored to a specific storefront slot
-    // (e.g. boardedStorefront). Nil for ambient artifacts (stoppedFountain,
-    // waterStainedCeiling, etc.). Matches Store.id for direct lookup.
+    // v9 Prompt 2 — slot-anchor reference.
     var storeSlotId: Int? = nil
-
-    // v9: Reserved for the future tenant-identity system. Left nil in Prompt 2
-    // — tenants currently have no id separate from their slot. When tenant
-    // identity lands (a later prompt), this becomes the cross-reference for
-    // visitor thoughts like "remember when Waldenbooks was here from '84 to '87?"
+    // v9 Prompt 2 — reserved for future tenant-identity system.
     var tenantId: Int? = nil
+
+    // v8: G.decorations[i].x, .y — corridor position.
+    // v9 Prompt 3 — migrated from deleted Decoration.
+    var x: Double? = nil
+    var y: Double? = nil
+
+    // v8: G.decorations[i].working — kugel spins, fountain runs, neon lit.
+    // v9 Prompt 3 — migrated from deleted Decoration.
+    var working: Bool = true
+
+    // v8: G.decorations[i].hazard — decayed to ruin + flagged, fines active.
+    // v9 Prompt 3 — migrated from deleted Decoration.
+    var hazard: Bool = false
+
+    // v8: G.decorations[i].monthsAtCondition — dwell counter for pacing.
+    // v9 Prompt 3 — migrated from deleted Decoration.
+    var monthsAtCondition: Int = 0
 }

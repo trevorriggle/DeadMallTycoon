@@ -1,49 +1,424 @@
 import Foundation
 import CoreGraphics
 
-// v8: DECORATION_TYPES
-enum DecorationTypes {
-    static let all: [DecorationKind: DecorationType] = [
-        .kugel: DecorationType(
-            kind: .kugel, name: "Kugel Ball",
-            baseMult: 0.15, ruinMult: 0.30,
-            size: CGSize(width: 28, height: 28),
-            cost: 3500, repair: 800,
-            description: "Granite sphere on water."),
-        .fountain: DecorationType(
-            kind: .fountain, name: "Fountain",
-            baseMult: 0.10, ruinMult: 0.25,
-            size: CGSize(width: 46, height: 46),
-            cost: 2500, repair: 600,
-            description: "Pennies stay when it stops."),
-        .plant: DecorationType(
-            kind: .plant, name: "Planter",
-            baseMult: 0.03, ruinMult: 0.08,
-            size: CGSize(width: 18, height: 18),
-            cost: 400, repair: 100,
-            description: "A ficus."),
-        .neon: DecorationType(
-            kind: .neon, name: "Neon Sign",
-            baseMult: 0.08, ruinMult: 0.20,
-            size: CGSize(width: 40, height: 14),
-            cost: 1200, repair: 300,
-            description: "Flickering is peak liminal."),
-        .bench: DecorationType(
-            kind: .bench, name: "Bench",
-            baseMult: 0.02, ruinMult: 0.05,
-            size: CGSize(width: 36, height: 10),
-            cost: 600, repair: 150,
-            description: "Mall walkers rest here."),
-        .directory: DecorationType(
-            kind: .directory, name: "Directory Board",
-            baseMult: 0.05, ruinMult: 0.15,
-            size: CGSize(width: 22, height: 30),
-            cost: 1500, repair: 400,
-            description: "Never update it."),
-    ]
+// v8: DECORATION_TYPES entry shape — migrated to ArtifactTypeInfo.
+// v9 Prompt 3 — the old DecorationType struct lived in Decoration.swift
+// (now deleted). The Artifact catalog lives here, colocated with promo /
+// ad / staff / tenant data tables for symmetry.
+struct ArtifactTypeInfo: Equatable {
+    let type: ArtifactType
+    let name: String
+    let baseMult: Double
+    let ruinMult: Double
+    let size: CGSize
+    let cost: Int             // 0 = not player-placeable (ambient / event-spawned)
+    let repair: Int
+    let description: String
+    let defaultTriggers: [String]   // placeholder thought pool per type
+}
 
-    static func type(_ kind: DecorationKind) -> DecorationType {
-        all[kind]!
+// v8: DECORATION_TYPES (kugel / fountain / plant / neon / bench / directory).
+// v9 Prompt 3 — expanded to full Artifact catalog: 6 preserved decoration
+// kinds (identical baseMult/ruinMult/cost/repair/size to v8 for parity) plus
+// 20 new Prompt 3 types. Ambient / event-spawned types (boardedStorefront,
+// sealedEntrance, emptyFoodCourt, custom) have cost == 0 and are filtered out
+// of the Acquire tab.
+//
+// Thought trigger pools are placeholder strings per the Prompt 1 convention.
+// Real prose authoring is deferred (highest-leverage creative work; should
+// happen intentionally, not by Claude Code defaults).
+enum ArtifactCatalog {
+
+    static func info(_ type: ArtifactType) -> ArtifactTypeInfo {
+        switch type {
+
+        // MARK: - Preserved Decoration kinds (v8 parity)
+
+        case .kugelBall:
+            // v8: DECORATION_TYPES.kugel
+            return ArtifactTypeInfo(
+                type: .kugelBall, name: "Kugel Ball",
+                baseMult: 0.15, ruinMult: 0.30,
+                size: CGSize(width: 28, height: 28),
+                cost: 3500, repair: 800,
+                description: "Granite sphere on water.",
+                defaultTriggers: [
+                    "[placeholder: kugel ball thought 1]",
+                    "[placeholder: kugel ball thought 2]",
+                    "[placeholder: kugel ball thought 3]",
+                ])
+        case .fountain:
+            // v8: DECORATION_TYPES.fountain
+            return ArtifactTypeInfo(
+                type: .fountain, name: "Fountain",
+                baseMult: 0.10, ruinMult: 0.25,
+                size: CGSize(width: 46, height: 46),
+                cost: 2500, repair: 600,
+                description: "Pennies stay when it stops.",
+                defaultTriggers: [
+                    "[placeholder: fountain thought 1]",
+                    "[placeholder: fountain thought 2]",
+                    "[placeholder: fountain thought 3]",
+                ])
+        case .planter:
+            // v8: DECORATION_TYPES.plant
+            return ArtifactTypeInfo(
+                type: .planter, name: "Planter",
+                baseMult: 0.03, ruinMult: 0.08,
+                size: CGSize(width: 18, height: 18),
+                cost: 400, repair: 100,
+                description: "A ficus.",
+                defaultTriggers: [
+                    "[placeholder: planter thought 1]",
+                    "[placeholder: planter thought 2]",
+                    "[placeholder: planter thought 3]",
+                ])
+        case .neonSign:
+            // v8: DECORATION_TYPES.neon
+            return ArtifactTypeInfo(
+                type: .neonSign, name: "Neon Sign",
+                baseMult: 0.08, ruinMult: 0.20,
+                size: CGSize(width: 40, height: 14),
+                cost: 1200, repair: 300,
+                description: "Flickering is peak liminal.",
+                defaultTriggers: [
+                    "[placeholder: neon sign thought 1]",
+                    "[placeholder: neon sign thought 2]",
+                    "[placeholder: neon sign thought 3]",
+                ])
+        case .bench:
+            // v8: DECORATION_TYPES.bench
+            return ArtifactTypeInfo(
+                type: .bench, name: "Bench",
+                baseMult: 0.02, ruinMult: 0.05,
+                size: CGSize(width: 36, height: 10),
+                cost: 600, repair: 150,
+                description: "Mall walkers rest here.",
+                defaultTriggers: [
+                    "[placeholder: bench thought 1]",
+                    "[placeholder: bench thought 2]",
+                    "[placeholder: bench thought 3]",
+                ])
+        case .directoryBoard:
+            // v8: DECORATION_TYPES.directory
+            return ArtifactTypeInfo(
+                type: .directoryBoard, name: "Directory Board",
+                baseMult: 0.05, ruinMult: 0.15,
+                size: CGSize(width: 22, height: 30),
+                cost: 1500, repair: 400,
+                description: "Never update it.",
+                defaultTriggers: [
+                    "[placeholder: directory board thought 1]",
+                    "[placeholder: directory board thought 2]",
+                    "[placeholder: directory board thought 3]",
+                ])
+
+        // MARK: - Seed-set new types (Prompt 3)
+
+        case .skylight:
+            // v9 Prompt 3 — new
+            return ArtifactTypeInfo(
+                type: .skylight, name: "Skylight",
+                baseMult: 0.12, ruinMult: 0.28,
+                size: CGSize(width: 60, height: 20),
+                cost: 3000, repair: 700,
+                description: "Light through cracked glass.",
+                defaultTriggers: [
+                    "[placeholder: skylight thought 1]",
+                    "[placeholder: skylight thought 2]",
+                    "[placeholder: skylight thought 3]",
+                ])
+        case .terrazzoFlooring:
+            // v9 Prompt 3 — new
+            return ArtifactTypeInfo(
+                type: .terrazzoFlooring, name: "Terrazzo Flooring",
+                baseMult: 0.08, ruinMult: 0.22,
+                size: CGSize(width: 80, height: 20),
+                cost: 2000, repair: 500,
+                description: "Original '80s terrazzo.",
+                defaultTriggers: [
+                    "[placeholder: terrazzo flooring thought 1]",
+                    "[placeholder: terrazzo flooring thought 2]",
+                    "[placeholder: terrazzo flooring thought 3]",
+                ])
+
+        // MARK: - Prompt 3 roster expansion
+
+        case .payPhoneBank:
+            return ArtifactTypeInfo(
+                type: .payPhoneBank, name: "Pay Phone Bank",
+                baseMult: 0.07, ruinMult: 0.18,
+                size: CGSize(width: 36, height: 24),
+                cost: 900, repair: 250,
+                description: "Nobody uses them.",
+                defaultTriggers: [
+                    "[placeholder: pay phone bank thought 1]",
+                    "[placeholder: pay phone bank thought 2]",
+                    "[placeholder: pay phone bank thought 3]",
+                ])
+        case .cigaretteVendingMachine:
+            return ArtifactTypeInfo(
+                type: .cigaretteVendingMachine, name: "Cigarette Machine",
+                baseMult: 0.06, ruinMult: 0.16,
+                size: CGSize(width: 18, height: 30),
+                cost: 700, repair: 200,
+                description: "Unplugged. Never removed.",
+                defaultTriggers: [
+                    "[placeholder: cigarette vending thought 1]",
+                    "[placeholder: cigarette vending thought 2]",
+                    "[placeholder: cigarette vending thought 3]",
+                ])
+        case .coinOperatedHorseRide:
+            return ArtifactTypeInfo(
+                type: .coinOperatedHorseRide, name: "Coin Horse",
+                baseMult: 0.09, ruinMult: 0.22,
+                size: CGSize(width: 30, height: 28),
+                cost: 1100, repair: 300,
+                description: "Twenty-five cents, still.",
+                defaultTriggers: [
+                    "[placeholder: coin horse thought 1]",
+                    "[placeholder: coin horse thought 2]",
+                    "[placeholder: coin horse thought 3]",
+                ])
+        case .photoBooth:
+            return ArtifactTypeInfo(
+                type: .photoBooth, name: "Photo Booth",
+                baseMult: 0.10, ruinMult: 0.24,
+                size: CGSize(width: 22, height: 36),
+                cost: 1400, repair: 350,
+                description: "Curtain torn halfway.",
+                defaultTriggers: [
+                    "[placeholder: photo booth thought 1]",
+                    "[placeholder: photo booth thought 2]",
+                    "[placeholder: photo booth thought 3]",
+                ])
+        case .massageChair:
+            return ArtifactTypeInfo(
+                type: .massageChair, name: "Massage Chair",
+                baseMult: 0.05, ruinMult: 0.14,
+                size: CGSize(width: 24, height: 22),
+                cost: 900, repair: 250,
+                description: "Shake-your-fillings-loose era.",
+                defaultTriggers: [
+                    "[placeholder: massage chair thought 1]",
+                    "[placeholder: massage chair thought 2]",
+                    "[placeholder: massage chair thought 3]",
+                ])
+        case .brassRailing:
+            return ArtifactTypeInfo(
+                type: .brassRailing, name: "Brass Railing",
+                baseMult: 0.06, ruinMult: 0.18,
+                size: CGSize(width: 60, height: 6),
+                cost: 800, repair: 200,
+                description: "Tarnished patina.",
+                defaultTriggers: [
+                    "[placeholder: brass railing thought 1]",
+                    "[placeholder: brass railing thought 2]",
+                    "[placeholder: brass railing thought 3]",
+                ])
+        case .terrazzoInlay:
+            return ArtifactTypeInfo(
+                type: .terrazzoInlay, name: "Terrazzo Inlay",
+                baseMult: 0.07, ruinMult: 0.20,
+                size: CGSize(width: 40, height: 16),
+                cost: 1100, repair: 300,
+                description: "The mall's seal, set in stone.",
+                defaultTriggers: [
+                    "[placeholder: terrazzo inlay thought 1]",
+                    "[placeholder: terrazzo inlay thought 2]",
+                    "[placeholder: terrazzo inlay thought 3]",
+                ])
+        case .sunkenSeatingPit:
+            return ArtifactTypeInfo(
+                type: .sunkenSeatingPit, name: "Conversation Pit",
+                baseMult: 0.12, ruinMult: 0.28,
+                size: CGSize(width: 60, height: 30),
+                cost: 2200, repair: 500,
+                description: "Nobody sits in it.",
+                defaultTriggers: [
+                    "[placeholder: sunken seating thought 1]",
+                    "[placeholder: sunken seating thought 2]",
+                    "[placeholder: sunken seating thought 3]",
+                ])
+        case .deadFicus:
+            return ArtifactTypeInfo(
+                type: .deadFicus, name: "Dead Ficus",
+                baseMult: 0.04, ruinMult: 0.10,
+                size: CGSize(width: 18, height: 20),
+                cost: 300, repair: 80,
+                description: "A planter nobody waters.",
+                defaultTriggers: [
+                    "[placeholder: dead ficus thought 1]",
+                    "[placeholder: dead ficus thought 2]",
+                    "[placeholder: dead ficus thought 3]",
+                ])
+        case .waterStainedCeiling:
+            return ArtifactTypeInfo(
+                type: .waterStainedCeiling, name: "Stained Ceiling Tile",
+                baseMult: 0.05, ruinMult: 0.14,
+                size: CGSize(width: 20, height: 20),
+                cost: 200, repair: 80,
+                description: "Tannin-colored halo.",
+                defaultTriggers: [
+                    "[placeholder: water-stained ceiling thought 1]",
+                    "[placeholder: water-stained ceiling thought 2]",
+                    "[placeholder: water-stained ceiling thought 3]",
+                ])
+        case .flickeringFluorescent:
+            return ArtifactTypeInfo(
+                type: .flickeringFluorescent, name: "Flickering Fluorescent",
+                baseMult: 0.06, ruinMult: 0.18,
+                size: CGSize(width: 36, height: 8),
+                cost: 400, repair: 100,
+                description: "Never fully on, never fully off.",
+                defaultTriggers: [
+                    "[placeholder: flickering fluorescent thought 1]",
+                    "[placeholder: flickering fluorescent thought 2]",
+                    "[placeholder: flickering fluorescent thought 3]",
+                ])
+        case .emergencyExitSign:
+            return ArtifactTypeInfo(
+                type: .emergencyExitSign, name: "Emergency Exit Sign",
+                baseMult: 0.04, ruinMult: 0.10,
+                size: CGSize(width: 24, height: 12),
+                cost: 300, repair: 80,
+                description: "Always lit, never used.",
+                defaultTriggers: [
+                    "[placeholder: emergency exit sign thought 1]",
+                    "[placeholder: emergency exit sign thought 2]",
+                    "[placeholder: emergency exit sign thought 3]",
+                ])
+        case .arcadeCabinet:
+            return ArtifactTypeInfo(
+                type: .arcadeCabinet, name: "Arcade Cabinet",
+                baseMult: 0.11, ruinMult: 0.26,
+                size: CGSize(width: 20, height: 32),
+                cost: 1800, repair: 450,
+                description: "Decommissioned. Screen dark.",
+                defaultTriggers: [
+                    "[placeholder: arcade cabinet thought 1]",
+                    "[placeholder: arcade cabinet thought 2]",
+                    "[placeholder: arcade cabinet thought 3]",
+                ])
+        case .christmasLeftUp:
+            return ArtifactTypeInfo(
+                type: .christmasLeftUp, name: "Stale Christmas Decor",
+                baseMult: 0.08, ruinMult: 0.20,
+                size: CGSize(width: 40, height: 16),
+                cost: 500, repair: 120,
+                description: "Still up in March.",
+                defaultTriggers: [
+                    "[placeholder: stale christmas thought 1]",
+                    "[placeholder: stale christmas thought 2]",
+                    "[placeholder: stale christmas thought 3]",
+                ])
+        case .lostAndFoundCabinet:
+            return ArtifactTypeInfo(
+                type: .lostAndFoundCabinet, name: "Lost & Found",
+                baseMult: 0.05, ruinMult: 0.14,
+                size: CGSize(width: 22, height: 24),
+                cost: 400, repair: 100,
+                description: "Sunglasses older than some visitors.",
+                defaultTriggers: [
+                    "[placeholder: lost and found thought 1]",
+                    "[placeholder: lost and found thought 2]",
+                    "[placeholder: lost and found thought 3]",
+                ])
+        case .pretzelRemnant:
+            return ArtifactTypeInfo(
+                type: .pretzelRemnant, name: "Pretzel Kiosk Remnant",
+                baseMult: 0.07, ruinMult: 0.18,
+                size: CGSize(width: 28, height: 24),
+                cost: 600, repair: 150,
+                description: "Counter still smells faintly of butter.",
+                defaultTriggers: [
+                    "[placeholder: pretzel remnant thought 1]",
+                    "[placeholder: pretzel remnant thought 2]",
+                    "[placeholder: pretzel remnant thought 3]",
+                ])
+        case .crackedTile:
+            return ArtifactTypeInfo(
+                type: .crackedTile, name: "Cracked Tile",
+                baseMult: 0.04, ruinMult: 0.12,
+                size: CGSize(width: 24, height: 16),
+                cost: 200, repair: 60,
+                description: "Caution tape left too long.",
+                defaultTriggers: [
+                    "[placeholder: cracked tile thought 1]",
+                    "[placeholder: cracked tile thought 2]",
+                    "[placeholder: cracked tile thought 3]",
+                ])
+        case .memorialBench:
+            return ArtifactTypeInfo(
+                type: .memorialBench, name: "Memorial Bench",
+                baseMult: 0.05, ruinMult: 0.14,
+                size: CGSize(width: 36, height: 10),
+                cost: 700, repair: 180,
+                description: "\"In Loving Memory of someone.\"",
+                defaultTriggers: [
+                    "[placeholder: memorial bench thought 1]",
+                    "[placeholder: memorial bench thought 2]",
+                    "[placeholder: memorial bench thought 3]",
+                ])
+
+        // MARK: - Ambient / event-spawned (cost == 0)
+
+        case .boardedStorefront:
+            // v9 Prompt 2 — tenant closure memorial. No mult contribution
+            // intended for now; scoring integration lands in Prompt 5.
+            return ArtifactTypeInfo(
+                type: .boardedStorefront, name: "Boarded Storefront",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 100, height: 90),
+                cost: 0, repair: 0,
+                description: "Where a tenant used to be.",
+                defaultTriggers: [
+                    "[placeholder: boarded storefront thought 1]",
+                    "[placeholder: boarded storefront thought 2]",
+                    "[placeholder: boarded storefront thought 3]",
+                ])
+        case .sealedEntrance:
+            return ArtifactTypeInfo(
+                type: .sealedEntrance, name: "Sealed Entrance",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 40, height: 24),
+                cost: 0, repair: 0,
+                description: "Boarded-over doors.",
+                defaultTriggers: [
+                    "[placeholder: sealed entrance thought 1]",
+                    "[placeholder: sealed entrance thought 2]",
+                    "[placeholder: sealed entrance thought 3]",
+                ])
+        case .emptyFoodCourt:
+            return ArtifactTypeInfo(
+                type: .emptyFoodCourt, name: "Empty Food Court",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 120, height: 80),
+                cost: 0, repair: 0,
+                description: "Trays stacked, forgotten.",
+                defaultTriggers: [
+                    "[placeholder: empty food court thought 1]",
+                    "[placeholder: empty food court thought 2]",
+                    "[placeholder: empty food court thought 3]",
+                ])
+        case .custom:
+            return ArtifactTypeInfo(
+                type: .custom, name: "Artifact",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 24, height: 24),
+                cost: 0, repair: 0,
+                description: "Scripted artifact.",
+                defaultTriggers: [
+                    "[placeholder: custom artifact thought 1]",
+                    "[placeholder: custom artifact thought 2]",
+                    "[placeholder: custom artifact thought 3]",
+                ])
+        }
+    }
+
+    // v9 Prompt 3 — the Acquire tab filters to types with cost > 0.
+    static var placeableTypes: [ArtifactType] {
+        ArtifactType.allCases.filter { info($0).cost > 0 }
     }
 }
 
@@ -96,7 +471,7 @@ enum StaffTypes {
         "security":    StaffType(key: "security",    name: "Security",        cost: 2000,
                                   description: "Prevents gang events. Reduces shoplifting."),
         "janitorial":  StaffType(key: "janitorial",  name: "Janitorial",      cost: 1500,
-                                  description: "Slows decoration decay by 50%."),
+                                  description: "Slows artifact decay by 50%."),
         "maintenance": StaffType(key: "maintenance", name: "Maintenance",     cost: 1800,
                                   description: "Reduces disaster frequency."),
         "marketing":   StaffType(key: "marketing",   name: "Marketing Dept.", cost: 1200,

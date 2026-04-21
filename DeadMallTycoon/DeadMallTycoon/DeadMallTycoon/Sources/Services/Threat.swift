@@ -4,8 +4,9 @@ import Foundation
 enum Threat {
 
     // v8: calculateThreat()
+    // v9 Prompt 3 — hazard count sourced from state.artifacts (unified).
     static func calculate(_ state: GameState) -> Double {
-        let hazards = state.decorations.filter { $0.hazard }.count
+        let hazards = state.artifacts.filter { $0.hazard }.count
         let closedWingsCount = Mall.closedWingsCount(state)
         let openStores = Mall.openStores(state)
         let occ = openStores.filter { $0.tier != .vacant }.count
@@ -33,9 +34,10 @@ enum Threat {
     }
 
     // v8: getThreatReason()
+    // v9 Prompt 3 — hazard count sourced from state.artifacts (unified).
     static func reason(_ state: GameState) -> String {
         var parts: [String] = []
-        let h = state.decorations.filter { $0.hazard }.count
+        let h = state.artifacts.filter { $0.hazard }.count
         let cw = Mall.closedWingsCount(state)
         if h  > 0 { parts.append("\(h) hazard\(h > 1 ? "s" : "")") }
         if cw > 0 { parts.append("\(cw) sealed wing\(cw > 1 ? "s" : "")") }

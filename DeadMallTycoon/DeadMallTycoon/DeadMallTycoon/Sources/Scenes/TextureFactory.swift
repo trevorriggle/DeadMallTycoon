@@ -323,6 +323,34 @@ enum TextureFactory {
         }
     }
 
+    // MARK: - Artifact placeholder (v9 Prompt 3)
+
+    // v9 Prompt 3 — neutral "pending art" sprite for any ArtifactType that
+    // doesn't have a specific pixel-art texture yet. Small grey square,
+    // dotted outline, no text. Tap-to-inspect handles the identity question.
+    // Trevor will swap in real per-type pixel art later; this single function
+    // is the only thing that needs to change at that point.
+    static func pendingArtPlaceholderTexture(size: CGSize) -> SKTexture {
+        let key = "pendingArt_\(Int(size.width))x\(Int(size.height))"
+        return cached(key) {
+            SKTexture(image: renderImage(size: size) { ctx, size in
+                // Fill — neutral mid-grey. Semi-transparent so existing corridor
+                // floor tone shows through slightly and the placeholder doesn't
+                // steamroll the mall's visual palette.
+                UIColor(white: 0.45, alpha: 0.85).setFill()
+                ctx.fill(CGRect(origin: .zero, size: size))
+
+                // Dotted outline — draw a 1.5pt stroke with short dashes.
+                UIColor(white: 0.2, alpha: 0.9).setStroke()
+                ctx.setLineWidth(1.5)
+                ctx.setLineDash(phase: 0, lengths: [3, 2])
+                let inset: CGFloat = 1
+                ctx.stroke(CGRect(origin: .zero, size: size)
+                            .insetBy(dx: inset, dy: inset))
+            })
+        }
+    }
+
     // MARK: - Helpers
 
     private static func renderImage(size: CGSize,

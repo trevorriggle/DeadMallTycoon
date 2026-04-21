@@ -2,7 +2,7 @@ import SpriteKit
 import Observation
 
 // The mall corridor renderer. Reads GameViewModel; mutates only via explicit player-action
-// calls (selectVisitor, placeDecoration, etc.).
+// calls (selectVisitor, placeArtifact, etc.).
 // Visitors are scene-local presentation state — owned here, never in GameState — so
 // their 60fps position updates don't churn the Observation loop. Store and decoration
 // lifecycle is diff-reconciled against GameState whenever state changes.
@@ -31,7 +31,10 @@ final class MallScene: SKScene {
     private let overlayLayer = SKNode()
 
     private var storeNodes: [Int: StoreNode] = [:]
-    private var decorationNodes: [Int: DecorationNode] = [:]
+    // v9 Prompt 3 — DecorationNode deleted; unified ArtifactNode renders all
+    // placed artifacts. Keyed by Artifact.id. Ambient types (boardedStorefront,
+    // sealedEntrance, emptyFoodCourt, custom) are skipped by reconcile.
+    private var artifactNodes: [Int: ArtifactNode] = [:]
     private var visitorNodes: [UUID: VisitorNode] = [:]
     private var northEntranceNode: EntranceNode?
     private var southEntranceNode: EntranceNode?
@@ -208,7 +211,7 @@ final class MallScene: SKScene {
         withObservationTracking {
             // Touch everything we care about so changes trigger re-registration.
             _ = vm.state.stores
-            _ = vm.state.decorations
+            _ = vm.state.artifacts           // v9 Prompt 3 — was state.decorations
             _ = vm.state.wingsClosed
             _ = vm.state.wingsDowngraded
             _ = vm.state.northEntranceSealed
@@ -248,7 +251,7 @@ final class MallScene: SKScene {
 
     private func reconcile(state: GameState) {
         reconcileStores(state)
-        reconcileDecorations(state)
+        reconcileArtifacts(state)        // v9 Prompt 3 — was reconcileDecorations
         reconcileEntrances(state)
         reconcileSealedWings(state)
         reconcileWingTint(state)        // Phase C — red tint on wings about to fail
@@ -358,7 +361,9 @@ final class MallScene: SKScene {
             lastStoreAnchor = storePt
             onStoreAnchorChange?(storePt)
         }
-        let decPt = anchorInView(for: state.selectedDecorationId.flatMap { decorationNodes[$0] })
+        // v9 Prompt 3 — decorationNodes → artifactNodes. selectedDecorationId
+        // field is kept (Prompt 2 storage name) but now keys into ArtifactNodes.
+        let decPt = anchorInView(for: state.selectedDecorationId.flatMap { artifactNodes[$0] })
         if decPt != lastDecorationAnchor {
             lastDecorationAnchor = decPt
             onDecorationAnchorChange?(decPt)
@@ -393,24 +398,36 @@ final class MallScene: SKScene {
         }
     }
 
-    private func reconcileDecorations(_ state: GameState) {
-        let seen = Set(state.decorations.map { $0.id })
-        for id in decorationNodes.keys where !seen.contains(id) {
-            decorationNodes[id]?.removeFromParent()
-            decorationNodes.removeValue(forKey: id)
+    // v8: the decoration reconcile loop — iterated G.decorations.
+    // v9 Prompt 3 — iterates state.artifacts. Ambient types (catalog cost == 0)
+    // are skipped here because they have no corridor position / sprite
+    // representation; the storefront texture flip (Prompt 2) handles the
+    // visual for boardedStorefront, and the other ambient types aren't yet
+    // consumed by mechanics either. Every placeable artifact with a non-nil
+    // (x, y) gets an ArtifactNode sprite.
+    private func reconcileArtifacts(_ state: GameState) {
+        let renderable = state.artifacts.filter { a in
+            guard ArtifactCatalog.info(a.type).cost > 0 else { return false }
+            return a.x != nil && a.y != nil
         }
-        for d in state.decorations {
-            let size = DecorationTypes.type(d.kind).size
-            let scenePos = csToScene(x: d.x + size.width / 2, y: d.y + size.height / 2)
-            if let node = decorationNodes[d.id] {
+        let seen = Set(renderable.map { $0.id })
+        for id in artifactNodes.keys where !seen.contains(id) {
+            artifactNodes[id]?.removeFromParent()
+            artifactNodes.removeValue(forKey: id)
+        }
+        for a in renderable {
+            let size = ArtifactCatalog.info(a.type).size
+            guard let ax = a.x, let ay = a.y else { continue }
+            let scenePos = csToScene(x: ax + size.width / 2, y: ay + size.height / 2)
+            if let node = artifactNodes[a.id] {
                 node.position = scenePos
-                node.apply(decoration: d)
+                node.apply(artifact: a)
             } else {
-                let node = DecorationNode(decoration: d)
+                let node = ArtifactNode(artifact: a)
                 node.position = scenePos
                 node.zPosition = 5
                 decorationsLayer.addChild(node)
-                decorationNodes[d.id] = node
+                artifactNodes[a.id] = node
             }
         }
     }
@@ -787,14 +804,16 @@ final class MallScene: SKScene {
             vm.selectStore(storeNode.storeId)
             return
         }
-        if let decNode = hits.first(where: { $0 is DecorationNode }) as? DecorationNode {
-            vm.selectDecoration(decNode.decorationId)
+        // v9 Prompt 3 — DecorationNode → ArtifactNode. selectDecoration still
+        // stores the id in selectedDecorationId (legacy field name retained).
+        if let artNode = hits.first(where: { $0 is ArtifactNode }) as? ArtifactNode {
+            vm.selectDecoration(artNode.artifactId)
             return
         }
-        // Placement mode — tap in corridor places a decoration
-        if let kind = vm.state.placingDecoration {
+        // Placement mode — tap in corridor places the chosen artifact type.
+        if let type = vm.state.placingArtifactType {
             let cs = sceneToCS(p)
-            vm.placeDecoration(kind: kind, at: (x: Double(cs.x), y: Double(cs.y)))
+            vm.placeArtifact(type: type, at: (x: Double(cs.x), y: Double(cs.y)))
             return
         }
         vm.clearSelection()

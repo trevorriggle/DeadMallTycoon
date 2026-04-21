@@ -97,7 +97,8 @@ enum TutorialDirector {
         return nil
     }
 
+    // v9 Prompt 3 — state.decorations removed; hazard sourced from unified artifacts.
     private static func hasHazard(_ s: GameState) -> Bool {
-        s.decorations.contains { $0.hazard }
+        s.artifacts.contains { $0.hazard }
     }
 }

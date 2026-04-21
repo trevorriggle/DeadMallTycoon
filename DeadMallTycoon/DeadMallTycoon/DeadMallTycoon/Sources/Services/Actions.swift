@@ -144,46 +144,58 @@ enum StoreActions {
     }
 }
 
-enum DecorationActions {
+// v8: beginPlacement / placementClickHandler / repairDec / removeDec — the
+// decoration player-action surface. v9 Prompt 3 — renamed to ArtifactActions,
+// operates on the unified Artifact model. Same cost/placement/repair/remove
+// mechanics, new home. The old DecorationActions enum is deleted.
+enum ArtifactActions {
 
     // v8: beginPlacement / placementClickHandler
-    static func place(kind: DecorationKind, at point: (x: Double, y: Double), _ state: GameState) -> GameState {
+    // v9 Prompt 3 — type is any ArtifactType with catalog cost > 0.
+    static func place(type: ArtifactType,
+                      at point: (x: Double, y: Double),
+                      _ state: GameState) -> GameState {
         var s = state
-        let type = DecorationTypes.type(kind)
-        if s.cash < type.cost { return s }
+        let info = ArtifactCatalog.info(type)
+        if info.cost <= 0 { return s }                // not player-placeable
+        if s.cash < info.cost { return s }
         // v8: corridor constraint y in [200, 320]
         if point.y < 200 || point.y > 320 { return s }
-        s.cash -= type.cost
-        let newId = (s.decorations.map(\.id).max() ?? 0) + 1
-        s.decorations.append(Decoration(
-            id: newId, kind: kind,
-            x: point.x - type.size.width  / 2,
-            y: point.y - type.size.height / 2,
-            condition: 0, working: true, hazard: false,
-            monthsAtCondition: 0
+        s.cash -= info.cost
+        let newId = (s.artifacts.map(\.id).max() ?? 0) + 1
+        s.artifacts.append(ArtifactFactory.make(
+            id: newId,
+            type: type,
+            name: info.name,
+            origin: .playerAction("placed"),
+            yearCreated: s.year,
+            x: point.x - info.size.width  / 2,
+            y: point.y - info.size.height / 2
         ))
-        s.placingDecoration = nil
+        s.placingArtifactType = nil
         return s
     }
 
     // v8: repairDec()
-    static func repair(decorationId: Int, _ state: GameState) -> GameState {
+    // v9 Prompt 3 — operates on Artifact (cost looked up via catalog).
+    static func repair(artifactId: Int, _ state: GameState) -> GameState {
         var s = state
-        guard let idx = s.decorations.firstIndex(where: { $0.id == decorationId }) else { return s }
-        let type = DecorationTypes.type(s.decorations[idx].kind)
-        if s.cash < type.repair { return s }
-        s.cash -= type.repair
-        s.decorations[idx].condition = max(0, s.decorations[idx].condition - 2)
-        s.decorations[idx].hazard = false
-        s.decorations[idx].monthsAtCondition = 0
+        guard let idx = s.artifacts.firstIndex(where: { $0.id == artifactId }) else { return s }
+        let info = ArtifactCatalog.info(s.artifacts[idx].type)
+        if info.repair <= 0 { return s }              // ambient types aren't repairable
+        if s.cash < info.repair { return s }
+        s.cash -= info.repair
+        s.artifacts[idx].condition = max(0, s.artifacts[idx].condition - 2)
+        s.artifacts[idx].hazard = false
+        s.artifacts[idx].monthsAtCondition = 0
         return s
     }
 
     // v8: removeDec()
-    static func remove(decorationId: Int, _ state: GameState) -> GameState {
+    static func remove(artifactId: Int, _ state: GameState) -> GameState {
         var s = state
-        s.decorations.removeAll { $0.id == decorationId }
-        if s.selectedDecorationId == decorationId { s.selectedDecorationId = nil }
+        s.artifacts.removeAll { $0.id == artifactId }
+        if s.selectedDecorationId == artifactId { s.selectedDecorationId = nil }
         return s
     }
 }

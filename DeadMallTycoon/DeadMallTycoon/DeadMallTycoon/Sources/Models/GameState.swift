@@ -19,13 +19,13 @@ struct GameState: Equatable {
     // Visitors are *presentation* state only — owned by MallScene, not GameState.
     // This keeps 60fps position updates out of the Observation loop. Identity (age,
     // personality, memory) is surfaced on selection via GameViewModel.recordVisitorInteraction.
+    // v9 Prompt 3: the separate `decorations: [Decoration]` field was deleted;
+    // every placed physical feature now lives in `artifacts` (the unified model).
     var stores: [Store] = []
-    var decorations: [Decoration] = []
 
-    // v9: Memorial entity introduced in Prompt 1. Nothing reads or writes this
-    // field yet — it is wired into mechanics in subsequent prompts (tenant
-    // closure → artifact spawn, monthly memory-weight accumulation, visitor
-    // thought selection biased by salience). See Artifact.swift for rationale.
+    // v8: G.decorations (merged) + v9 Prompts 1-2 memorial entity (boardedStorefront, etc.).
+    // v9 Prompt 3 — unified. Mechanic reads (aestheticMult, hazardFines,
+    // threat, decay, warnings, events) all iterate this array.
     var artifacts: [Artifact] = []
 
     // operations — v8: G.spd, G.activePromos, G.activeAdDeals, G.activeStaff
@@ -67,8 +67,10 @@ struct GameState: Equatable {
     var selectedDecorationId: Int? = nil
     var selectedVisitorThought: String = ""
 
-    // decoration placement mode — v8: G.placingDecoration
-    var placingDecoration: DecorationKind? = nil
+    // v8: G.placingDecoration — placement mode for the old decoration picker.
+    // v9 Prompt 3 — renamed to placingArtifactType; carries the unified
+    // ArtifactType that the player chose in the Acquire tab.
+    var placingArtifactType: ArtifactType? = nil
 
     // v9 addition — populated by TickEngine each month, rendered as sparkline in Phase 5
     var scoreHistory: RingBuffer<Int> = RingBuffer(capacity: 12)

@@ -61,8 +61,11 @@ enum Economy {
     }
 
     // v8: hazardFines()
+    // v9 Prompt 3 — reads state.artifacts (unified from deleted state.decorations).
+    // Only placeable artifacts can carry hazard in practice; ambient/memorial
+    // types never set the flag, so no filter-by-type is needed.
     static func hazardFines(_ state: GameState) -> Int {
-        state.decorations
+        state.artifacts
             .filter { $0.hazard }
             .reduce(0) { $0 + 500 + $1.condition * 200 }
     }
@@ -92,6 +95,11 @@ enum Economy {
     }
 
     // v8: aestheticMult()
+    // v9 Prompt 3 — artifact sum replaces decoration sum. Formula is
+    // identical: each placeable artifact contributes
+    //   condition >= 4 ? ruinMult : baseMult * (1 + 0.2 * condition)
+    // Ambient / memorial artifacts (cost == 0 in catalog) contribute 0 here
+    // — their scoring role is introduced in Prompt 5 via memoryWeight.
     static func aestheticMult(_ state: GameState) -> Double {
         let totalSlots = max(1, state.stores.count)
         let vacantOpenCount = state.stores
@@ -101,12 +109,16 @@ enum Economy {
         if Mall.isWingClosed(.north, in: state) { vacMult += 0.3 }
         if Mall.isWingClosed(.south, in: state) { vacMult += 0.3 }
 
-        let decSum = state.decorations.reduce(0.0) { acc, d in
-            let type = DecorationTypes.type(d.kind)
-            let mult = d.condition >= 4 ? type.ruinMult : type.baseMult * (1.0 + Double(d.condition) * 0.2)
+        let artifactSum = state.artifacts.reduce(0.0) { acc, a in
+            let info = ArtifactCatalog.info(a.type)
+            // cost == 0 → ambient/memorial; no aesthetic contribution (yet).
+            guard info.cost > 0 else { return acc }
+            let mult = a.condition >= 4
+                ? info.ruinMult
+                : info.baseMult * (1.0 + Double(a.condition) * 0.2)
             return acc + mult
         }
-        let decMult = 1.0 + decSum
+        let decMult = 1.0 + artifactSum
 
         let adPenalty = state.activeAdDeals.reduce(0.0) { $0 + $1.aestheticPenalty }
 

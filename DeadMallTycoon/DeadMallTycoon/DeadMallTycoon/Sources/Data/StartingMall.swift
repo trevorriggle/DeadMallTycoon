@@ -69,11 +69,15 @@ enum StartingMall {
         StoreSeed(name: "JCPenney",           tier: .anchor,   rent: 4000, traffic: 260, threshold: 130, lease: 96),
     ]
 
-    // v8: STARTING_DECORATIONS
-    // Decorations that previously sat at x<200 or x>1000 are moved inward since
-    // those x ranges are now occupied by the anchor end-caps.
-    private struct DecorationSeed {
-        let kind: DecorationKind
+    // v8: STARTING_DECORATIONS — 10 seed items (2× fountain, 2× neon, 2× bench,
+    // 2× plant, kugel, directory).
+    // v9 Prompt 3 — starting seed reduced to the five period-appropriate
+    // landmark artifacts per the spec: kugel ball, fountain, directory board,
+    // skylight, terrazzo flooring. The reduction is intentional — the default
+    // mall reads "empty and monumental" rather than "already decorated".
+    // Everything else is player-placeable via the Acquire tab.
+    private struct ArtifactSeed {
+        let type: ArtifactType
         let x: Double
         let y: Double
         let condition: Int
@@ -81,17 +85,12 @@ enum StartingMall {
         let hazard: Bool
     }
 
-    private static let decorationSeeds: [DecorationSeed] = [
-        DecorationSeed(kind: .kugel,     x:  585, y: 245, condition: 2, working: true,  hazard: false),
-        DecorationSeed(kind: .fountain,  x:  275, y: 235, condition: 1, working: true,  hazard: false),
-        DecorationSeed(kind: .fountain,  x:  875, y: 235, condition: 3, working: false, hazard: true),
-        DecorationSeed(kind: .neon,      x:  220, y: 200, condition: 2, working: true,  hazard: false),  // was x=90 (inside Sears)
-        DecorationSeed(kind: .neon,      x:  960, y: 200, condition: 1, working: true,  hazard: false),  // was x=1080 (inside JCP)
-        DecorationSeed(kind: .bench,     x:  460, y: 260, condition: 1, working: true,  hazard: false),
-        DecorationSeed(kind: .bench,     x:  710, y: 260, condition: 0, working: true,  hazard: false),
-        DecorationSeed(kind: .plant,     x:  250, y: 280, condition: 2, working: true,  hazard: false),  // was x=160 (inside Sears)
-        DecorationSeed(kind: .plant,     x:  930, y: 280, condition: 1, working: true,  hazard: false),  // was x=1010 (inside JCP)
-        DecorationSeed(kind: .directory, x:  650, y: 220, condition: 3, working: true,  hazard: false),
+    private static let artifactSeeds: [ArtifactSeed] = [
+        ArtifactSeed(type: .kugelBall,        x: 585, y: 245, condition: 2, working: true, hazard: false),
+        ArtifactSeed(type: .fountain,         x: 275, y: 235, condition: 1, working: true, hazard: false),
+        ArtifactSeed(type: .directoryBoard,   x: 650, y: 220, condition: 3, working: true, hazard: false),
+        ArtifactSeed(type: .skylight,         x: 450, y: 210, condition: 1, working: true, hazard: false),
+        ArtifactSeed(type: .terrazzoFlooring, x: 800, y: 290, condition: 2, working: true, hazard: false),
     ]
 
     // v8: initStores()
@@ -119,24 +118,32 @@ enum StartingMall {
     }
 
     // v8: initDecorations()
-    static func buildDecorations() -> [Decoration] {
-        decorationSeeds.enumerated().map { idx, seed in
-            Decoration(
-                id: idx, kind: seed.kind,
+    // v9 Prompt 3 — renamed to buildStartingArtifacts; produces Artifact
+    // instances in the unified model. Condition + working + hazard values
+    // carried over from the old seed table where applicable.
+    static func buildStartingArtifacts() -> [Artifact] {
+        artifactSeeds.enumerated().map { idx, seed in
+            var a = ArtifactFactory.make(
+                id: idx,
+                type: seed.type,
+                name: ArtifactCatalog.info(seed.type).name,
+                origin: .playerAction("starting seed"),
+                yearCreated: GameConstants.startingYear,
                 x: seed.x, y: seed.y,
-                condition: seed.condition,
                 working: seed.working,
-                hazard: seed.hazard,
-                monthsAtCondition: 0
+                hazard: seed.hazard
             )
+            a.condition = seed.condition
+            return a
         }
     }
 
     // v8: startGame() initial state
+    // v9 Prompt 3 — seeds state.artifacts instead of the deleted state.decorations.
     static func initialState() -> GameState {
         var s = GameState()
         s.stores = buildStores()
-        s.decorations = buildDecorations()
+        s.artifacts = buildStartingArtifacts()
         s.started = true
         s.pendingLawsuitMonth = 4
         return s

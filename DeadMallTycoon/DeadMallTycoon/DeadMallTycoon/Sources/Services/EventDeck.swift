@@ -167,8 +167,12 @@ enum EventDeck {
                 }
             }
             // v8: decorations with y>300 and condition<4 advance
-            for i in s.decorations.indices where s.decorations[i].y > 300 && s.decorations[i].condition < 4 {
-                s.decorations[i].condition += 1
+            // v9 Prompt 3 — iterate state.artifacts; ambient types have nil y
+            // and are skipped naturally by the optional-y binding.
+            for i in s.artifacts.indices {
+                guard let y = s.artifacts[i].y, y > 300,
+                      s.artifacts[i].condition < 4 else { continue }
+                s.artifacts[i].condition += 1
             }
 
         case (.vandalism(let cost), .accept):
@@ -176,8 +180,11 @@ enum EventDeck {
 
         case (.vandalism, .decline):
             // v8: every decoration with condition<4 has 40% chance to advance
-            for i in s.decorations.indices where s.decorations[i].condition < 4 {
-                if rng.chance(0.4) { s.decorations[i].condition += 1 }
+            // v9 Prompt 3 — iterate placeable artifacts only (cost > 0 filter).
+            for i in s.artifacts.indices {
+                guard s.artifacts[i].condition < 4,
+                      ArtifactCatalog.info(s.artifacts[i].type).cost > 0 else { continue }
+                if rng.chance(0.4) { s.artifacts[i].condition += 1 }
             }
 
         case (.gangActivity(let cost), .accept):
@@ -191,10 +198,12 @@ enum EventDeck {
 
         case (.cityInspection, .decline):
             // v8: first 2 decorations with condition<4 get tagged hazard
+            // v9 Prompt 3 — iterate placeable artifacts only (cost > 0 filter).
             var tagged = 0
-            for i in s.decorations.indices where tagged < 2 {
-                if s.decorations[i].condition < 4 {
-                    s.decorations[i].hazard = true
+            for i in s.artifacts.indices where tagged < 2 {
+                if s.artifacts[i].condition < 4
+                    && ArtifactCatalog.info(s.artifacts[i].type).cost > 0 {
+                    s.artifacts[i].hazard = true
                     tagged += 1
                 }
             }

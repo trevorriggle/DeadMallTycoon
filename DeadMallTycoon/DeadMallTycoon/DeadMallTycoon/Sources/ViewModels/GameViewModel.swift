@@ -188,21 +188,25 @@ final class GameViewModel {
         state = newState
         return success
     }
-    func placeDecoration(kind: DecorationKind, at point: (x: Double, y: Double)) {
-        state = DecorationActions.place(kind: kind, at: point, state)
+    // v8: placeDecoration / repairDec / removeDec / beginPlacement / cancelPlacement
+    // v9 Prompt 3 — routed through ArtifactActions on the unified Artifact model.
+    // placingDecoration field renamed to placingArtifactType. selectedDecorationId
+    // kept as-is (it now identifies the tapped Artifact; storage is the same).
+    func placeArtifact(type: ArtifactType, at point: (x: Double, y: Double)) {
+        state = ArtifactActions.place(type: type, at: point, state)
     }
-    func repairDecoration(_ id: Int) {
-        state = DecorationActions.repair(decorationId: id, state)
+    func repairArtifact(_ id: Int) {
+        state = ArtifactActions.repair(artifactId: id, state)
     }
-    func removeDecoration(_ id: Int) {
-        state = DecorationActions.remove(decorationId: id, state)
+    func removeArtifact(_ id: Int) {
+        state = ArtifactActions.remove(artifactId: id, state)
     }
-    func beginPlacement(_ kind: DecorationKind) {
-        guard state.cash >= DecorationTypes.type(kind).cost else { return }
-        state.placingDecoration = kind
+    func beginPlacement(_ type: ArtifactType) {
+        guard state.cash >= ArtifactCatalog.info(type).cost else { return }
+        state.placingArtifactType = type
     }
     func cancelPlacement() {
-        state.placingDecoration = nil
+        state.placingArtifactType = nil
     }
     func toggleWingClosed(_ wing: Wing) {
         state = WingActions.toggleClosed(wing, state)

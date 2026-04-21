@@ -65,9 +65,8 @@ enum Severity: String, Codable {
     }
 }                                                     // v8: addWarning() severity keys
 
-enum DecorationKind: String, Codable, CaseIterable {
-    case kugel, fountain, plant, neon, bench, directory
-}                                                     // v8: DECORATION_TYPES keys
+// v8: DECORATION_TYPES keys — moved to ArtifactType in Artifact.swift.
+// v9 Prompt 3 — DecorationKind enum deleted; unified taxonomy is ArtifactType.
 
 enum EventChoice {
     case accept, decline

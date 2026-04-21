@@ -7,18 +7,22 @@ enum Warnings {
         var s = state
         var seen = Set<String>()
 
-        // Decoration decay / hazard warnings
-        for d in s.decorations {
-            let typeName = DecorationTypes.type(d.kind).name
-            if d.condition == 3 && !d.hazard {
-                let k = "decay_\(d.id)"
+        // Artifact decay / hazard warnings
+        // v8: decoration decay/hazard warning loop — iterated G.decorations.
+        // v9 Prompt 3 — unified loop over state.artifacts. Ambient/memorial
+        // types (cost == 0 in catalog) don't decay, so filtering them out
+        // here keeps the Watch List from echoing boarded-storefront entries.
+        for a in s.artifacts where ArtifactCatalog.info(a.type).cost > 0 {
+            let typeName = ArtifactCatalog.info(a.type).name
+            if a.condition == 3 && !a.hazard {
+                let k = "decay_\(a.id)"
                 seen.insert(k)
                 s = add(s, key: k,
                         text: "\(typeName) is deteriorating. May become a hazard soon.",
                         severity: .watch)
             }
-            if d.hazard {
-                let k = "hazard_\(d.id)"
+            if a.hazard {
+                let k = "hazard_\(a.id)"
                 seen.insert(k)
                 s = add(s, key: k,
                         text: "\(typeName) is a hazard. Monthly fine active.",

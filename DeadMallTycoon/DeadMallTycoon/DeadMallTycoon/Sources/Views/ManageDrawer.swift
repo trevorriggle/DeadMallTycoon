@@ -1,14 +1,14 @@
 import SwiftUI
 
-// Bottom-drawer management sheet. Six tabs: Tenants · Promos · Staff · Wings · Ads · Build.
-// Content lifted verbatim from the Phase 1-5 OpsTabsView — one tab per thematic
-// section of the old Operations / Tenants / Promotions tabs.
-// Revenue sections moved out of the drawer and into the PnLModal (read-only info
-// belongs with the rest of the P&L breakdown).
+// Bottom-drawer management sheet. Six tabs: Acquire · Tenants · Promos · Staff · Wings · Ads.
+// v9 Prompt 3 — Build tab renamed Acquire and moved to the first slot (more
+// prominent) per the spec: "the option to add new decorations needs to be
+// much more obvious in the UI." Also lists the full 26 placeable Artifact
+// types, not just the 6 legacy decorations.
 struct ManageDrawer: View {
     @Bindable var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var tab: ManageTab = .tenants
+    @State private var tab: ManageTab = .acquire
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,12 +18,12 @@ struct ManageDrawer: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     switch tab {
+                    case .acquire: acquireTab
                     case .tenants: tenantsTab
                     case .promos:  promosTab
                     case .staff:   staffTab
                     case .wings:   wingsTab
                     case .ads:     adsTab
-                    case .build:   buildTab
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -299,14 +299,19 @@ struct ManageDrawer: View {
         }
     }
 
-    // MARK: - Build
+    // MARK: - Acquire (v9 Prompt 3)
 
-    private var buildTab: some View {
+    // v8: buildTab — six-kind decoration picker.
+    // v9 Prompt 3 — full Artifact roster. The 26 placeable types from
+    // ArtifactCatalog.placeableTypes, listed with cost + base/ruin multipliers.
+    // Placement mode banner is prominent. Tapping a row starts placement and
+    // closes the drawer so the player can tap the corridor.
+    private var acquireTab: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Decorations")
+            sectionHeader("Acquire Artifacts")
             subtle("Aesthetic multipliers. Decay with time — a ruined fountain scores more than a working one.")
-            if vm.state.placingDecoration != nil {
-                Text("Placement mode active. Tap the corridor in the mall scene.")
+            if vm.state.placingArtifactType != nil {
+                Text("Placement mode active. Close this sheet and tap the corridor.")
                     .font(.system(size: 13, design: .monospaced)).italic()
                     .foregroundStyle(Color(hex: "#7fd3f0"))
                     .padding(8)
@@ -315,22 +320,22 @@ struct ManageDrawer: View {
                     .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#7fd3f0")))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
             }
-            ForEach(Array(DecorationTypes.all.keys), id: \.self) { kind in
-                let t = DecorationTypes.type(kind)
+            ForEach(ArtifactCatalog.placeableTypes, id: \.self) { type in
+                let info = ArtifactCatalog.info(type)
                 actionButton(active: false) {
-                    vm.beginPlacement(kind)
+                    vm.beginPlacement(type)
                     // Close the drawer so the player can tap in the corridor.
                     dismiss()
                 } label: {
                     HStack {
-                        Text("\(t.name) · $\(t.cost.formatted())")
+                        Text("\(info.name) · $\(info.cost.formatted())")
                         Spacer()
-                        Text("(+\(Int((t.baseMult * 100).rounded()))% mult, ruin +\(Int((t.ruinMult * 100).rounded()))%)")
+                        Text("(+\(Int((info.baseMult * 100).rounded()))% mult, ruin +\(Int((info.ruinMult * 100).rounded()))%)")
                             .font(.system(size: 12))
                             .foregroundStyle(Color(hex: "#6a6a78"))
                     }
                 }
-                .disabled(vm.state.cash < t.cost)
+                .disabled(vm.state.cash < info.cost)
             }
         }
     }
@@ -377,15 +382,18 @@ struct ManageDrawer: View {
 }
 
 enum ManageTab: String, CaseIterable, Hashable {
-    case tenants, promos, staff, wings, ads, build
+    // v8/Prompt 1-2: tenants, promos, staff, wings, ads, build.
+    // v9 Prompt 3 — `build` renamed `acquire` and promoted to the first slot
+    // so artifact placement is the most obvious entry point in the drawer.
+    case acquire, tenants, promos, staff, wings, ads
     var title: String {
         switch self {
+        case .acquire: return "Acquire"
         case .tenants: return "Tenants"
         case .promos:  return "Promos"
         case .staff:   return "Staff"
         case .wings:   return "Wings"
         case .ads:     return "Ads"
-        case .build:   return "Build"
         }
     }
 }

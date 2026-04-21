@@ -1,17 +1,17 @@
 import Foundation
 
-// v9: Construction helpers for Artifact. No mechanics — creation only. Future
-// prompts will add accumulation, decay, and consumption services alongside
-// this one.
+// v9: Construction helpers for Artifact. No mechanics — creation only.
+// Prompt 3 — default thought triggers now come from ArtifactCatalog.info(type),
+// not a per-prompt inline table. Single source of truth for catalog data.
 enum ArtifactFactory {
 
     // v9: Build an artifact with the caller-supplied id. Mirrors how Decoration
-    // ids are assigned by callers (see DecorationActions.place).
-    // Defaults: condition 0 (Pristine), memoryWeight 0, no slot/tenant ref.
-    // thoughtTriggers default to the type's placeholder pool; callers may pass
-    // overrides for event- or tenant-specific flavor.
-    // Prompt 2: storeSlotId and tenantId optional parameters added for
-    // boardedStorefront artifacts that anchor to a specific slot / tenant.
+    // ids used to be assigned by callers (see ArtifactActions.place).
+    // Defaults: condition 0 (Pristine), memoryWeight 0, no slot/tenant ref,
+    // no corridor position, working true, no hazard.
+    // Prompt 2: storeSlotId and tenantId optional parameters for slot-anchored.
+    // Prompt 3: x, y, working, hazard, monthsAtCondition surfaced via overloads
+    // below for the placement path; keep the simple form for event spawns.
     static func make(id: Int,
                      type: ArtifactType,
                      name: String,
@@ -19,7 +19,11 @@ enum ArtifactFactory {
                      yearCreated: Int,
                      thoughtTriggers: [String]? = nil,
                      storeSlotId: Int? = nil,
-                     tenantId: Int? = nil) -> Artifact {
+                     tenantId: Int? = nil,
+                     x: Double? = nil,
+                     y: Double? = nil,
+                     working: Bool = true,
+                     hazard: Bool = false) -> Artifact {
         Artifact(
             id: id,
             name: name,
@@ -30,76 +34,19 @@ enum ArtifactFactory {
             origin: origin,
             thoughtTriggers: thoughtTriggers ?? defaultThoughtTriggers(for: type),
             storeSlotId: storeSlotId,
-            tenantId: tenantId
+            tenantId: tenantId,
+            x: x,
+            y: y,
+            working: working,
+            hazard: hazard,
+            monthsAtCondition: 0
         )
     }
 
-    // v9: Placeholder thought pools. Intentionally obvious "[placeholder: ...]"
-    // strings — the real thought content is the highest-leverage creative work
-    // in the v9 sequence and is authored by hand in a later prompt. Do not
-    // replace these with generated prose; that decision belongs to Trevor.
+    // v9 Prompt 3 — pulled from ArtifactCatalog so this function remains the
+    // single place callers look for "default" triggers. Real prose authoring
+    // is deferred; placeholder strings are intentional.
     static func defaultThoughtTriggers(for type: ArtifactType) -> [String] {
-        switch type {
-        case .boardedStorefront:
-            return [
-                "[placeholder: boarded storefront thought 1]",
-                "[placeholder: boarded storefront thought 2]",
-                "[placeholder: boarded storefront thought 3]",
-            ]
-        case .stoppedFountain:
-            return [
-                "[placeholder: stopped fountain thought 1]",
-                "[placeholder: stopped fountain thought 2]",
-                "[placeholder: stopped fountain thought 3]",
-            ]
-        case .sealedEntrance:
-            return [
-                "[placeholder: sealed entrance thought 1]",
-                "[placeholder: sealed entrance thought 2]",
-                "[placeholder: sealed entrance thought 3]",
-            ]
-        case .flickeringNeon:
-            return [
-                "[placeholder: flickering neon thought 1]",
-                "[placeholder: flickering neon thought 2]",
-                "[placeholder: flickering neon thought 3]",
-            ]
-        case .deterioratingSkylight:
-            return [
-                "[placeholder: deteriorating skylight thought 1]",
-                "[placeholder: deteriorating skylight thought 2]",
-                "[placeholder: deteriorating skylight thought 3]",
-            ]
-        case .emptyFoodCourt:
-            return [
-                "[placeholder: empty food court thought 1]",
-                "[placeholder: empty food court thought 2]",
-                "[placeholder: empty food court thought 3]",
-            ]
-        case .outdatedDirectory:
-            return [
-                "[placeholder: outdated directory thought 1]",
-                "[placeholder: outdated directory thought 2]",
-                "[placeholder: outdated directory thought 3]",
-            ]
-        case .ruinedKugelBall:
-            return [
-                "[placeholder: ruined kugel ball thought 1]",
-                "[placeholder: ruined kugel ball thought 2]",
-                "[placeholder: ruined kugel ball thought 3]",
-            ]
-        case .waterStainedCeiling:
-            return [
-                "[placeholder: water-stained ceiling thought 1]",
-                "[placeholder: water-stained ceiling thought 2]",
-                "[placeholder: water-stained ceiling thought 3]",
-            ]
-        case .custom:
-            return [
-                "[placeholder: custom artifact thought 1]",
-                "[placeholder: custom artifact thought 2]",
-                "[placeholder: custom artifact thought 3]",
-            ]
-        }
+        ArtifactCatalog.info(type).defaultTriggers
     }
 }

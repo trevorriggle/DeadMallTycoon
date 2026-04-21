@@ -188,17 +188,21 @@ final class LawsuitTriggerTests: XCTestCase {
     }
 }
 
-// MARK: - Decoration decay
+// MARK: - Artifact decay (v9 Prompt 3 — formerly Decoration decay)
 
 final class DecayTests: XCTestCase {
 
-    func testAtLeastOneDecorationAdvancesOverAYear() {
+    // v8: decoration decay test.
+    // v9 Prompt 3 — retargeted at the unified state.artifacts. Only placeable
+    // artifacts (catalog cost > 0) are subject to decay, so this test only
+    // compares those.
+    func testAtLeastOneArtifactAdvancesOverAYear() {
         var s = StartingMall.initialState()
         s.pendingLawsuitMonth = nil
-        let initial = s.decorations.map(\.condition)
+        let initial = s.artifacts.map(\.condition)
         let after = simulateYear(s, seed: 5)
-        let advanced = zip(initial, after.decorations).contains { $0 < $1.condition }
-        XCTAssertTrue(advanced, "at least one decoration should decay across 12 months")
+        let advanced = zip(initial, after.artifacts).contains { $0 < $1.condition }
+        XCTAssertTrue(advanced, "at least one artifact should decay across 12 months")
     }
 
     func testJanitorialHalvesDecayRate() {
@@ -209,8 +213,10 @@ final class DecayTests: XCTestCase {
         withJanitor.activeStaff.janitorial = true
         let a = simulateYear(baseline, seed: 100)
         let b = simulateYear(withJanitor, seed: 100)
-        let baselineAdvance = zip(baseline.decorations, a.decorations).reduce(0) { $0 + ($1.1.condition - $1.0.condition) }
-        let janitorAdvance  = zip(withJanitor.decorations, b.decorations).reduce(0) { $0 + ($1.1.condition - $1.0.condition) }
+        let baselineAdvance = zip(baseline.artifacts, a.artifacts)
+            .reduce(0) { $0 + ($1.1.condition - $1.0.condition) }
+        let janitorAdvance  = zip(withJanitor.artifacts, b.artifacts)
+            .reduce(0) { $0 + ($1.1.condition - $1.0.condition) }
         XCTAssertLessThanOrEqual(janitorAdvance, baselineAdvance,
                                  "janitorial staff should not produce *more* decay than no staff")
     }
@@ -318,7 +324,8 @@ final class ThreatTests: XCTestCase {
     func testThreatRisesWithHazards() {
         var s = StartingMall.initialState()
         let baseline = Threat.calculate(s)
-        for i in s.decorations.indices { s.decorations[i].hazard = true }
+        // v9 Prompt 3 — state.decorations replaced by state.artifacts.
+        for i in s.artifacts.indices { s.artifacts[i].hazard = true }
         let elevated = Threat.calculate(s)
         XCTAssertGreaterThan(elevated, baseline)
     }
@@ -334,7 +341,8 @@ final class ThreatTests: XCTestCase {
 
     func testSecurityReducesThreat() {
         var s = StartingMall.initialState()
-        for i in s.decorations.indices { s.decorations[i].hazard = true }
+        // v9 Prompt 3 — state.decorations replaced by state.artifacts.
+        for i in s.artifacts.indices { s.artifacts[i].hazard = true }
         let unguarded = Threat.calculate(s)
         s.activeStaff.security = true
         let guarded = Threat.calculate(s)

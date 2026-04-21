@@ -40,12 +40,12 @@ struct MallView: View {
             .coachmarkAnchor(.sceneStore)
             .coachmarkAnchor(.watchList)   // Phase C — warnings are ambient on the scene now
 
-            // Placement mode banner — stays as in Phase 1-5 so players can
-            // cancel an in-flight decoration placement.
-            if let kind = vm.state.placingDecoration {
+            // Placement mode banner — v9 Prompt 3: now sourced from
+            // placingArtifactType + ArtifactCatalog.info(type).name.
+            if let type = vm.state.placingArtifactType {
                 VStack {
                     Button(action: { vm.cancelPlacement() }) {
-                        Text("Placing \(DecorationTypes.type(kind).name) · Tap corridor · Tap here to cancel")
+                        Text("Placing \(ArtifactCatalog.info(type).name) · Tap corridor · Tap here to cancel")
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                             .tracking(0.5)
                             .padding(.horizontal, 14).padding(.vertical, 6)
@@ -79,7 +79,8 @@ struct MallView: View {
                 )
                 .modifier(CardPositionModifier(anchor: pt, viewport: viewportSize))
         } else if let id = vm.state.selectedDecorationId, let pt = decorationAnchor {
-            DecorationInfoCard(vm: vm, decorationId: id)
+            // v9 Prompt 3 — DecorationInfoCard → ArtifactInfoCard.
+            ArtifactInfoCard(vm: vm, artifactId: id)
                 .frame(maxWidth: 360)
                 .fixedSize(horizontal: false, vertical: true)
                 .modifier(CardPositionModifier(anchor: pt, viewport: viewportSize))

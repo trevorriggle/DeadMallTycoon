@@ -85,24 +85,31 @@ enum TickEngine {
             }
         }
 
-        // 5. decoration decay — v8: G.decorations.forEach(...)
+        // 5. artifact decay — v8: G.decorations.forEach(...)
+        // v9 Prompt 3 — loop now iterates state.artifacts (unified model).
+        // Only artifacts with a catalog cost > 0 (player-placeable, formerly
+        // Decorations) are subject to decay. Ambient / memorial types
+        // (boardedStorefront, sealedEntrance, emptyFoodCourt, custom) are
+        // frozen — condition is set at creation and doesn't advance here.
         let janitorialMult = s.activeStaff.janitorial ? 0.5 : 1.0
-        for i in s.decorations.indices {
-            s.decorations[i].monthsAtCondition += 1
-            let decayChance = (0.02 + Double(s.decorations[i].condition) * 0.01) * janitorialMult
+        for i in s.artifacts.indices {
+            guard ArtifactCatalog.info(s.artifacts[i].type).cost > 0 else { continue }
 
-            if s.decorations[i].condition < 4 && rng.chance(decayChance) {
-                s.decorations[i].condition += 1
-                s.decorations[i].monthsAtCondition = 0
-                if s.decorations[i].condition >= 4
-                    && !s.decorations[i].hazard
+            s.artifacts[i].monthsAtCondition += 1
+            let decayChance = (0.02 + Double(s.artifacts[i].condition) * 0.01) * janitorialMult
+
+            if s.artifacts[i].condition < 4 && rng.chance(decayChance) {
+                s.artifacts[i].condition += 1
+                s.artifacts[i].monthsAtCondition = 0
+                if s.artifacts[i].condition >= 4
+                    && !s.artifacts[i].hazard
                     && rng.chance(0.4) {
-                    s.decorations[i].hazard = true
+                    s.artifacts[i].hazard = true
                 }
-            } else if s.decorations[i].condition >= 4
-                        && !s.decorations[i].hazard
+            } else if s.artifacts[i].condition >= 4
+                        && !s.artifacts[i].hazard
                         && rng.chance(0.15) {
-                s.decorations[i].hazard = true
+                s.artifacts[i].hazard = true
             }
         }
 
