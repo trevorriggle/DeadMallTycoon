@@ -28,6 +28,10 @@ struct ContentView: View {
     @State private var showPnL = false
     @State private var coachmarkAnchors: [CoachmarkAnchor: CGRect] = [:]
     @Environment(\.horizontalSizeClass) private var hSize
+    #if DEBUG
+    // v9: Artifact debug panel entry — Prompt 1. Dev-only, stripped from release.
+    @State private var showArtifactDebug = false
+    #endif
 
     var body: some View {
         ZStack {
@@ -86,6 +90,23 @@ struct ContentView: View {
                 HStack(alignment: .bottom) {
                     ManageButton(action: { showManage = true })
                         .coachmarkAnchor(.tabBar)   // rebound — MANAGE replaces the old TabBar
+                    #if DEBUG
+                    // v9: Dev-only button to inspect the Artifact list. Sits next to
+                    // MANAGE; stripped from release builds by the surrounding #if DEBUG.
+                    Button(action: { showArtifactDebug = true }) {
+                        Text("DBG")
+                            .font(.system(size: 11, weight: .black, design: .monospaced))
+                            .tracking(1)
+                            .foregroundStyle(Color(hex: "#b8e8f8"))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color(hex: "#14141a").opacity(0.8))
+                            .overlay(
+                                Rectangle().stroke(Color(hex: "#3a3a48"), lineWidth: 1)
+                            )
+                    }
+                    .padding(.leading, 6)
+                    #endif
                     Spacer()
                     SpeedControls(vm: vm)
                 }
@@ -95,5 +116,8 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showManage) { ManageDrawer(vm: vm) }
         .sheet(isPresented: $showPnL)    { PnLModal(vm: vm) }
+        #if DEBUG
+        .sheet(isPresented: $showArtifactDebug) { ArtifactDebugPanel(vm: vm) }
+        #endif
     }
 }
