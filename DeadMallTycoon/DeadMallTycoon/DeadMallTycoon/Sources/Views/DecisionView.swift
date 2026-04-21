@@ -28,15 +28,15 @@ struct DecisionBanner: View {
             Text("TENANT OFFER · PAUSED")
                 .font(.system(size: 12, weight: .bold, design: .monospaced))
                 .tracking(0.8)
-                .foregroundStyle(Color(hex: "#FAC775"))
+                .foregroundStyle(Color(hex: "#7fd3f0"))
             Text(o.name).font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color(hex: "#f4e4b0"))
+                .foregroundStyle(Color(hex: "#b8e8f8"))
             Text(o.pitch)
                 .font(.system(size: 15, design: .serif))
-                .foregroundStyle(Color(hex: "#c4b4a0"))
+                .foregroundStyle(Color(hex: "#d8d8e0"))
             Text("\(o.tier.rawValue) · \(o.lease)mo lease")
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .foregroundStyle(Color(hex: "#888780"))
+                .foregroundStyle(Color(hex: "#6a6a78"))
             HStack(spacing: 8) {
                 decisionButton(primary: true,
                                title: "Sign",
@@ -54,12 +54,12 @@ struct DecisionBanner: View {
             Text("DISASTER · PAUSED")
                 .font(.system(size: 12, weight: .bold, design: .monospaced))
                 .tracking(0.8)
-                .foregroundStyle(Color(hex: "#F09595"))
+                .foregroundStyle(Color(hex: "#ff4dbd"))
             Text(ev.name).font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color(hex: "#f4e4b0"))
+                .foregroundStyle(Color(hex: "#b8e8f8"))
             Text(ev.description)
                 .font(.system(size: 15, design: .serif))
-                .foregroundStyle(Color(hex: "#c4b4a0"))
+                .foregroundStyle(Color(hex: "#d8d8e0"))
             HStack(spacing: 8) {
                 decisionButton(primary: true,
                                title: ev.acceptLabel,
@@ -89,10 +89,10 @@ struct DecisionBanner: View {
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.horizontal, 12).padding(.vertical, 8)
-            .foregroundStyle(primary ? Color(hex: "#0a1f10") : Color(hex: "#e8dcc8"))
-            .background(primary ? Color(hex: "#5DCAA5") : Color(hex: "#2a2520"))
+            .foregroundStyle(primary ? Color(hex: "#0a1f10") : Color(hex: "#e8e8f0"))
+            .background(primary ? Color(hex: "#5DCAA5") : Color(hex: "#1a1a22"))
             .overlay(RoundedRectangle(cornerRadius: 4)
-                        .strokeBorder(primary ? Color(hex: "#2a8a70") : Color(hex: "#5a4a3a"),
+                        .strokeBorder(primary ? Color(hex: "#2a8a70") : Color(hex: "#3a3a48"),
                                       lineWidth: 1.5))
             .clipShape(RoundedRectangle(cornerRadius: 4))
         }
@@ -101,14 +101,14 @@ struct DecisionBanner: View {
 
     private var backgroundColor: Color {
         switch decision {
-        case .tenant: return Color(hex: "#2a2520")
-        case .event:  return Color(hex: "#2a1515")
+        case .tenant: return Color(hex: "#1a1a22")
+        case .event:  return Color(hex: "#2a0a1a")
         }
     }
     private var borderColor: Color {
         switch decision {
-        case .tenant: return Color(hex: "#FAC775")
-        case .event:  return Color(hex: "#F09595")
+        case .tenant: return Color(hex: "#7fd3f0")
+        case .event:  return Color(hex: "#ff4dbd")
         }
     }
 }
@@ -123,7 +123,7 @@ struct StartScreenView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(hex: "#0a0908"), Color(hex: "#1a1410"), Color(hex: "#0a0908")],
+            LinearGradient(colors: [Color(hex: "#0a0a0e"), Color(hex: "#14141a"), Color(hex: "#0a0a0e")],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
                 .ignoresSafeArea()
             VStack(spacing: 16) {
@@ -135,7 +135,7 @@ struct StartScreenView: View {
                 Text("KEEP THE CORPSE BREATHING.")
                     .font(.system(size: 15, design: .monospaced))
                     .tracking(3)
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
                     .padding(.top, 8)
                 Text("""
                 You inherit the mall. Score grows with empty stores, sealed wings, and visible \
@@ -145,7 +145,7 @@ struct StartScreenView: View {
                 """)
                     .font(.system(size: 17, design: .serif))
                     .italic()
-                    .foregroundStyle(Color(hex: "#c4b4a0"))
+                    .foregroundStyle(Color(hex: "#d8d8e0"))
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
                     .frame(maxWidth: 520)
@@ -155,26 +155,26 @@ struct StartScreenView: View {
                 }
                 .font(.system(size: 20, weight: .bold, design: .monospaced))
                 .tracking(1.2)
-                .foregroundStyle(Color(hex: "#2a0a15"))
+                .foregroundStyle(Color(hex: "#2a0a2a"))
                 .padding(.horizontal, 36).padding(.vertical, 14)
-                .background(Color(hex: "#c4919a"))
-                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#8a4a5a"), lineWidth: 2))
+                .background(Color(hex: "#ff4dbd"))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .buttonStyle(.plain)
                 .padding(.top, 20)
                 Button("Skip Tutorial") { onStart(false) }
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .tracking(0.8)
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
                     .padding(.horizontal, 10).padding(.vertical, 3)
-                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#3a3935")))
+                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#3a3a48")))
                     .padding(.top, 2)
                 Button("How to Play") { showingTutorial = true }
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .tracking(0.8)
-                    .foregroundStyle(Color(hex: "#c4919a"))
+                    .foregroundStyle(Color(hex: "#ff4dbd"))
                     .padding(.horizontal, 10).padding(.vertical, 3)
-                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#5a2a35")))
+                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#8a2a6a")))
             }
         }
         .sheet(isPresented: $showingTutorial) {
@@ -194,11 +194,11 @@ struct TutorialView: View {
                 Text("HOW TO PLAY")
                     .font(.system(size: 28, weight: .black, design: .monospaced))
                     .tracking(1.6)
-                    .foregroundStyle(Color(hex: "#c4919a"))
+                    .foregroundStyle(Color(hex: "#ff4dbd"))
                 Text("THE CONTROLLED DECLINE")
                     .font(.system(size: 14, design: .monospaced))
                     .tracking(2.4)
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
             }
 
             section("The Core Loop",
@@ -215,17 +215,17 @@ struct TutorialView: View {
             Button("Got It") { onClose() }
                 .font(.system(size: 17, weight: .bold, design: .monospaced))
                 .tracking(1)
-                .foregroundStyle(Color(hex: "#2a0a15"))
+                .foregroundStyle(Color(hex: "#2a0a2a"))
                 .padding(.horizontal, 24).padding(.vertical, 10)
-                .background(Color(hex: "#c4919a"))
-                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#8a4a5a"), lineWidth: 2))
+                .background(Color(hex: "#ff4dbd"))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .buttonStyle(.plain)
         }
         .padding(30)
         .frame(maxWidth: 680)
-        .background(Color(hex: "#1a1917"))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#5a2a35"), lineWidth: 2))
+        .background(Color(hex: "#14141a"))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#8a2a6a"), lineWidth: 2))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
@@ -234,10 +234,10 @@ struct TutorialView: View {
             Text(title.uppercased())
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(0.8)
-                .foregroundStyle(Color(hex: "#FAC775"))
+                .foregroundStyle(Color(hex: "#7fd3f0"))
             Text(body)
                 .font(.system(size: 18, design: .serif))
-                .foregroundStyle(Color(hex: "#c4b4a0"))
+                .foregroundStyle(Color(hex: "#d8d8e0"))
                 .lineSpacing(2)
         }
     }
@@ -253,31 +253,31 @@ struct GameOverView: View {
             Text("FORECLOSED")
                 .font(.system(size: 42, weight: .black, design: .monospaced))
                 .tracking(1.8)
-                .foregroundStyle(Color(hex: "#e24b4a"))
+                .foregroundStyle(Color(hex: "#ff2f4a"))
             Text("The bank took the mall. The lights go dark.")
                 .font(.system(size: 18, design: .serif)).italic()
-                .foregroundStyle(Color(hex: "#c4b4a0"))
+                .foregroundStyle(Color(hex: "#d8d8e0"))
             Text("FINAL SCORE")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(2.4)
-                .foregroundStyle(Color(hex: "#888780"))
+                .foregroundStyle(Color(hex: "#6a6a78"))
                 .padding(.top, 20)
             Text(vm.state.score.formatted())
                 .font(.system(size: 64, weight: .black, design: .monospaced))
                 .monospacedDigit()
-                .foregroundStyle(Color(hex: "#FAC775"))
+                .foregroundStyle(Color(hex: "#7fd3f0"))
             Text("\(vm.state.year - GameConstants.startingYear) years, \(vm.state.month) months survived")
                 .font(.system(size: 18, design: .serif)).italic()
-                .foregroundStyle(Color(hex: "#c4b4a0"))
+                .foregroundStyle(Color(hex: "#d8d8e0"))
             Button("Try Again") {
                 vm.restart()
             }
             .font(.system(size: 20, weight: .bold, design: .monospaced))
             .tracking(1.2)
-            .foregroundStyle(Color(hex: "#2a0a15"))
+            .foregroundStyle(Color(hex: "#2a0a2a"))
             .padding(.horizontal, 36).padding(.vertical, 14)
-            .background(Color(hex: "#c4919a"))
-            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#8a4a5a"), lineWidth: 2))
+            .background(Color(hex: "#ff4dbd"))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
             .clipShape(RoundedRectangle(cornerRadius: 4))
             .buttonStyle(.plain)
             .padding(.top, 20)

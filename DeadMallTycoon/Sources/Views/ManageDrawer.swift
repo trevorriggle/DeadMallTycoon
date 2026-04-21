@@ -14,7 +14,7 @@ struct ManageDrawer: View {
         VStack(spacing: 0) {
             header
             tabBar
-            Divider().background(Color(hex: "#3a3935"))
+            Divider().background(Color(hex: "#3a3a48"))
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     switch tab {
@@ -30,7 +30,7 @@ struct ManageDrawer: View {
                 .padding(16)
             }
         }
-        .background(Color(hex: "#1a1917"))
+        .background(Color(hex: "#14141a"))
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -42,11 +42,11 @@ struct ManageDrawer: View {
             Text("MANAGE")
                 .font(.system(size: 16, weight: .black, design: .monospaced))
                 .tracking(2)
-                .foregroundStyle(Color(hex: "#f4e4b0"))
+                .foregroundStyle(Color(hex: "#b8e8f8"))
             Spacer()
             Button("Close") { dismiss() }
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .foregroundStyle(Color(hex: "#888780"))
+                .foregroundStyle(Color(hex: "#6a6a78"))
         }
         .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
     }
@@ -60,11 +60,11 @@ struct ManageDrawer: View {
                             .font(.system(size: 13, weight: .bold, design: .monospaced))
                             .tracking(0.8)
                             .padding(.horizontal, 12).padding(.vertical, 7)
-                            .foregroundStyle(t == tab ? Color(hex: "#FAC775") : Color(hex: "#888780"))
-                            .background(t == tab ? Color(hex: "#2a2520") : Color.clear)
+                            .foregroundStyle(t == tab ? Color(hex: "#7fd3f0") : Color(hex: "#6a6a78"))
+                            .background(t == tab ? Color(hex: "#1a1a22") : Color.clear)
                             .overlay(
                                 Rectangle().frame(height: 2)
-                                    .foregroundStyle(t == tab ? Color(hex: "#FAC775") : Color.clear),
+                                    .foregroundStyle(t == tab ? Color(hex: "#7fd3f0") : Color.clear),
                                 alignment: .bottom
                             )
                     }
@@ -110,10 +110,10 @@ struct ManageDrawer: View {
                         HStack {
                             Text("\(t.name) · $\(t.approachCost)")
                             Spacer()
-                            Text("~\(baseRate)% success").foregroundStyle(Color(hex: "#888780"))
+                            Text("~\(baseRate)% success").foregroundStyle(Color(hex: "#6a6a78"))
                         }
                         Text("\(t.tier.rawValue) · $\(t.rent.formatted())/mo · \(t.lease)mo lease")
-                            .font(.system(size: 12)).foregroundStyle(Color(hex: "#888780"))
+                            .font(.system(size: 12)).foregroundStyle(Color(hex: "#6a6a78"))
                     }
                 }
                 .disabled(!canApproach)
@@ -129,13 +129,13 @@ struct ManageDrawer: View {
                                : s.hardship >= 2 ? .yellow : .green
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(s.name).font(.system(size: 16, weight: .bold)).foregroundStyle(Color(hex: "#FAC775"))
+                Text(s.name).font(.system(size: 16, weight: .bold)).foregroundStyle(Color(hex: "#7fd3f0"))
                 Spacer()
                 Text(status).font(.system(size: 12)).foregroundStyle(statusColor)
             }
             Text("\(s.tier.rawValue) · \(s.wing.rawValue) · $\(s.rent.formatted())/mo @ \(Int((s.rentMultiplier * 100).rounded()))% · \(s.lease)mo")
                 .font(.system(size: 12, design: .monospaced))
-                .foregroundStyle(Color(hex: "#888780"))
+                .foregroundStyle(Color(hex: "#6a6a78"))
             HStack(spacing: 4) {
                 Button("−") { vm.adjustRent(storeId: s.id, delta: -0.1) }
                     .buttonStyle(.bordered).disabled(s.rentMultiplier <= 0.5)
@@ -150,8 +150,8 @@ struct ManageDrawer: View {
             }
         }
         .padding(8)
-        .background(Color(hex: "#2a2520"))
-        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a4a3a")))
+        .background(Color(hex: "#1a1a22"))
+        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#3a3a48")))
         .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
@@ -167,15 +167,15 @@ struct ManageDrawer: View {
                 ForEach(vm.state.activePromos) { p in
                     VStack(alignment: .leading) {
                         Text(p.name).font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color(hex: "#FAC775"))
+                            .foregroundStyle(Color(hex: "#7fd3f0"))
                         Text("\(p.remaining) months remaining")
                             .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(Color(hex: "#888780"))
+                            .foregroundStyle(Color(hex: "#6a6a78"))
                     }
                     .padding(8)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(hex: "#2a2520"))
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a4a3a")))
+                    .background(Color(hex: "#1a1a22"))
+                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#3a3a48")))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
             }
@@ -192,10 +192,10 @@ struct ManageDrawer: View {
                             Text("\(p.name) · $\(p.cost)")
                             Spacer()
                             Text(active ? "ACTIVE" : "\(p.duration)mo")
-                                .foregroundStyle(Color(hex: "#888780"))
+                                .foregroundStyle(Color(hex: "#6a6a78"))
                         }
                         Text(p.description).font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "#888780"))
+                            .foregroundStyle(Color(hex: "#6a6a78"))
                     }
                 }
                 .disabled(active || vm.state.cash < p.cost)
@@ -221,7 +221,7 @@ struct ManageDrawer: View {
                             Spacer()
                             Text(active ? "ACTIVE" : "off").foregroundStyle(active ? .green : .secondary)
                         }
-                        Text(type.description).font(.system(size: 12)).foregroundStyle(Color(hex: "#888780"))
+                        Text(type.description).font(.system(size: 12)).foregroundStyle(Color(hex: "#6a6a78"))
                     }
                 }
             }
@@ -257,7 +257,7 @@ struct ManageDrawer: View {
             Text("\(wing.rawValue.uppercased()) Wing")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .tracking(0.6)
-                .foregroundStyle(Color(hex: "#FAC775"))
+                .foregroundStyle(Color(hex: "#7fd3f0"))
                 .padding(.top, 6)
             actionButton(active: down) {
                 vm.toggleWingDowngrade(wing)
@@ -292,7 +292,7 @@ struct ManageDrawer: View {
                         }
                         Text("\(deal.description) (−\(Int(deal.aestheticPenalty * 100))% aesthetic)")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "#888780"))
+                            .foregroundStyle(Color(hex: "#6a6a78"))
                     }
                 }
             }
@@ -308,11 +308,11 @@ struct ManageDrawer: View {
             if vm.state.placingDecoration != nil {
                 Text("Placement mode active. Tap the corridor in the mall scene.")
                     .font(.system(size: 13, design: .monospaced)).italic()
-                    .foregroundStyle(Color(hex: "#FAC775"))
+                    .foregroundStyle(Color(hex: "#7fd3f0"))
                     .padding(8)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(hex: "#2a1a0a"))
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#FAC775")))
+                    .background(Color(hex: "#2a2a34"))
+                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#7fd3f0")))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
             }
             ForEach(Array(DecorationTypes.all.keys), id: \.self) { kind in
@@ -327,7 +327,7 @@ struct ManageDrawer: View {
                         Spacer()
                         Text("(+\(Int((t.baseMult * 100).rounded()))% mult, ruin +\(Int((t.ruinMult * 100).rounded()))%)")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "#888780"))
+                            .foregroundStyle(Color(hex: "#6a6a78"))
                     }
                 }
                 .disabled(vm.state.cash < t.cost)
@@ -341,14 +341,14 @@ struct ManageDrawer: View {
         Text(t.uppercased())
             .font(.system(size: 12, weight: .bold, design: .monospaced))
             .tracking(1.2)
-            .foregroundStyle(Color(hex: "#FAC775"))
+            .foregroundStyle(Color(hex: "#7fd3f0"))
             .padding(.top, 2)
     }
 
     private func subtle(_ s: String) -> some View {
         Text(s)
             .font(.system(size: 12, design: .monospaced)).italic()
-            .foregroundStyle(Color(hex: "#888780"))
+            .foregroundStyle(Color(hex: "#6a6a78"))
             .padding(.bottom, 2)
     }
 
@@ -365,11 +365,11 @@ struct ManageDrawer: View {
             label()
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .tracking(0.5)
-                .foregroundStyle(active ? Color(hex: "#9FE1CB") : Color(hex: "#e8dcc8"))
+                .foregroundStyle(active ? Color(hex: "#9FE1CB") : Color(hex: "#e8e8f0"))
                 .padding(8)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(active ? Color(hex: "#2a4a3a") : Color(hex: "#2a2520"))
-                .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(active ? Color(hex: "#0f6e56") : Color(hex: "#5a4a3a")))
+                .background(active ? Color(hex: "#2a4a3a") : Color(hex: "#1a1a22"))
+                .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(active ? Color(hex: "#0f6e56") : Color(hex: "#3a3a48")))
                 .clipShape(RoundedRectangle(cornerRadius: 3))
         }
         .buttonStyle(.plain)

@@ -129,10 +129,10 @@ struct CoachmarkOverlay: View {
                     // Highlight ring around the anchor if one was published.
                     if let anchorId = frame.anchor, let rect = anchors[anchorId] {
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color(hex: "#FAC775"), lineWidth: 3)
+                            .stroke(Color(hex: "#7fd3f0"), lineWidth: 3)
                             .frame(width: rect.width + 14, height: rect.height + 14)
                             .position(x: rect.midX, y: rect.midY)
-                            .shadow(color: Color(hex: "#FAC775").opacity(0.6), radius: 8)
+                            .shadow(color: Color(hex: "#7fd3f0").opacity(0.6), radius: 8)
                     }
 
                     // Card — anchored near the target, or centered if no anchor /
@@ -165,11 +165,11 @@ struct CoachmarkOverlay: View {
                 Text(header)
                     .font(.system(size: 13, weight: .bold, design: .monospaced))
                     .tracking(1.4)
-                    .foregroundStyle(Color(hex: "#c4919a"))
+                    .foregroundStyle(Color(hex: "#ff4dbd"))
             }
             Text(frame.body)
                 .font(.system(size: 17, design: .serif))
-                .foregroundStyle(Color(hex: "#f4e4b0"))
+                .foregroundStyle(Color(hex: "#b8e8f8"))
                 .lineSpacing(3)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -178,23 +178,23 @@ struct CoachmarkOverlay: View {
                     Text(pageLabel)
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .tracking(0.8)
-                        .foregroundStyle(Color(hex: "#888780"))
+                        .foregroundStyle(Color(hex: "#6a6a78"))
                 }
                 Spacer()
                 Button(buttonTitle, action: action)
                     .font(.system(size: 15, weight: .bold, design: .monospaced))
                     .tracking(0.8)
-                    .foregroundStyle(Color(hex: "#2a0a15"))
+                    .foregroundStyle(Color(hex: "#2a0a2a"))
                     .padding(.horizontal, 18).padding(.vertical, 8)
-                    .background(Color(hex: "#c4919a"))
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#8a4a5a"), lineWidth: 2))
+                    .background(Color(hex: "#ff4dbd"))
+                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                     .buttonStyle(.plain)
             }
         }
         .padding(16)
-        .background(Color(hex: "#1a1917"))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#FAC775"), lineWidth: 2))
+        .background(Color(hex: "#14141a"))
+        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#7fd3f0"), lineWidth: 2))
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .shadow(color: .black.opacity(0.7), radius: 12, y: 4)
     }

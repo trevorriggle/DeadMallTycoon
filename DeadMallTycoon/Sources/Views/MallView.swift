@@ -25,7 +25,7 @@ struct MallView: View {
                 onStoreAnchorChange: { storeAnchor = $0 },
                 onDecorationAnchorChange: { decorationAnchor = $0 }
             )
-            .background(Color(hex: "#0a0908"))
+            .background(Color(hex: "#0a0a0e"))
             .clipShape(RoundedRectangle(cornerRadius: 4))
             .aspectRatio(
                 GameConstants.worldWidth / GameConstants.worldHeight,
@@ -49,8 +49,8 @@ struct MallView: View {
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                             .tracking(0.5)
                             .padding(.horizontal, 14).padding(.vertical, 6)
-                            .background(Color(hex: "#FAC775").opacity(0.95))
-                            .foregroundStyle(Color(hex: "#2a1a0a"))
+                            .background(Color(hex: "#7fd3f0").opacity(0.95))
+                            .foregroundStyle(Color(hex: "#2a2a34"))
                             .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                     .buttonStyle(.plain)

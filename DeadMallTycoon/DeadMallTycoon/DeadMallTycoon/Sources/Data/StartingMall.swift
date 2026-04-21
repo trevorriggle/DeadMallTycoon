@@ -3,32 +3,42 @@ import Foundation
 // v8: STORE_POSITIONS, STARTING_STORES, STARTING_DECORATIONS + initial G hydration.
 enum StartingMall {
 
-    // v8: STORE_POSITIONS — 20 slots, 10 north + 10 south, fixed layout.
+    // Anchor end-caps (Sears west, JCPenney east) are full scene-height structures
+    // that visually terminate the corridor. 200pt wide (2× a standard storefront),
+    // spanning y 10..510 so they read as department stores, not inline storefronts.
+    // Total slot count: 18 (9 per wing, each wing = 1 anchor + 8 standards).
+    //
+    // v8 parity note: v8 treated Sears/JCP as standard-sized slots with higher rent.
+    // The iPad port diverges here — anchors are architecturally distinct.
     static let positions: [StorePosition] = [
-        StorePosition(x:   20, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  128, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  236, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  344, y:  20, w: 140, h: 90, wing: .north),
-        StorePosition(x:  492, y:  20, w: 100, h: 90, wing: .north),
+        // North anchor (Sears) — full-height west end-cap.
+        StorePosition(x:    0, y:  10, w: 200, h: 500, wing: .north),
+        // North standards — 8 storefronts butted up across x 200..1000.
+        StorePosition(x:  200, y:  20, w: 100, h: 90, wing: .north),
+        StorePosition(x:  300, y:  20, w: 100, h: 90, wing: .north),
+        StorePosition(x:  400, y:  20, w: 100, h: 90, wing: .north),
+        StorePosition(x:  500, y:  20, w: 100, h: 90, wing: .north),
         StorePosition(x:  600, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  708, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  816, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  924, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x: 1032, y:  20, w: 130, h: 90, wing: .north),
-        StorePosition(x:   20, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  128, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  236, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  344, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  452, y: 410, w: 140, h: 90, wing: .south),
+        StorePosition(x:  700, y:  20, w: 100, h: 90, wing: .north),
+        StorePosition(x:  800, y:  20, w: 100, h: 90, wing: .north),
+        StorePosition(x:  900, y:  20, w: 100, h: 90, wing: .north),
+        // South standards — 8 storefronts butted up across x 200..1000.
+        StorePosition(x:  200, y: 410, w: 100, h: 90, wing: .south),
+        StorePosition(x:  300, y: 410, w: 100, h: 90, wing: .south),
+        StorePosition(x:  400, y: 410, w: 100, h: 90, wing: .south),
+        StorePosition(x:  500, y: 410, w: 100, h: 90, wing: .south),
         StorePosition(x:  600, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  708, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  816, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  924, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x: 1032, y: 410, w: 130, h: 90, wing: .south),
+        StorePosition(x:  700, y: 410, w: 100, h: 90, wing: .south),
+        StorePosition(x:  800, y: 410, w: 100, h: 90, wing: .south),
+        StorePosition(x:  900, y: 410, w: 100, h: 90, wing: .south),
+        // South anchor (JCPenney) — full-height east end-cap.
+        StorePosition(x: 1000, y:  10, w: 200, h: 500, wing: .south),
     ]
 
     // v8: STARTING_STORES
-    // Paired with positions by index; entries with tier:.vacant represent STARTING_STORES' two vacant slots.
+    // Paired with positions by index. The iPad port drops 2 seeds vs v8 (Lids, Things Remembered)
+    // to land on 18 slots while preserving the 2 starting vacant slots that seed the early
+    // tenant-offer decision flow.
     private struct StoreSeed {
         let name: String
         let tier: StoreTier
@@ -48,20 +58,20 @@ enum StartingMall {
         StoreSeed(name: "Radio Shack",        tier: .standard, rent:  800, traffic:  50, threshold:  28, lease: 36),
         StoreSeed(name: "Kay Jewelers",       tier: .standard, rent: 1500, traffic:  40, threshold:  18, lease: 48),
         StoreSeed(name: "Spencer's",          tier: .standard, rent:  800, traffic:  55, threshold:  30, lease: 24),
-        StoreSeed(name: "JCPenney",           tier: .anchor,   rent: 4000, traffic: 260, threshold: 130, lease: 96),
         StoreSeed(name: "B. Dalton",          tier: .standard, rent:  900, traffic:  45, threshold:  24, lease: 30),
         StoreSeed(name: "Cinnabon",           tier: .kiosk,    rent:  450, traffic:  40, threshold:  22, lease: 24),
         StoreSeed(name: "Orange Julius",      tier: .kiosk,    rent:  400, traffic:  35, threshold:  20, lease: 18),
         StoreSeed(name: "Sunglass Hut",       tier: .kiosk,    rent:  300, traffic:  20, threshold:  12, lease: 24),
-        StoreSeed(name: "Lids",               tier: .kiosk,    rent:  250, traffic:  18, threshold:   8, lease: 18),
-        StoreSeed(name: "Things Remembered",  tier: .kiosk,    rent:  300, traffic:  20, threshold:  10, lease: 18),
         StoreSeed(name: "",                   tier: .vacant,   rent:    0, traffic:   0, threshold:   0, lease:  0),
         StoreSeed(name: "",                   tier: .vacant,   rent:    0, traffic:   0, threshold:   0, lease:  0),
         StoreSeed(name: "Auntie Anne's",      tier: .kiosk,    rent:  400, traffic:  40, threshold:  20, lease: 18),
         StoreSeed(name: "Vape Shop",          tier: .sketchy,  rent:  200, traffic:   8, threshold:   0, lease: 18),
+        StoreSeed(name: "JCPenney",           tier: .anchor,   rent: 4000, traffic: 260, threshold: 130, lease: 96),
     ]
 
     // v8: STARTING_DECORATIONS
+    // Decorations that previously sat at x<200 or x>1000 are moved inward since
+    // those x ranges are now occupied by the anchor end-caps.
     private struct DecorationSeed {
         let kind: DecorationKind
         let x: Double
@@ -75,12 +85,12 @@ enum StartingMall {
         DecorationSeed(kind: .kugel,     x:  585, y: 245, condition: 2, working: true,  hazard: false),
         DecorationSeed(kind: .fountain,  x:  275, y: 235, condition: 1, working: true,  hazard: false),
         DecorationSeed(kind: .fountain,  x:  875, y: 235, condition: 3, working: false, hazard: true),
-        DecorationSeed(kind: .neon,      x:   90, y: 200, condition: 2, working: true,  hazard: false),
-        DecorationSeed(kind: .neon,      x: 1080, y: 200, condition: 1, working: true,  hazard: false),
+        DecorationSeed(kind: .neon,      x:  220, y: 200, condition: 2, working: true,  hazard: false),  // was x=90 (inside Sears)
+        DecorationSeed(kind: .neon,      x:  960, y: 200, condition: 1, working: true,  hazard: false),  // was x=1080 (inside JCP)
         DecorationSeed(kind: .bench,     x:  460, y: 260, condition: 1, working: true,  hazard: false),
         DecorationSeed(kind: .bench,     x:  710, y: 260, condition: 0, working: true,  hazard: false),
-        DecorationSeed(kind: .plant,     x:  160, y: 280, condition: 2, working: true,  hazard: false),
-        DecorationSeed(kind: .plant,     x: 1010, y: 280, condition: 1, working: true,  hazard: false),
+        DecorationSeed(kind: .plant,     x:  250, y: 280, condition: 2, working: true,  hazard: false),  // was x=160 (inside Sears)
+        DecorationSeed(kind: .plant,     x:  930, y: 280, condition: 1, working: true,  hazard: false),  // was x=1010 (inside JCP)
         DecorationSeed(kind: .directory, x:  650, y: 220, condition: 3, working: true,  hazard: false),
     ]
 

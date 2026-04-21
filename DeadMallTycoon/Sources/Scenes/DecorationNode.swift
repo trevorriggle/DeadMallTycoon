@@ -124,10 +124,10 @@ final class DecorationNode: SKSpriteNode {
             }
             if d.hazard {
                 badgeNode?.text = "!"
-                badgeNode?.fontColor = UIColor(hex: "#fcebeb")
+                badgeNode?.fontColor = UIColor(hex: "#e8e8f0")
             } else {
                 badgeNode?.text = Condition(rawValue: d.condition)?.name ?? ""
-                badgeNode?.fontColor = UIColor(hex: "#fac775")
+                badgeNode?.fontColor = UIColor(hex: "#7fd3f0")
             }
         } else {
             badgeNode?.removeFromParent()

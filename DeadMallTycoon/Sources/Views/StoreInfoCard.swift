@@ -27,8 +27,8 @@ struct StoreInfoCard: View {
         }
         .padding(14)
         .frame(maxWidth: 360)
-        .background(Color(hex: "#1a1917"))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#5a4a3a"), lineWidth: 1.5))
+        .background(Color(hex: "#14141a"))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#3a3a48"), lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.6), radius: 12, y: 4)
     }
@@ -44,13 +44,13 @@ struct StoreInfoCard: View {
                     .foregroundStyle(titleColor(s))
                 Text(subtitleText(s))
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
             }
             Spacer(minLength: 4)
             Button(action: { vm.clearSelection() }) {
                 Text("×")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
                     .frame(width: 26, height: 26)
             }
             .buttonStyle(.plain)
@@ -67,7 +67,7 @@ struct StoreInfoCard: View {
     }
 
     private func titleColor(_ s: Store) -> Color {
-        s.tier == .vacant ? Color(hex: "#888780") : Color(hex: "#FAC775")
+        s.tier == .vacant ? Color(hex: "#6a6a78") : Color(hex: "#7fd3f0")
     }
 
     private func subtitleText(_ s: Store) -> String {
@@ -83,7 +83,7 @@ struct StoreInfoCard: View {
         Text("This empty space is generating score every month.")
             .font(.system(size: 14, design: .serif))
             .italic()
-            .foregroundStyle(Color(hex: "#c4b4a0"))
+            .foregroundStyle(Color(hex: "#d8d8e0"))
     }
 
     // MARK: - Active tenant body: rent, rent adjust, promo, evict
@@ -92,13 +92,13 @@ struct StoreInfoCard: View {
         VStack(alignment: .leading, spacing: 8) {
             statLine(label: "Rent", value: "$\(s.rent.formatted())/mo", color: .yellow)
             if s.closing {
-                statLine(label: "Status", value: "CLOSING", color: Color(hex: "#e24b4a"))
+                statLine(label: "Status", value: "CLOSING", color: Color(hex: "#ff2f4a"))
             } else if s.leaving {
-                statLine(label: "Status", value: "Lease ending", color: Color(hex: "#EF9F27"))
+                statLine(label: "Status", value: "Lease ending", color: Color(hex: "#ff4dbd"))
             } else if s.hardship >= 2 {
-                statLine(label: "Status", value: "Struggling", color: Color(hex: "#EF9F27"))
+                statLine(label: "Status", value: "Struggling", color: Color(hex: "#ff4dbd"))
             }
-            statLine(label: "Lease", value: "\(s.lease) months", color: Color(hex: "#c4b4a0"))
+            statLine(label: "Lease", value: "\(s.lease) months", color: Color(hex: "#d8d8e0"))
 
             // Rent adjustment row
             HStack(spacing: 6) {
@@ -130,7 +130,7 @@ struct StoreInfoCard: View {
 
     private func statLine(label: String, value: String, color: Color) -> some View {
         HStack {
-            Text(label).foregroundStyle(Color(hex: "#888780"))
+            Text(label).foregroundStyle(Color(hex: "#6a6a78"))
             Spacer()
             Text(value).foregroundStyle(color).monospacedDigit()
         }

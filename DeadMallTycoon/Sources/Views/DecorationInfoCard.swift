@@ -25,7 +25,7 @@ struct DecorationInfoCard: View {
 
             Text(type.description)
                 .font(.system(size: 13, design: .serif)).italic()
-                .foregroundStyle(Color(hex: "#c4b4a0"))
+                .foregroundStyle(Color(hex: "#d8d8e0"))
 
             statLine(label: "Multiplier",
                      value: "+\(Int((mult * 100).rounded()))%",
@@ -34,7 +34,7 @@ struct DecorationInfoCard: View {
             if d.hazard {
                 statLine(label: "Monthly fine",
                          value: "-$\(500 + d.condition * 200)",
-                         color: Color(hex: "#F09595"))
+                         color: Color(hex: "#ff4dbd"))
             }
 
             // Actions
@@ -49,8 +49,8 @@ struct DecorationInfoCard: View {
         }
         .padding(14)
         .frame(maxWidth: 360)
-        .background(Color(hex: "#1a1917"))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#5a4a3a"), lineWidth: 1.5))
+        .background(Color(hex: "#14141a"))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#3a3a48"), lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.6), radius: 12, y: 4)
     }
@@ -61,16 +61,16 @@ struct DecorationInfoCard: View {
                 Text(typeName.uppercased())
                     .font(.system(size: 17, weight: .black, design: .monospaced))
                     .tracking(0.8)
-                    .foregroundStyle(Color(hex: "#FAC775"))
+                    .foregroundStyle(Color(hex: "#7fd3f0"))
                 Text(conditionLabel)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
             }
             Spacer(minLength: 4)
             Button(action: { vm.clearSelection() }) {
                 Text("×")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
                     .frame(width: 26, height: 26)
             }
             .buttonStyle(.plain)
@@ -84,7 +84,7 @@ struct DecorationInfoCard: View {
 
     private func statLine(label: String, value: String, color: Color) -> some View {
         HStack {
-            Text(label).foregroundStyle(Color(hex: "#888780"))
+            Text(label).foregroundStyle(Color(hex: "#6a6a78"))
             Spacer()
             Text(value).foregroundStyle(color).monospacedDigit()
         }

@@ -5,6 +5,11 @@ import SpriteKit
 // Christian's final 128x128 pixel art — the PNG bakes in sign + window + frame,
 // so the procedural sign/window/gate overlays from earlier phases are retired.
 //
+// Anchor slots (Sears west, JCPenney east) are full-height end-caps and use a
+// procedural facade + SKLabelNode signage instead of the stretched pixel-art PNG.
+// An anchor slot is detected by footprint width (>= 180pt) — see StartingMall
+// positions for the 200pt anchor width.
+//
 // Ambient indicators (Phase C UI overhaul):
 // - Stores about to close: yellow pulsing dot in the top-right of the storefront.
 //   Replaces the old full-sprite red colorize pulse — that tint competed with the
@@ -12,17 +17,38 @@ import SpriteKit
 final class StoreNode: SKSpriteNode {
 
     let storeId: Int
+    private let isAnchorSlot: Bool
     private var closingDot: SKShapeNode?
+    private var anchorNameLabel: SKLabelNode?
 
     init(store: Store) {
         self.storeId = store.id
+        self.isAnchorSlot = store.position.w >= 180
         let size = CGSize(width: store.position.w, height: store.position.h)
-        let texture = TextureFactory.storefrontTexture(tier: store.tier,
-                                                        state: Self.visualState(for: store))
+        let visual = Self.visualState(for: store)
+        let texture: SKTexture = isAnchorSlot
+            ? TextureFactory.anchorFacadeTexture(state: visual, size: size)
+            : TextureFactory.storefrontTexture(tier: store.tier, state: visual)
 
         super.init(texture: texture, color: .clear, size: size)
         name = "store:\(storeId)"
         isUserInteractionEnabled = false
+
+        if isAnchorSlot {
+            // Signage label sits on the dark band baked into the facade texture.
+            // Positioned in the node's local coord space (origin at center, y-up).
+            let label = SKLabelNode(fontNamed: "Courier-Bold")
+            label.fontSize = 22
+            label.fontColor = Palette.signLight
+            label.verticalAlignmentMode = .center
+            label.horizontalAlignmentMode = .center
+            // Signage band is 30..100pt from the top of the texture; center ≈ 65pt from top.
+            label.position = CGPoint(x: 0, y: size.height / 2 - 65)
+            label.zPosition = 1
+            label.name = "anchorName"
+            addChild(label)
+            anchorNameLabel = label
+        }
 
         apply(store: store)
     }
@@ -31,7 +57,16 @@ final class StoreNode: SKSpriteNode {
 
     func apply(store: Store) {
         let visual = Self.visualState(for: store)
-        texture = TextureFactory.storefrontTexture(tier: store.tier, state: visual)
+        texture = isAnchorSlot
+            ? TextureFactory.anchorFacadeTexture(state: visual, size: size)
+            : TextureFactory.storefrontTexture(tier: store.tier, state: visual)
+
+        if isAnchorSlot {
+            // Vacant anchor shows as a dark gap — the "huge empty space" emotional beat.
+            // Hide the name label entirely when vacant so the void reads clean.
+            anchorNameLabel?.text = store.isVacant ? "" : store.name.uppercased()
+            anchorNameLabel?.isHidden = store.isVacant
+        }
 
         updateClosingDot(store.closing)
         updatePromoGlow(store.promotionActive)

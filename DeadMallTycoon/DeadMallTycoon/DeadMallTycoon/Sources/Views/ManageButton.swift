@@ -10,10 +10,10 @@ struct ManageButton: View {
             Text("MANAGE")
                 .font(.system(size: 14, weight: .black, design: .monospaced))
                 .tracking(1.8)
-                .foregroundStyle(Color(hex: "#f4e4b0"))
+                .foregroundStyle(Color(hex: "#b8e8f8"))
                 .padding(.horizontal, 18).padding(.vertical, 10)
-                .background(Color(hex: "#2a1515").opacity(0.92))
-                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#c4919a"), lineWidth: 1.5))
+                .background(Color(hex: "#2a0a1a").opacity(0.92))
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#ff4dbd"), lineWidth: 1.5))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .shadow(color: .black.opacity(0.5), radius: 6, y: 2)
         }

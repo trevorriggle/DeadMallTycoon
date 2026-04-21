@@ -23,7 +23,7 @@ struct PnLModal: View {
             }
             .padding(20)
         }
-        .background(Color(hex: "#1a1917"))
+        .background(Color(hex: "#14141a"))
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
@@ -35,11 +35,11 @@ struct PnLModal: View {
             Text("MONTHLY P&L")
                 .font(.system(size: 16, weight: .black, design: .monospaced))
                 .tracking(2)
-                .foregroundStyle(Color(hex: "#f4e4b0"))
+                .foregroundStyle(Color(hex: "#b8e8f8"))
             Spacer()
             Button("Close") { dismiss() }
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .foregroundStyle(Color(hex: "#888780"))
+                .foregroundStyle(Color(hex: "#6a6a78"))
         }
     }
 
@@ -53,27 +53,27 @@ struct PnLModal: View {
                 Text("SCORE")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.4)
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
                 Text(vm.state.score.formatted())
                     .font(.system(size: 34, weight: .black, design: .monospaced))
                     .monospacedDigit()
-                    .foregroundStyle(Color(hex: "#FAC775"))
+                    .foregroundStyle(Color(hex: "#7fd3f0"))
                 Text("LAST MONTH  \(vm.state.lastMonthlyScore >= 0 ? "+" : "")\(vm.state.lastMonthlyScore)")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text("MONTH")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.4)
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
                 Text("\(monthsSurvived)")
                     .font(.system(size: 34, weight: .black, design: .monospaced))
                     .monospacedDigit()
-                    .foregroundStyle(Color(hex: "#c4919a"))
+                    .foregroundStyle(Color(hex: "#ff4dbd"))
                 Text("\(GameConstants.months[vm.state.month]) \(String(vm.state.year))")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(Color(hex: "#888780"))
+                    .foregroundStyle(Color(hex: "#6a6a78"))
             }
             Spacer(minLength: 0)
             ScoreSparklineView(history: vm.state.scoreHistory)
@@ -81,8 +81,8 @@ struct PnLModal: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(hex: "#0f0e0d"))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#3a3935")))
+        .background(Color(hex: "#0a0a0e"))
+        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#3a3a48")))
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
@@ -107,7 +107,7 @@ struct PnLModal: View {
             statRow("Promos",    promoNet >= 0 ? "+\(fmtK(promoNet))" : "-\(fmtK(-promoNet))",
                     color: promoNet >= 0 ? .green : .red)
             statRow("Fines",     fines > 0 ? "-\(fmtK(fines))" : "$0",      color: .red)
-            Divider().background(Color(hex: "#5a4a3a")).padding(.vertical, 2)
+            Divider().background(Color(hex: "#3a3a48")).padding(.vertical, 2)
             statRow("NET", (net >= 0 ? "+" : "-") + fmtK(abs(net)),
                     color: net >= 0 ? .green : .red, bold: true)
         }
@@ -159,7 +159,7 @@ struct PnLModal: View {
             } else {
                 ForEach(sorted) { s in
                     HStack {
-                        Text(s.name).foregroundStyle(Color(hex: "#c4b4a0"))
+                        Text(s.name).foregroundStyle(Color(hex: "#d8d8e0"))
                         Spacer()
                         Text("$\(s.rent.formatted())").foregroundStyle(.green)
                     }
@@ -183,7 +183,7 @@ struct PnLModal: View {
             } else {
                 ForEach(vm.state.activeAdDeals) { d in
                     HStack {
-                        Text(d.name).foregroundStyle(Color(hex: "#c4b4a0"))
+                        Text(d.name).foregroundStyle(Color(hex: "#d8d8e0"))
                         Spacer()
                         Text("+$\(d.income.formatted())").foregroundStyle(.green)
                     }
@@ -191,7 +191,7 @@ struct PnLModal: View {
                 }
                 ForEach(profitablePromos) { p in
                     HStack {
-                        Text(p.name).foregroundStyle(Color(hex: "#c4b4a0"))
+                        Text(p.name).foregroundStyle(Color(hex: "#d8d8e0"))
                         Spacer()
                         Text("+$\((-p.monthlyCost).formatted())").foregroundStyle(.green)
                     }
@@ -209,20 +209,20 @@ struct PnLModal: View {
             Text(title.uppercased())
                 .font(.system(size: 12, weight: .bold, design: .monospaced))
                 .tracking(1.2)
-                .foregroundStyle(Color(hex: "#FAC775"))
+                .foregroundStyle(Color(hex: "#7fd3f0"))
                 .padding(.bottom, 4)
             content()
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(hex: "#0f0e0d"))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#3a3935")))
+        .background(Color(hex: "#0a0a0e"))
+        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color(hex: "#3a3a48")))
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
     private func statRow(_ label: String, _ value: String, color: Color, bold: Bool = false) -> some View {
         HStack {
-            Text(label).foregroundStyle(Color(hex: "#888780"))
+            Text(label).foregroundStyle(Color(hex: "#6a6a78"))
             Spacer()
             Text(value)
                 .foregroundStyle(color)

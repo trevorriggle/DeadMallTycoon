@@ -8,11 +8,19 @@ import Foundation
 enum StoreActions {
 
     // v8: acceptTenant()
+    // Anchor slot gate: a slot with w >= 180 (the two department-store end-caps) only
+    // accepts an anchor-tier offer, and anchor-tier offers only go to anchor slots.
+    // If no compatible slot exists, the decision is cleared without filling — matching
+    // v8 behavior for "no vacant slot" but extended to respect architectural size.
     static func acceptOffer(_ state: GameState) -> GameState {
         var s = state
         guard case .tenant(let offer) = s.decision else { return s }
-        guard let vi = s.stores.firstIndex(where: {
-            $0.tier == .vacant && !Mall.isWingClosed($0.wing, in: s)
+        let offerIsAnchor = offer.tier == .anchor
+        guard let vi = s.stores.firstIndex(where: { store in
+            let slotIsAnchor = store.position.w >= 180
+            return store.tier == .vacant
+                && !Mall.isWingClosed(store.wing, in: s)
+                && slotIsAnchor == offerIsAnchor
         }) else {
             s.decision = nil; s.paused = false
             return s
@@ -89,8 +97,12 @@ enum StoreActions {
         if s.cash < target.approachCost { return (s, false) }
         let mallState = Mall.state(s)
         if !target.requiredStates.contains(mallState) { return (s, false) }
-        guard let vi = s.stores.firstIndex(where: {
-            $0.tier == .vacant && !Mall.isWingClosed($0.wing, in: s)
+        let targetIsAnchor = target.tier == .anchor
+        guard let vi = s.stores.firstIndex(where: { store in
+            let slotIsAnchor = store.position.w >= 180
+            return store.tier == .vacant
+                && !Mall.isWingClosed(store.wing, in: s)
+                && slotIsAnchor == targetIsAnchor
         }) else { return (s, false) }
 
         s.cash -= target.approachCost

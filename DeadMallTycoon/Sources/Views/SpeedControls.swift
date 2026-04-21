@@ -17,16 +17,16 @@ struct SpeedControls: View {
                         .font(.system(size: 14, weight: .bold, design: .monospaced))
                         .monospacedDigit()
                         .frame(minWidth: 28, minHeight: 28)
-                        .foregroundStyle(vm.state.speed == s ? Color(hex: "#9FE1CB") : Color(hex: "#888780"))
-                        .background(vm.state.speed == s ? Color(hex: "#2a4a5a") : Color(hex: "#1a1917").opacity(0.85))
-                        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#444441")))
+                        .foregroundStyle(vm.state.speed == s ? Color(hex: "#9FE1CB") : Color(hex: "#6a6a78"))
+                        .background(vm.state.speed == s ? Color(hex: "#2a4a5a") : Color(hex: "#14141a").opacity(0.85))
+                        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#4a4a54")))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(4)
-        .background(Color(hex: "#0a0908").opacity(0.6))
+        .background(Color(hex: "#0a0a0e").opacity(0.6))
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 

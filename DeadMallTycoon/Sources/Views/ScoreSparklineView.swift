@@ -14,7 +14,7 @@ struct ScoreSparklineView: View {
                 var path = Path()
                 path.move(to: CGPoint(x: 0, y: y))
                 path.addLine(to: CGPoint(x: size.width, y: y))
-                ctx.stroke(path, with: .color(Color(hex: "#3a3935")), lineWidth: 1)
+                ctx.stroke(path, with: .color(Color(hex: "#3a3a48")), lineWidth: 1)
                 return
             }
             let maxV = max(values.max() ?? 1, 1)
@@ -32,8 +32,8 @@ struct ScoreSparklineView: View {
             let first = values.first ?? 0
             let last = values.last ?? 0
             let color: Color = last > first ? Color(hex: "#9FE1CB")
-                             : last < first ? Color(hex: "#F09595")
-                             : Color(hex: "#FAC775")
+                             : last < first ? Color(hex: "#ff4dbd")
+                             : Color(hex: "#7fd3f0")
             ctx.stroke(path, with: .color(color), lineWidth: 1.5)
         }
     }

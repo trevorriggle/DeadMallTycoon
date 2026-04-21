@@ -30,6 +30,14 @@ struct GameState: Equatable {
     var wingsClosed: [Wing: Bool] = [.north: false, .south: false]
     var wingsDowngraded: [Wing: Bool] = [.north: false, .south: false]
 
+    // Entrance sealing — v9 iPad-port addition, no v8 equivalent. Set by TickEngine
+    // monthly when mall state is struggling or worse. Distinct from wingsClosed:
+    // sealing is an emergent late-game decay event (plywood over glass doors),
+    // not a player action. Not reversible. Both sealed → "functionally closed":
+    // no new visitors spawn, existing drain out, corridor empties.
+    var northEntranceSealed: Bool = false
+    var southEntranceSealed: Bool = false
+
     // threat + traffic — v8: G.threatMeter, G.currentTraffic, G.consecutiveLowTrafficMonths, G.gangMonths
     var threatMeter: Double = 0
     var currentTraffic: Int = 0

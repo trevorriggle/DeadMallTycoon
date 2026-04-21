@@ -200,6 +200,99 @@ enum TextureFactory {
         }
     }
 
+    // Anchor end-cap facade — procedural, no v8 equivalent (v8 treated anchors as
+    // standard slots). Drawn in scene CSS units; y=0 is the top of the scene so the
+    // signage band lives at the top, entrance archway at the bottom-center.
+    // StoreNode layers the store name as a SKLabelNode on top of the signage band.
+    static func anchorFacadeTexture(state: StorefrontVisualState, size: CGSize) -> SKTexture {
+        let stateKey: String = {
+            switch state {
+            case .open:          return "open"
+            case .boarded:       return "boarded"
+            case .longAbandoned: return "abandoned"
+            }
+        }()
+        let key = "anchorFacade_\(stateKey)_\(Int(size.width))x\(Int(size.height))"
+        return cached(key) {
+            SKTexture(image: renderImage(size: size) { ctx, size in
+                switch state {
+                case .open:
+                    // Warm tan facade with darker border + sign band + central archway.
+                    Palette.storeAnchor.setFill()
+                    ctx.fill(CGRect(origin: .zero, size: size))
+
+                    // Outer border (thick — reads as a substantial building).
+                    Palette.storeAnchorBorder.setStroke()
+                    ctx.setLineWidth(4)
+                    ctx.stroke(CGRect(x: 2, y: 2, width: size.width - 4, height: size.height - 4))
+
+                    // Signage band near top — dark panel where the store name label sits.
+                    let signHeight: CGFloat = 70
+                    let signRect = CGRect(x: 10, y: 30, width: size.width - 20, height: signHeight)
+                    Palette.signDark.setFill()
+                    ctx.fill(signRect)
+                    Palette.storeAnchorBorder.setStroke()
+                    ctx.setLineWidth(2)
+                    ctx.stroke(signRect)
+
+                    // Window band — lit warm rectangles below the sign, above the archway.
+                    let windowY: CGFloat = 130
+                    let windowHeight: CGFloat = size.height - windowY - 140
+                    let windowRect = CGRect(x: 20, y: windowY, width: size.width - 40, height: windowHeight)
+                    Palette.windowLit.setFill()
+                    ctx.fill(windowRect)
+                    // Window frame divisions — three horizontal bands for that department-store look.
+                    Palette.storeAnchorBorder.setStroke()
+                    ctx.setLineWidth(2)
+                    ctx.stroke(windowRect)
+                    let bandStep = windowHeight / 3
+                    for i in 1...2 {
+                        let y = windowY + bandStep * CGFloat(i)
+                        ctx.move(to: CGPoint(x: 20, y: y))
+                        ctx.addLine(to: CGPoint(x: size.width - 20, y: y))
+                        ctx.strokePath()
+                    }
+
+                    // Central entrance archway at the bottom — dark doorway.
+                    let archWidth: CGFloat = min(120, size.width * 0.5)
+                    let archHeight: CGFloat = 110
+                    let archRect = CGRect(x: (size.width - archWidth) / 2,
+                                          y: size.height - archHeight - 10,
+                                          width: archWidth, height: archHeight)
+                    Palette.gateDark.setFill()
+                    ctx.fill(archRect)
+                    Palette.storeAnchorBorder.setStroke()
+                    ctx.setLineWidth(3)
+                    ctx.stroke(archRect)
+
+                case .boarded:
+                    // Dark boarded facade — the "huge dark gap" emotional beat.
+                    Palette.storeBoarded.setFill()
+                    ctx.fill(CGRect(origin: .zero, size: size))
+                    Palette.storeBoardedBorder.setStroke()
+                    ctx.setLineWidth(4)
+                    ctx.stroke(CGRect(x: 2, y: 2, width: size.width - 4, height: size.height - 4))
+                    // Plywood planks — horizontal darker stripes.
+                    Palette.storeAbandoned.setFill()
+                    let plankHeight: CGFloat = 18
+                    var y: CGFloat = 40
+                    while y < size.height - 20 {
+                        ctx.fill(CGRect(x: 10, y: y, width: size.width - 20, height: plankHeight))
+                        y += plankHeight + 12
+                    }
+
+                case .longAbandoned:
+                    // Near-black void — the mall has lost its anchor for a long time.
+                    Palette.storeAbandoned.setFill()
+                    ctx.fill(CGRect(origin: .zero, size: size))
+                    Palette.storeBoardedBorder.setStroke()
+                    ctx.setLineWidth(3)
+                    ctx.stroke(CGRect(x: 2, y: 2, width: size.width - 4, height: size.height - 4))
+                }
+            })
+        }
+    }
+
     // MARK: - Visitor
 
     // Visitor body: scaled up ~2.6x from v8's 10x14 so visitors are actually tappable on iPad.

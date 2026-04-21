@@ -31,9 +31,9 @@ struct HUDView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
-        .background(Color(hex: "#1a1917").opacity(0.96))
-        .overlay(Rectangle().frame(height: 1).foregroundStyle(Color(hex: "#3a3935")), alignment: .bottom)
-        .foregroundStyle(Color(hex: "#e8dcc8"))
+        .background(Color(hex: "#14141a").opacity(0.96))
+        .overlay(Rectangle().frame(height: 1).foregroundStyle(Color(hex: "#3a3a48")), alignment: .bottom)
+        .foregroundStyle(Color(hex: "#e8e8f0"))
     }
 
     // MARK: - Cells
@@ -43,11 +43,11 @@ struct HUDView: View {
             Text("\(GameConstants.months[vm.state.month]) \(String(vm.state.year))")
                 .font(.system(size: 18, weight: .bold, design: .monospaced))
                 .monospacedDigit()
-                .foregroundStyle(Color(hex: "#c4919a"))
+                .foregroundStyle(Color(hex: "#ff4dbd"))
             Text("MONTH \(monthsSurvived)")
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .tracking(1.4)
-                .foregroundStyle(Color(hex: "#888780"))
+                .foregroundStyle(Color(hex: "#6a6a78"))
         }
         .fixedSize(horizontal: true, vertical: false)
     }
@@ -63,7 +63,7 @@ struct HUDView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if vm.state.debt > 0 {
-                (Text("debt ").foregroundStyle(Color(hex: "#888780"))
+                (Text("debt ").foregroundStyle(Color(hex: "#6a6a78"))
                  + Text("-\(fmt(vm.state.debt))").foregroundStyle(debtColor))
                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                     .monospacedDigit()
@@ -79,8 +79,8 @@ struct HUDView: View {
         let fillColor: Color = {
             switch band {
             case .stable, .uneasy: return Color(hex: "#5DCAA5")
-            case .risky:           return Color(hex: "#EF9F27")
-            case .critical:        return Color(hex: "#e24b4a")
+            case .risky:           return Color(hex: "#ff4dbd")
+            case .critical:        return Color(hex: "#ff2f4a")
             }
         }()
         return HStack(spacing: 6) {
@@ -92,8 +92,8 @@ struct HUDView: View {
                 .foregroundStyle(fillColor)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: "#0a0908")).overlay(
-                        Capsule().strokeBorder(Color(hex: "#2a2a22"), lineWidth: 1)
+                    Capsule().fill(Color(hex: "#0a0a0e")).overlay(
+                        Capsule().strokeBorder(Color(hex: "#2a2a34"), lineWidth: 1)
                     )
                     Capsule().fill(fillColor).frame(width: geo.size.width * t)
                 }
@@ -112,13 +112,13 @@ struct HUDView: View {
 
     private var cashColor: Color {
         if vm.state.cash > 5000 { return Color(hex: "#9FE1CB") }
-        if vm.state.cash > 1500 { return Color(hex: "#FAC775") }
-        return Color(hex: "#F09595")
+        if vm.state.cash > 1500 { return Color(hex: "#7fd3f0") }
+        return Color(hex: "#ff4dbd")
     }
 
     private var debtColor: Color {
-        if vm.state.debt > 15000 { return Color(hex: "#F09595") }
-        if vm.state.debt > 0     { return Color(hex: "#FAC775") }
+        if vm.state.debt > 15000 { return Color(hex: "#ff4dbd") }
+        if vm.state.debt > 0     { return Color(hex: "#7fd3f0") }
         return Color(hex: "#9FE1CB")
     }
 

@@ -31,7 +31,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#0a0908").ignoresSafeArea()
+            Color(hex: "#0a0a0e").ignoresSafeArea()
             if !vm.state.started {
                 StartScreenView(onStart: { withTutorial in
                     vm.startGame(withTutorial: withTutorial)

@@ -2,9 +2,13 @@ import SpriteKit
 
 // v8: .visitor, with a small body composed of head + torso.
 // Thought bubbles are a separate child created on tap and auto-dismissed.
+// Bag indicator (Phase 3): a small tier-tinted rectangle next to the body,
+// shown when the visitor recently exited a store — color encodes which tier
+// (anchor bag looks different from kiosk bag).
 final class VisitorNode: SKSpriteNode {
 
     let visitorId: UUID
+    private var bagNode: SKShapeNode?
 
     init(visitor: Visitor) {
         self.visitorId = visitor.id
@@ -30,6 +34,39 @@ final class VisitorNode: SKSpriteNode {
         } else {
             removeAction(forKey: "selected")
             setScale(1.0)
+        }
+    }
+
+    // Phase 3 — bag indicator. nil tier removes the bag; otherwise creates or
+    // retints a small rect next to the visitor's torso. Shape is shared across
+    // tiers; color encodes tier (anchor tan, standard pink, kiosk blue, sketchy olive).
+    func setBag(tier: StoreTier?) {
+        guard let tier = tier, tier != .vacant else {
+            bagNode?.removeFromParent()
+            bagNode = nil
+            return
+        }
+        if bagNode == nil {
+            let bag = SKShapeNode(rectOf: CGSize(width: 8, height: 10), cornerRadius: 1)
+            bag.strokeColor = UIColor.black.withAlphaComponent(0.6)
+            bag.lineWidth = 1
+            // Positioned beside the torso (node size is 26×36, origin centered).
+            // Torso sits in the lower half of the texture; place bag at the right side.
+            bag.position = CGPoint(x: 14, y: -6)
+            bag.zPosition = 1
+            addChild(bag)
+            bagNode = bag
+        }
+        bagNode?.fillColor = Self.bagColor(for: tier)
+    }
+
+    private static func bagColor(for tier: StoreTier) -> UIColor {
+        switch tier {
+        case .anchor:   return Palette.storeAnchor
+        case .standard: return Palette.storeStandard
+        case .kiosk:    return Palette.storeKiosk
+        case .sketchy:  return Palette.storeSketchy
+        case .vacant:   return .gray  // unreachable — guarded above
         }
     }
 }

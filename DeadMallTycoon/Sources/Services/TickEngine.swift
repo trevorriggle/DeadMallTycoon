@@ -134,6 +134,29 @@ enum TickEngine {
         s.threatMeter = Threat.calculate(s)
         s = Warnings.refresh(s)
 
+        // 9.5 entrance sealing — v9 iPad-port addition. When mall state is
+        // struggling or worse, one still-open entrance has a monthly chance of
+        // getting boarded up. Not reversible. If both are already sealed, skip.
+        let sealProbability: Double
+        switch Mall.state(s) {
+        case .struggling: sealProbability = 0.05
+        case .dying:      sealProbability = 0.10
+        case .dead:       sealProbability = 0.15
+        case .thriving, .fading: sealProbability = 0
+        }
+        if sealProbability > 0 && rng.chance(sealProbability) {
+            let northOpen = !s.northEntranceSealed
+            let southOpen = !s.southEntranceSealed
+            if northOpen && southOpen {
+                if rng.chance(0.5) { s.northEntranceSealed = true }
+                else               { s.southEntranceSealed = true }
+            } else if northOpen {
+                s.northEntranceSealed = true
+            } else if southOpen {
+                s.southEntranceSealed = true
+            }
+        }
+
         // 10. maybe a decision (tenant offer or flavor event) — v8: maybeDecision()
         s = EventDeck.maybeDecision(s, rng: &rng)
 
