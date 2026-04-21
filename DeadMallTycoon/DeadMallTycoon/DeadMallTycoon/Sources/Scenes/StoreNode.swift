@@ -113,9 +113,13 @@ final class StoreNode: SKSpriteNode {
         }
     }
 
+    // v9 Prompt 2: any vacant slot shows Closed.png immediately. Previously
+    // gated behind `monthsVacant >= 6`, which meant a freshly-evicted slot
+    // kept the Open.png texture for six months — visually misleading.
+    // The artifact data layer still tracks closure history in state.artifacts
+    // for future scoring + thought-bubble prompts; the slot sprite itself is
+    // now the visual signal.
     static func visualState(for store: Store) -> StorefrontVisualState {
-        if store.tier != .vacant { return .open }
-        if store.monthsVacant >= 6 { return .boarded }
-        return .open
+        store.tier == .vacant ? .boarded : .open
     }
 }
