@@ -62,6 +62,15 @@ final class MallScene: SKScene {
     private var visitorBehavior: [UUID: VisitorBehaviorState] = [:]
     private var visitorRNG = SeededGenerator(seed: UInt64.random(in: 1..<UInt64.max))
 
+    // v9 Prompt 4 Phase 3 — per-visitor passive-thought clock. Each visitor
+    // fires a silent thought every 20-30s; if the thought tags an artifact
+    // (proximity gate in PersonalityPicker.pickThought), the VM increments
+    // that artifact's memory weight by cohort-weighted amount. Scene-local,
+    // not in GameState — this is presentation-layer cadence, not game logic.
+    private var nextPassiveThoughtAt: [UUID: TimeInterval] = [:]
+    private static let passiveThoughtMinInterval: TimeInterval = 20
+    private static let passiveThoughtMaxInterval: TimeInterval = 30
+
     // Phase 3 — state machine for visitor behavior. Replaces the old "v.state
     // == .leaving" + dwellTimer-based logic with explicit phases that encode
     // the next action to take when a pause elapses.
@@ -144,6 +153,41 @@ final class MallScene: SKScene {
             visitorBehavior[v.id] = behavior
             visitors.append(v)
         }
+    }
+
+    // MARK: Passive thoughts (v9 Prompt 4 Phase 3)
+
+    // v9 Prompt 4 Phase 3 — passive thought firing. Each visitor has a
+    // private timer; when it elapses, a Thought is generated for them at
+    // their current position. If the thought tags an artifact, the VM
+    // increments that artifact's memory weight. Silent — no bubble, no
+    // thoughts-log entry. The mall is being remembered by everyone in it,
+    // whether the player is watching or not.
+    private func tickPassiveThoughts(now: TimeInterval) {
+        guard let vm else { return }
+        for v in visitors {
+            if let next = nextPassiveThoughtAt[v.id] {
+                if now >= next {
+                    vm.firePassiveThought(for: v)
+                    nextPassiveThoughtAt[v.id] = scheduleNextThought(now: now)
+                }
+            } else {
+                // First pass — schedule without firing. Staggers the initial
+                // cohort so we don't get a synchronized volley.
+                nextPassiveThoughtAt[v.id] = scheduleNextThought(now: now)
+            }
+        }
+        // Garbage-collect timers for despawned visitors.
+        let liveIds = Set(visitors.map(\.id))
+        for id in nextPassiveThoughtAt.keys where !liveIds.contains(id) {
+            nextPassiveThoughtAt.removeValue(forKey: id)
+        }
+    }
+
+    private func scheduleNextThought(now: TimeInterval) -> TimeInterval {
+        let span = Self.passiveThoughtMaxInterval - Self.passiveThoughtMinInterval
+        let jitter = visitorRNG.double(in: 0..<span)
+        return now + Self.passiveThoughtMinInterval + jitter
     }
 
     // MARK: Static background (floor / ceiling / walls / sealed wings)
@@ -511,6 +555,10 @@ final class MallScene: SKScene {
         guard let vm else { return }
         let s = vm.state
         seedInitialVisitors()
+
+        // v9 Prompt 4 Phase 3 — passive thoughts. For every visitor whose
+        // clock has elapsed, fire a thought via the VM and schedule the next.
+        tickPassiveThoughts(now: currentTime)
 
         // Phase C — re-publish SwiftUI card anchors every frame while a selection exists.
         if s.selectedStoreId != nil || s.selectedDecorationId != nil {

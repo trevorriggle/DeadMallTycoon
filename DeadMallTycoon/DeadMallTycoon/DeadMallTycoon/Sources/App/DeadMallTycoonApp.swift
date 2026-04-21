@@ -66,25 +66,50 @@ struct ContentView: View {
     // so they can pin near the tapped scene node.
     private var gameBody: some View {
         ZStack {
+            // v9 Prompt 4 Phase 0 — HUD layout lock.
+            // The core VStack is HUD + MallView only. DecisionBanner used to
+            // sit as a sibling in this VStack, which forced MallView (maxHeight
+            // infinity) to compress whenever a decision appeared. That
+            // displacement broke the mall scene's stable-ground feel — it's
+            // the emotional center of the game and must not move when a pop-up
+            // fires. The banner is now a ZStack overlay below (positioned with
+            // alignment), rendered above the mall without affecting layout.
+            // The mall scene's on-screen position is invariant with respect
+            // to decision presentation; any future pop-up must follow the
+            // same overlay-not-insertion pattern.
             VStack(spacing: 6) {
                 HUDView(vm: vm, onTapCash: { showPnL = true })
-
-                if hSize != .compact, let decision = vm.state.decision {
-                    DecisionBanner(vm: vm, decision: decision)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
                 MallView(vm: vm)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if hSize == .compact, let decision = vm.state.decision {
-                    DecisionBanner(vm: vm, decision: decision)
-                        .frame(maxWidth: .infinity)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
             }
             .padding(.horizontal, 8)
             .padding(.bottom, 8)
+
+            // v9 Prompt 4 Phase 0 — decision banner overlay.
+            // Regular width: pins near the top, just below the HUD band.
+            // Compact width: pins near the bottom, just above the button row.
+            // Either way: overlay, never a VStack child. The mall scene does
+            // not shrink when this appears.
+            if let decision = vm.state.decision {
+                VStack(spacing: 0) {
+                    if hSize != .compact {
+                        DecisionBanner(vm: vm, decision: decision)
+                            .padding(.top, 52)   // clear the HUD band
+                            .padding(.horizontal, 8)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        Spacer()
+                    } else {
+                        Spacer()
+                        DecisionBanner(vm: vm, decision: decision)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 8)
+                            .padding(.bottom, 72) // clear the button row
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .zIndex(50)
+                .allowsHitTesting(true)
+            }
 
             // Bottom-left: ACQUIRE shortcut stacked above MANAGE drawer trigger.
             // v9 Prompt 3 followup — Acquire promoted to the HUD as a

@@ -66,6 +66,9 @@ struct GameState: Equatable {
     var selectedStoreId: Int? = nil
     var selectedDecorationId: Int? = nil
     var selectedVisitorThought: String = ""
+    // v9 Prompt 4 Phase 6 — frozen identity snapshot powering the profile panel.
+    // Set by vm.selectVisitor, cleared by vm.clearSelection. See VisitorIdentity.
+    var selectedVisitorIdentity: VisitorIdentity? = nil
 
     // v8: G.placingDecoration — placement mode for the old decoration picker.
     // v9 Prompt 3 — renamed to placingArtifactType; carries the unified
@@ -87,4 +90,11 @@ struct GameState: Equatable {
     var tutorialSeenSteps: Set<TutorialStep> = []
     var tutorialOwnedPause: Bool = false
     var tickIntervalOverrideMs: Int? = nil
+
+    // v9 Prompt 4 Phase 5 — total memory weight across all artifacts.
+    // Rendered in the HUD top strip. Computed, not stored, so no extra
+    // bookkeeping is required when memoryWeight is mutated in place.
+    var totalMemoryWeight: Double {
+        artifacts.reduce(0) { $0 + $1.memoryWeight }
+    }
 }

@@ -7,25 +7,43 @@ enum VisitorFactory {
 
     // v8: spawnVisitor() — v9 Ghost Mall kicks in automatically via the year passed
     // into PersonalityPicker.weightedPick.
+    // v9 Prompt 4 Phase 1 — identity (firstName, lastName, ageCohort) and
+    // narrative state (mood, activity, destinationIntent) populated here.
+    // The old Personalities.names(for:) pool is superseded by the
+    // period-appropriate VisitorNames pool; the type-specific name table
+    // is no longer consulted (the visitor's name is now cohort-driven, not
+    // personality-driven).
     static func spawn(state: GameState, rng: inout some RandomNumberGenerator) -> Visitor {
         let mallState = Mall.state(state)
         let personalityKey = PersonalityPicker.weightedPick(state: mallState,
                                                              year: state.year,
                                                              rng: &rng)
         let personality = Personalities.all[personalityKey] ?? Personalities.all["Casual Browser"]!
-        let names = Personalities.names(for: personality.type)
-        let name = rng.pick(names) ?? "Visitor"
         let side: String = rng.chance(0.5) ? "left" : "right"
         let age = personality.ageRange.lowerBound + rng.int(in: 0..<(personality.ageRange.count))
 
+        // v9 Prompt 4 Phase 1 — identity.
+        let firstName = rng.pick(VisitorNames.firstNames) ?? "Visitor"
+        let lastName  = rng.pick(VisitorNames.lastNames)  ?? "Smith"
+        let cohort = AgeCohort.from(age: age)
+        let mood       = rng.pick(VisitorMood.allCases)     ?? .curious
+        let activity   = rng.pick(VisitorActivity.allCases) ?? .wandering
+        let destination = pickDestination(rng: &rng)
+
         var v = Visitor(
             id: UUID(),
-            name: name,
+            firstName: firstName,
+            lastName: lastName,
+            ageCohort: cohort,
+            mood: mood,
+            activity: activity,
+            destinationIntent: destination,
             personality: personalityKey,
             type: personality.type,
             color: personality.color,
             headColor: personality.headColor,
             age: age,
+            tenantIdAffinity: nil,
             x: side == "left" ? -20 : 1200,
             y: 220 + rng.double(in: 0..<60),
             vx: 0, vy: 0,
@@ -38,6 +56,21 @@ enum VisitorFactory {
         )
         pickTarget(for: &v, in: state, rng: &rng)
         return v
+    }
+
+    // v9 Prompt 4 Phase 1 — plausible destination intent at spawn.
+    // `.store(slotId:)` is omitted here (coupling spawn to store layout is
+    // unnecessary; "a store" is presented abstractly in the panel).
+    private static func pickDestination(rng: inout some RandomNumberGenerator) -> DestinationIntent {
+        let roll = rng.int(in: 0..<10)
+        switch roll {
+        case 0, 1, 2: return .noDestination    // 30%
+        case 3, 4:    return .fountain          // 20%
+        case 5:       return .foodCourt         // 10%
+        case 6:       return .directory         // 10%
+        case 7, 8:    return .nearestExit       // 20%
+        default:      return .noDestination     // remainder
+        }
     }
 
     // v8: pickTarget()

@@ -3,6 +3,10 @@ import SwiftUI
 
 // v9: Read-only dev panel. Lists every Artifact in GameState so Prompts 2+ can
 // be visually verified as they wire creation/decay/accumulation. Not shipped.
+// v9 Prompt 4 Phase 7 — adds total memory weight summary at the top plus a
+// visitor identity list (selected visitor's identity snapshot). No live
+// visitor roster — visitors live in MallScene and aren't surfaceable here
+// without a data bridge; selectedVisitorIdentity is the useful snapshot.
 struct ArtifactDebugPanel: View {
     @Bindable var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
@@ -10,6 +14,8 @@ struct ArtifactDebugPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            Divider().background(Color(hex: "#3a3a48"))
+            summary   // v9 Prompt 4 Phase 7 — memory totals + selected visitor
             Divider().background(Color(hex: "#3a3a48"))
             if vm.state.artifacts.isEmpty {
                 empty
@@ -20,6 +26,44 @@ struct ArtifactDebugPanel: View {
         .background(Color(hex: "#14141a"))
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+
+    // v9 Prompt 4 Phase 7 — debug summary block. Total memory weight across
+    // all artifacts, plus the currently-selected visitor's identity snapshot
+    // (if any). Visitor roster isn't listed here because visitors live in
+    // MallScene presentation state, not GameState — exposing them would
+    // require a scene→VM data bridge that's out of scope for this prompt.
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("TOTAL MEMORY")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .tracking(1)
+                    .foregroundStyle(Color(hex: "#6a6a78"))
+                Spacer()
+                Text(String(format: "%.1f", vm.state.totalMemoryWeight))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .monospacedDigit()
+                    .foregroundStyle(Color(hex: "#b8e8f8"))
+            }
+            if let vi = vm.state.selectedVisitorIdentity {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("SELECTED VISITOR")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .tracking(1)
+                        .foregroundStyle(Color(hex: "#6a6a78"))
+                    Text("\(vi.name) · age \(vi.age) · \(vi.ageCohort.rawValue)")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#e8e8f0"))
+                    Text("mood=\(vi.mood.rawValue) activity=\(vi.activity.rawValue) heading=\(vi.destinationIntent.displayLabel)")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#9090a0"))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     private var header: some View {

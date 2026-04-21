@@ -138,19 +138,67 @@ final class GameViewModel {
 
     // Called by MallScene when a visitor sprite is tapped. The scene owns visitor
     // positions so it hands us the visitor object.
+    // v9 Prompt 4 Phase 2+3 — now fires a tagged Thought (via pickThought)
+    // and, when the thought references an artifact, routes through
+    // recordThoughtFired so memory weight accrues. Also stores the text as
+    // before for the thought bubble + thoughts log.
     func selectVisitor(_ visitor: Visitor) {
         state.selectedVisitorId = visitor.id
         state.selectedStoreId = nil
         state.selectedDecorationId = nil
-        let thought = PersonalityPicker.pickMemory(for: visitor, in: state, rng: &rng)
-        state.selectedVisitorThought = thought
+
+        let thought = PersonalityPicker.pickThought(
+            for: visitor,
+            at: (x: visitor.x, y: visitor.y),
+            in: state, rng: &rng
+        )
+        state.selectedVisitorThought = thought.text
         state.thoughtsLog.insert(
-            ThoughtLogEntry(visitorName: visitor.name, personality: visitor.personality, text: thought),
+            ThoughtLogEntry(visitorName: visitor.name, personality: visitor.personality, text: thought.text),
             at: 0
         )
         if state.thoughtsLog.count > 6 {
             state.thoughtsLog = Array(state.thoughtsLog.prefix(6))
         }
+
+        // v9 Prompt 4 Phase 3 — memory weight accrual on tagged thoughts.
+        if let artifactId = thought.artifactId {
+            recordThoughtFired(artifactId: artifactId, cohort: visitor.ageCohort)
+        }
+
+        // v9 Prompt 4 Phase 6 — frozen identity snapshot for the profile panel.
+        // Captures narrative state AT selection time. Subsequent passive
+        // thoughts on this visitor do NOT mutate the snapshot (Prompt 4
+        // non-goal: "panel shows state but does not modify it from player
+        // actions").
+        state.selectedVisitorIdentity = VisitorIdentity(from: visitor, memory: thought.text)
+    }
+
+    // v9 Prompt 4 Phase 2 — passive-thought path.
+    // Called by MallScene's per-visitor thought timer (non-interactive, no
+    // bubble UI). Generates a Thought for the visitor at their current
+    // position; if tagged with an artifactId, applies memory weight; no
+    // thoughts-log entry and no selectedVisitorThought mutation (silent).
+    func firePassiveThought(for visitor: Visitor) {
+        let thought = PersonalityPicker.pickThought(
+            for: visitor,
+            at: (x: visitor.x, y: visitor.y),
+            in: state, rng: &rng
+        )
+        if let artifactId = thought.artifactId {
+            recordThoughtFired(artifactId: artifactId, cohort: visitor.ageCohort)
+        }
+    }
+
+    // v9 Prompt 4 Phase 3 — single place memory weight is incremented.
+    // Base +0.5 × cohort multiplier (Originals 2.5, Nostalgics 1.5, Explorers 1.0).
+    // Monotonic — never decreases in Prompt 4. Prompt 6 introduces the
+    // destruction-on-vacancy-fill rule; Prompt 7 introduces the preservation
+    // ×1.5 rate. Neither is wired here.
+    func recordThoughtFired(artifactId: Int, cohort: AgeCohort) {
+        guard let idx = state.artifacts.firstIndex(where: { $0.id == artifactId }) else { return }
+        let increment = ThoughtTuning.memoryWeightBaseIncrement * cohort.memoryWeightMultiplier
+        state.artifacts[idx].memoryWeight += increment
     }
 
     func selectStore(_ id: Int) {
@@ -170,6 +218,7 @@ final class GameViewModel {
         state.selectedStoreId = nil
         state.selectedDecorationId = nil
         state.selectedVisitorThought = ""
+        state.selectedVisitorIdentity = nil   // v9 Prompt 4 Phase 6
     }
 
     // ---------- player actions (thin pass-through to pure services) ----------

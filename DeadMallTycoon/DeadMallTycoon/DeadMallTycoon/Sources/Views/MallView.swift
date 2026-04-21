@@ -58,6 +58,19 @@ struct MallView: View {
                     Spacer()
                 }
             }
+
+            // v9 Prompt 4 Phase 6 — visitor profile panel. Pinned to the
+            // bottom of this ZStack (which extends into the aspect-fit
+            // letterbox space below the mall scene). Overlay only; the
+            // mall scene's size and on-screen position are unchanged when
+            // the panel appears or dismisses.
+            VStack {
+                Spacer()
+                VisitorProfilePanel(vm: vm)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
+            }
+            .allowsHitTesting(vm.state.selectedVisitorIdentity != nil)
         }
     }
 

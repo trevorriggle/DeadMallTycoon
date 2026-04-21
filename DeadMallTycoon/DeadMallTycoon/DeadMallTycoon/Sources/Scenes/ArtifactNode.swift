@@ -15,6 +15,9 @@ final class ArtifactNode: SKSpriteNode {
     private let artifactType: ArtifactType
     private var badgeNode: SKLabelNode?
     private var hazardDot: SKShapeNode?
+    // v9 Prompt 4 Phase 4 — memory-weight halo. Subtle pulse indicating the
+    // artifact has accumulated meaningful memory weight (≥ MemoryWeight.visualThreshold).
+    private var memoryHalo: SKShapeNode?
 
     init(artifact: Artifact) {
         self.artifactId = artifact.id
@@ -33,6 +36,7 @@ final class ArtifactNode: SKSpriteNode {
         updateAnimations(for: a)
         updateBadge(for: a)
         updateHazardDot(a.hazard)
+        updateMemoryHalo(weight: a.memoryWeight)   // v9 Prompt 4 Phase 4
     }
 
     // v9 Prompt 3 — per-type texture routing. The six legacy kinds keep their
@@ -123,6 +127,50 @@ final class ArtifactNode: SKSpriteNode {
         } else {
             hazardDot?.removeFromParent()
             hazardDot = nil
+        }
+    }
+
+    // v9 Prompt 4 Phase 4 — memory halo.
+    // A subtle desaturated halo behind the artifact, pulsing gently. Reads
+    // as "this object matters to someone" rather than "highlighted game
+    // object." Activates at memoryWeight ≥ MemoryWeight.visualThreshold;
+    // removed below threshold. Pulse parameters per Trevor's tuning:
+    // ±8% alpha, ±3% scale, 3-4s period.
+    private func updateMemoryHalo(weight: Double) {
+        let shouldShow = weight >= MemoryWeight.visualThreshold
+        if shouldShow {
+            if memoryHalo == nil {
+                // Soft circle roughly 40% larger than the artifact in its
+                // longest dimension — gentle breathing-ring effect.
+                let radius = max(size.width, size.height) * 0.7
+                let halo = SKShapeNode(circleOfRadius: radius)
+                halo.strokeColor = .clear
+                halo.fillColor = SKColor(white: 0.86, alpha: 0.12)
+                halo.blendMode = .add
+                halo.zPosition = -1   // behind the artifact sprite
+                halo.position = .zero
+                halo.alpha = 0.92
+                // Pulse: alpha 0.92 ↔ 1.00 (±~8% around mean ~0.96),
+                // scale 0.97 ↔ 1.03 (±3%), period 3.5s. Phase via group.
+                let period: TimeInterval = 3.5
+                let half = period / 2
+                let alphaCycle = SKAction.sequence([
+                    SKAction.fadeAlpha(to: 1.00, duration: half),
+                    SKAction.fadeAlpha(to: 0.92, duration: half),
+                ])
+                let scaleCycle = SKAction.sequence([
+                    SKAction.scale(to: 1.03, duration: half),
+                    SKAction.scale(to: 0.97, duration: half),
+                ])
+                let pulse = SKAction.group([alphaCycle, scaleCycle])
+                halo.run(SKAction.repeatForever(pulse), withKey: "memoryPulse")
+                addChild(halo)
+                memoryHalo = halo
+            }
+        } else {
+            memoryHalo?.removeAction(forKey: "memoryPulse")
+            memoryHalo?.removeFromParent()
+            memoryHalo = nil
         }
     }
 

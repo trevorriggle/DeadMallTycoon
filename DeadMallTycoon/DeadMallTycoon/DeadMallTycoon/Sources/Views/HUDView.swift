@@ -23,6 +23,8 @@ struct HUDView: View {
                 .coachmarkAnchor(.pnlPanel)      // re-anchored — tapping cash opens the modal
                 .coachmarkAnchor(.scoreSources)  // re-anchored — score breakdown is in the modal
             Spacer(minLength: 8)
+            memoryCell   // v9 Prompt 4 Phase 5 — ambient memory-weight readout
+            Spacer(minLength: 8)
             threatMeter
                 .coachmarkAnchor(.threatMeter)
                 // .watchList anchor lives on MallView now (Phase C) — warnings are ambient
@@ -34,6 +36,24 @@ struct HUDView: View {
         .background(Color(hex: "#14141a").opacity(0.96))
         .overlay(Rectangle().frame(height: 1).foregroundStyle(Color(hex: "#3a3a48")), alignment: .bottom)
         .foregroundStyle(Color(hex: "#e8e8f0"))
+    }
+
+    // v9 Prompt 4 Phase 5 — total mall memory weight. Read-only, minimal.
+    // Matches the ambient typography of the threat-reason label: monospaced,
+    // muted color, tabular digits.
+    private var memoryCell: some View {
+        let total = Int(vm.state.totalMemoryWeight.rounded())
+        return HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text("Memory")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(0.6)
+                .foregroundStyle(Color(hex: "#6a6a78"))
+            Text("\(total)")
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(Color(hex: "#b8e8f8"))
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     // MARK: - Cells
