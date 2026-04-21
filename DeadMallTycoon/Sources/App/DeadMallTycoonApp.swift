@@ -28,10 +28,10 @@ struct ContentView: View {
     @State private var showPnL = false
     @State private var coachmarkAnchors: [CoachmarkAnchor: CGRect] = [:]
     @Environment(\.horizontalSizeClass) private var hSize
-    #if DEBUG
-    // v9: Artifact debug panel entry — Prompt 1. Dev-only, stripped from release.
+    // v9: Artifact debug panel entry — Prompt 1. DIAGNOSTIC: temporarily
+    // ungated to confirm whether #if DEBUG is the reason the pill is invisible.
+    // Restore the #if DEBUG wrapper once we know.
     @State private var showArtifactDebug = false
-    #endif
 
     var body: some View {
         ZStack {
@@ -90,9 +90,9 @@ struct ContentView: View {
                 HStack(alignment: .bottom) {
                     ManageButton(action: { showManage = true })
                         .coachmarkAnchor(.tabBar)   // rebound — MANAGE replaces the old TabBar
-                    #if DEBUG
-                    // v9: Dev-only button to inspect the Artifact list. Sits next to
-                    // MANAGE; stripped from release builds by the surrounding #if DEBUG.
+                    // v9: DIAGNOSTIC — #if DEBUG temporarily removed around this button
+                    // to isolate whether the macro is the reason it wasn't visible.
+                    // Restore the wrapper once we know.
                     Button(action: { showArtifactDebug = true }) {
                         Text("DBG")
                             .font(.system(size: 11, weight: .black, design: .monospaced))
@@ -106,7 +106,6 @@ struct ContentView: View {
                             )
                     }
                     .padding(.leading, 6)
-                    #endif
                     Spacer()
                     SpeedControls(vm: vm)
                 }
@@ -116,8 +115,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showManage) { ManageDrawer(vm: vm) }
         .sheet(isPresented: $showPnL)    { PnLModal(vm: vm) }
-        #if DEBUG
+        // v9: DIAGNOSTIC — #if DEBUG temporarily removed around this sheet.
         .sheet(isPresented: $showArtifactDebug) { ArtifactDebugPanel(vm: vm) }
-        #endif
     }
 }
