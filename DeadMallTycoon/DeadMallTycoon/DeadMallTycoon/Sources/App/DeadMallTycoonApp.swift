@@ -26,6 +26,8 @@ struct ContentView: View {
     @State private var showingTutorial = false
     @State private var showManage = false
     @State private var showPnL = false
+    // v9 Prompt 3 followup — top-level Acquire shortcut.
+    @State private var showAcquire = false
     @State private var coachmarkAnchors: [CoachmarkAnchor: CGRect] = [:]
     @Environment(\.horizontalSizeClass) private var hSize
     #if DEBUG
@@ -84,12 +86,19 @@ struct ContentView: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 8)
 
-            // Bottom-left: MANAGE drawer trigger.
+            // Bottom-left: ACQUIRE shortcut stacked above MANAGE drawer trigger.
+            // v9 Prompt 3 followup — Acquire promoted to the HUD as a
+            // top-level shortcut. MANAGE is unchanged; the Acquire tab inside
+            // MANAGE is also untouched (this is an additional entry point,
+            // not a replacement).
             VStack {
                 Spacer()
                 HStack(alignment: .bottom) {
-                    ManageButton(action: { showManage = true })
-                        .coachmarkAnchor(.tabBar)   // rebound — MANAGE replaces the old TabBar
+                    VStack(alignment: .leading, spacing: 8) {
+                        AcquireButton(action: { showAcquire = true })
+                        ManageButton(action: { showManage = true })
+                            .coachmarkAnchor(.tabBar)   // rebound — MANAGE replaces the old TabBar
+                    }
                     #if DEBUG
                     // v9: Dev-only button to inspect the Artifact list. Sits next to
                     // MANAGE; stripped from release builds by the surrounding #if DEBUG.
@@ -114,8 +123,9 @@ struct ContentView: View {
                 .padding(.bottom, 12)
             }
         }
-        .sheet(isPresented: $showManage) { ManageDrawer(vm: vm) }
-        .sheet(isPresented: $showPnL)    { PnLModal(vm: vm) }
+        .sheet(isPresented: $showManage)  { ManageDrawer(vm: vm) }
+        .sheet(isPresented: $showPnL)     { PnLModal(vm: vm) }
+        .sheet(isPresented: $showAcquire) { ArtifactAcquireSheet(vm: vm) }
         #if DEBUG
         .sheet(isPresented: $showArtifactDebug) { ArtifactDebugPanel(vm: vm) }
         #endif

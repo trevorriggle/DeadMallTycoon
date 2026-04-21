@@ -302,41 +302,15 @@ struct ManageDrawer: View {
     // MARK: - Acquire (v9 Prompt 3)
 
     // v8: buildTab — six-kind decoration picker.
-    // v9 Prompt 3 — full Artifact roster. The 26 placeable types from
-    // ArtifactCatalog.placeableTypes, listed with cost + base/ruin multipliers.
-    // Placement mode banner is prominent. Tapping a row starts placement and
-    // closes the drawer so the player can tap the corridor.
+    // v9 Prompt 3 — full Artifact roster.
+    // v9 Prompt 3 followup — list body extracted to ArtifactAcquirePanel so
+    // both this tab and the standalone HUD Acquire sheet use the same UI.
+    // Tapping a row starts placement and closes the drawer so the player
+    // can tap the corridor.
     private var acquireTab: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Acquire Artifacts")
-            subtle("Aesthetic multipliers. Decay with time — a ruined fountain scores more than a working one.")
-            if vm.state.placingArtifactType != nil {
-                Text("Placement mode active. Close this sheet and tap the corridor.")
-                    .font(.system(size: 13, design: .monospaced)).italic()
-                    .foregroundStyle(Color(hex: "#7fd3f0"))
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(hex: "#2a2a34"))
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#7fd3f0")))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
-            ForEach(ArtifactCatalog.placeableTypes, id: \.self) { type in
-                let info = ArtifactCatalog.info(type)
-                actionButton(active: false) {
-                    vm.beginPlacement(type)
-                    // Close the drawer so the player can tap in the corridor.
-                    dismiss()
-                } label: {
-                    HStack {
-                        Text("\(info.name) · $\(info.cost.formatted())")
-                        Spacer()
-                        Text("(+\(Int((info.baseMult * 100).rounded()))% mult, ruin +\(Int((info.ruinMult * 100).rounded()))%)")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "#6a6a78"))
-                    }
-                }
-                .disabled(vm.state.cash < info.cost)
-            }
+        ArtifactAcquirePanel(vm: vm) { type in
+            vm.beginPlacement(type)
+            dismiss()
         }
     }
 
