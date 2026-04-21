@@ -22,6 +22,12 @@ struct GameState: Equatable {
     var stores: [Store] = []
     var decorations: [Decoration] = []
 
+    // v9: Memorial entity introduced in Prompt 1. Nothing reads or writes this
+    // field yet — it is wired into mechanics in subsequent prompts (tenant
+    // closure → artifact spawn, monthly memory-weight accumulation, visitor
+    // thought selection biased by salience). See Artifact.swift for rationale.
+    var artifacts: [Artifact] = []
+
     // operations — v8: G.spd, G.activePromos, G.activeAdDeals, G.activeStaff
     var speed: Speed = .x1
     var activePromos: [ActivePromotion] = []

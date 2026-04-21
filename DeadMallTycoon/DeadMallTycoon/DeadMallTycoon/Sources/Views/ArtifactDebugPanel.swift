@@ -1,6 +1,4 @@
-// v9: DIAGNOSTIC — #if DEBUG wrapper temporarily removed (Prompt 1 diagnosis).
-// Restore the wrapper once we confirm whether the macro is the reason the DBG
-// pill wasn't visible in DeadMallTycoonApp.swift.
+#if DEBUG
 import SwiftUI
 
 // v9: Read-only dev panel. Lists every Artifact in GameState so Prompts 2+ can
@@ -125,4 +123,4 @@ struct ArtifactDebugPanel: View {
         }
     }
 }
-// v9: DIAGNOSTIC — trailing #endif removed to match ungated top of file.
+#endif
