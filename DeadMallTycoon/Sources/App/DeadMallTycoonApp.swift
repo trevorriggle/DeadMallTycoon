@@ -90,19 +90,19 @@ struct ContentView: View {
                 HStack(alignment: .bottom) {
                     ManageButton(action: { showManage = true })
                         .coachmarkAnchor(.tabBar)   // rebound — MANAGE replaces the old TabBar
-                    // v9: DIAGNOSTIC — #if DEBUG temporarily removed around this button
-                    // to isolate whether the macro is the reason it wasn't visible.
-                    // Restore the wrapper once we know.
+                    // v9: DIAGNOSTIC — 80×80 solid red square in place of the DBG pill.
+                    // If this is invisible, Xcode is not running the code we're
+                    // editing (stale build / wrong target membership / file missing
+                    // from target). If visible, the prior styling was the culprit
+                    // and we fix that instead. Revert to the proper pill afterward.
                     Button(action: { showArtifactDebug = true }) {
-                        Text("DBG")
-                            .font(.system(size: 11, weight: .black, design: .monospaced))
-                            .tracking(1)
-                            .foregroundStyle(Color(hex: "#b8e8f8"))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .background(Color(hex: "#14141a").opacity(0.8))
+                        Rectangle()
+                            .fill(Color.red)
+                            .frame(width: 80, height: 80)
                             .overlay(
-                                Rectangle().stroke(Color(hex: "#3a3a48"), lineWidth: 1)
+                                Text("DBG")
+                                    .font(.system(size: 20, weight: .black))
+                                    .foregroundStyle(.white)
                             )
                     }
                     .padding(.leading, 6)
