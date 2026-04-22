@@ -3,16 +3,22 @@ import Foundation
 // v8: STORE_POSITIONS, STARTING_STORES, STARTING_DECORATIONS + initial G hydration.
 enum StartingMall {
 
-    // Anchor end-caps (Sears west, JCPenney east) are full scene-height structures
-    // that visually terminate the corridor. 200pt wide (2× a standard storefront),
-    // spanning y 10..510 so they read as department stores, not inline storefronts.
+    // Anchor end-caps (Sears west, JCPenney east) are the terminal anchors
+    // of the mall. 200pt wide (2× a standard storefront).
     // Total slot count: 18 (9 per wing, each wing = 1 anchor + 8 standards).
     //
     // v8 parity note: v8 treated Sears/JCP as standard-sized slots with higher rent.
     // The iPad port diverges here — anchors are architecturally distinct.
+    //
+    // v9 Prompt 6.5 — anchors relocated. Previously full-scene-height (y 10..510)
+    // bookends that occupied the corner real estate. Now corridor-height
+    // flanks (y 110..410, h:300) so the four corner blocks are free for
+    // the new NW/NE/SW/SE entrance doors. Width and wing assignments
+    // preserved; anchor-tier detection by position.w >= 180 survives.
     static let positions: [StorePosition] = [
-        // North anchor (Sears) — full-height west end-cap.
-        StorePosition(x:    0, y:  10, w: 200, h: 500, wing: .north),
+        // North anchor (Sears) — west corridor flank, between the corner doors.
+        // v9 Prompt 6.5 — was `y:10, h:500` full-height bookend.
+        StorePosition(x:    0, y: 110, w: 200, h: 300, wing: .north),
         // North standards — 8 storefronts butted up across x 200..1000.
         StorePosition(x:  200, y:  20, w: 100, h: 90, wing: .north),
         StorePosition(x:  300, y:  20, w: 100, h: 90, wing: .north),
@@ -31,8 +37,9 @@ enum StartingMall {
         StorePosition(x:  700, y: 410, w: 100, h: 90, wing: .south),
         StorePosition(x:  800, y: 410, w: 100, h: 90, wing: .south),
         StorePosition(x:  900, y: 410, w: 100, h: 90, wing: .south),
-        // South anchor (JCPenney) — full-height east end-cap.
-        StorePosition(x: 1000, y:  10, w: 200, h: 500, wing: .south),
+        // South anchor (JCPenney) — east corridor flank, between the corner doors.
+        // v9 Prompt 6.5 — was `y:10, h:500` full-height bookend.
+        StorePosition(x: 1000, y: 110, w: 200, h: 300, wing: .south),
     ]
 
     // v8: STARTING_STORES

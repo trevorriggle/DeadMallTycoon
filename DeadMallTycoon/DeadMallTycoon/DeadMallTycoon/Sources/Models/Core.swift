@@ -24,6 +24,26 @@ enum Wing: String, Codable, CaseIterable, Hashable {
     case north, south
 }
 
+// v9 Prompt 6.5 — per-corner entrance identity.
+//
+// The iPad port relocated the two mid-wall entrances to four corner doors
+// (NW/NE/SW/SE). Each corner is independently sealable; wings continue to
+// be north-row / south-row and are NOT redefined by corner.
+//
+// Corner → wing mapping is fixed: NW/NE → .north, SW/SE → .south. A wing
+// closure hides both of its corners' doors; an entrance seal takes out a
+// single corner without affecting the other on the same wing.
+enum EntranceCorner: String, Codable, CaseIterable, Hashable {
+    case nw, ne, sw, se
+
+    var wing: Wing {
+        switch self {
+        case .nw, .ne: return .north
+        case .sw, .se: return .south
+        }
+    }
+}
+
 enum StoreTier: String, Codable {
     case anchor, standard, kiosk, sketchy, vacant
 }

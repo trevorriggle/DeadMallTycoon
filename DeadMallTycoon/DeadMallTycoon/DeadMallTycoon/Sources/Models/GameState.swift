@@ -39,10 +39,13 @@ struct GameState: Equatable {
     // Entrance sealing — v9 iPad-port addition, no v8 equivalent. Set by TickEngine
     // monthly when mall state is struggling or worse. Distinct from wingsClosed:
     // sealing is an emergent late-game decay event (plywood over glass doors),
-    // not a player action. Not reversible. Both sealed → "functionally closed":
+    // not a player action. Not reversible. All sealed → "functionally closed":
     // no new visitors spawn, existing drain out, corridor empties.
-    var northEntranceSealed: Bool = false
-    var southEntranceSealed: Bool = false
+    //
+    // v9 Prompt 6.5 — replaced the two-wing booleans (northEntranceSealed /
+    // southEntranceSealed) with a per-corner set covering NW/NE/SW/SE. Clean
+    // break — there is no saved-game format to migrate.
+    var sealedEntrances: Set<EntranceCorner> = []
 
     // threat + traffic — v8: G.threatMeter, G.currentTraffic, G.consecutiveLowTrafficMonths, G.gangMonths
     var threatMeter: Double = 0

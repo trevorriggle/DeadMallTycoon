@@ -36,26 +36,35 @@ final class MallScene: SKScene {
     // sealedEntrance, emptyFoodCourt, custom) are skipped by reconcile.
     private var artifactNodes: [Int: ArtifactNode] = [:]
     private var visitorNodes: [UUID: VisitorNode] = [:]
-    private var northEntranceNode: EntranceNode?
-    private var southEntranceNode: EntranceNode?
+    // v9 Prompt 6.5 — four corner entrances (NW/NE/SW/SE), keyed by corner.
+    // Replaces the two wing-centered doors. Lazy-created in reconcileEntrances.
+    private var entranceNodes: [EntranceCorner: EntranceNode] = [:]
 
-    // Entrance spawn/exit points in CSS coords. Centered at x=600 (the seam
-    // between standard storefront slots 4 and 5), sitting on the corridor wall
-    // line (y=128 north, y=388 south). Entrance nodes are 40×24pt at these points
-    // — fully in the wall band without overlapping any storefront sprite.
-    private static let northEntranceCSS = CGPoint(x: 600, y: 128)
-    private static let southEntranceCSS = CGPoint(x: 600, y: 388)
-    // Spawn slightly inside the corridor so visitors don't sit on the wall line.
-    private static let northSpawnCSS = CGPoint(x: 600, y: 140)
-    private static let southSpawnCSS = CGPoint(x: 600, y: 380)
+    // v9 Prompt 6.5 — corner entrance positions in CSS coords. Each corner
+    // door sits centered in its 200×110pt corner block, in the wall band
+    // adjacent to the corridor. Spawn positions are shifted a few points
+    // inward (toward the corridor) so visitors don't render on the wall line.
+    private static let entranceCSS: [EntranceCorner: CGPoint] = [
+        .nw: CGPoint(x: 100, y: 105),
+        .ne: CGPoint(x: 1100, y: 105),
+        .sw: CGPoint(x: 100, y: 415),
+        .se: CGPoint(x: 1100, y: 415),
+    ]
+    private static let spawnCSS: [EntranceCorner: CGPoint] = [
+        .nw: CGPoint(x: 100, y: 140),
+        .ne: CGPoint(x: 1100, y: 140),
+        .sw: CGPoint(x: 100, y: 380),
+        .se: CGPoint(x: 1100, y: 380),
+    ]
 
     // Scene-local visitor presentation state — not in GameState, not observed.
     // Keeps 60fps position writes out of the Observation loop.
     private var visitors: [Visitor] = []
-    // Tracks which entrance each visitor entered through, so leaving visitors
+    // Tracks which corner each visitor entered through, so leaving visitors
     // can prefer exiting the way they came (spec: "they exit the way they came").
     // Scene-local only — not persisted, not in GameState.
-    private var visitorEntryWing: [UUID: Wing] = [:]
+    // v9 Prompt 6.5 — was visitorEntryWing; now per-corner.
+    private var visitorEntryCorner: [UUID: EntranceCorner] = [:]
     // Phase 3 behavior state: phase machine + destination + post-shop bag tier +
     // last-shopped-at store id (for thought-bubble suffix). Keyed by visitor.id.
     // Cleared alongside visitorNodes on despawn / restart.
@@ -149,7 +158,10 @@ final class MallScene: SKScene {
             v.state = .wandering
             var behavior = VisitorBehaviorState()
             assignFreshDestination(&v, &behavior, in: s)
-            visitorEntryWing[v.id] = visitorRNG.chance(0.5) ? .north : .south
+            // v9 Prompt 6.5 — seed visitor's entry corner uniformly at random
+            // from all four. Initial seeding assumes all corners open; Mall
+            // openness is checked on actual spawns, not this first-frame seed.
+            visitorEntryCorner[v.id] = EntranceCorner.allCases.randomElement(using: &visitorRNG) ?? .nw
             visitorBehavior[v.id] = behavior
             visitors.append(v)
         }
@@ -258,8 +270,7 @@ final class MallScene: SKScene {
             _ = vm.state.artifacts           // v9 Prompt 3 — was state.decorations
             _ = vm.state.wingsClosed
             _ = vm.state.wingsDowngraded
-            _ = vm.state.northEntranceSealed
-            _ = vm.state.southEntranceSealed
+            _ = vm.state.sealedEntrances
             _ = vm.state.selectedVisitorId
             _ = vm.state.selectedStoreId
             _ = vm.state.started
@@ -285,7 +296,7 @@ final class MallScene: SKScene {
             for node in visitorNodes.values { node.removeFromParent() }
             visitorNodes.removeAll()
             visitors.removeAll()
-            visitorEntryWing.removeAll()
+            visitorEntryCorner.removeAll()
             visitorBehavior.removeAll()
             didSeedVisitors = false
         }
@@ -309,27 +320,26 @@ final class MallScene: SKScene {
     }
 
     // Entrance reconcile — lazy create on first pass, toggle sealed state thereafter.
-    // When a wing is player-sealed (wingsClosed), hide the entrance entirely — the
-    // wing overlay handles the visual. Otherwise show it, sealed or not.
+    // When a wing is player-sealed (wingsClosed), hide both of its corners'
+    // doors entirely — the wing overlay handles the visual. Otherwise show,
+    // with per-corner sealed plywood when sealedEntrances contains the corner.
+    //
+    // v9 Prompt 6.5 — was two wing-centered doors (north/south); now four
+    // corner doors keyed by EntranceCorner.
     private func reconcileEntrances(_ state: GameState) {
-        if northEntranceNode == nil {
-            let n = EntranceNode(wing: .north)
-            n.position = csToScene(x: Self.northEntranceCSS.x, y: Self.northEntranceCSS.y)
-            n.zPosition = 12
-            entrancesLayer.addChild(n)
-            northEntranceNode = n
+        for corner in EntranceCorner.allCases {
+            if entranceNodes[corner] == nil {
+                let node = EntranceNode(corner: corner)
+                if let pos = Self.entranceCSS[corner] {
+                    node.position = csToScene(x: pos.x, y: pos.y)
+                }
+                node.zPosition = 12
+                entrancesLayer.addChild(node)
+                entranceNodes[corner] = node
+            }
+            entranceNodes[corner]?.setSealed(state.sealedEntrances.contains(corner))
+            entranceNodes[corner]?.isHidden = Mall.isWingClosed(corner.wing, in: state)
         }
-        if southEntranceNode == nil {
-            let s = EntranceNode(wing: .south)
-            s.position = csToScene(x: Self.southEntranceCSS.x, y: Self.southEntranceCSS.y)
-            s.zPosition = 12
-            entrancesLayer.addChild(s)
-            southEntranceNode = s
-        }
-        northEntranceNode?.setSealed(state.northEntranceSealed)
-        southEntranceNode?.setSealed(state.southEntranceSealed)
-        northEntranceNode?.isHidden = Mall.isWingClosed(.north, in: state)
-        southEntranceNode?.isHidden = Mall.isWingClosed(.south, in: state)
     }
 
     // Phase C — subtle red tint on a wing background when any store in the wing
@@ -642,7 +652,7 @@ final class MallScene: SKScene {
         for id in toRemove {
             visitorNodes[id]?.removeFromParent()
             visitorNodes.removeValue(forKey: id)
-            visitorEntryWing.removeValue(forKey: id)
+            visitorEntryCorner.removeValue(forKey: id)
             visitorBehavior.removeValue(forKey: id)
         }
         visitors.removeAll { toRemove.contains($0.id) }
@@ -659,13 +669,13 @@ final class MallScene: SKScene {
         if visibleCount < visibleTarget
             && visitors.count < poolCap
             && visitorRNG.chance(0.02) {
-            if let (spawnCSS, wing) = chooseSpawnEntrance(in: s) {
+            if let (spawnPos, corner) = chooseSpawnEntrance(in: s) {
                 var v = VisitorFactory.spawn(state: s, rng: &visitorRNG)
-                v.x = spawnCSS.x
-                v.y = spawnCSS.y
+                v.x = spawnPos.x
+                v.y = spawnPos.y
                 var behavior = VisitorBehaviorState()
                 assignFreshDestination(&v, &behavior, in: s)
-                visitorEntryWing[v.id] = wing
+                visitorEntryCorner[v.id] = corner
                 visitorBehavior[v.id] = behavior
                 visitors.append(v)
             }
@@ -899,42 +909,38 @@ final class MallScene: SKScene {
 
     // MARK: Entrance routing
 
-    // Returns a spawn point + entry-wing record, or nil if no usable entrance.
-    // An entrance is usable when it isn't sealed AND its wing isn't player-sealed.
-    private func chooseSpawnEntrance(in state: GameState) -> (pos: CGPoint, wing: Wing)? {
-        let northUsable = !state.northEntranceSealed && !Mall.isWingClosed(.north, in: state)
-        let southUsable = !state.southEntranceSealed && !Mall.isWingClosed(.south, in: state)
-        switch (northUsable, southUsable) {
-        case (true, true):
-            return visitorRNG.chance(0.5)
-                ? (Self.northSpawnCSS, .north)
-                : (Self.southSpawnCSS, .south)
-        case (true, false): return (Self.northSpawnCSS, .north)
-        case (false, true): return (Self.southSpawnCSS, .south)
-        default:            return nil
-        }
+    // v9 Prompt 6.5 — picks uniformly at random from open corners; spawn
+    // position is that corner's spawnCSS (visitor enters AT the corner door
+    // and walks inward). Returns nil if every corner is sealed or its wing
+    // is closed.
+    private func chooseSpawnEntrance(in state: GameState) -> (pos: CGPoint, corner: EntranceCorner)? {
+        let open = Mall.openEntrances(in: state)
+        guard !open.isEmpty,
+              let picked = open.randomElement(using: &visitorRNG),
+              let pos = Self.spawnCSS[picked]
+        else { return nil }
+        return (pos, picked)
     }
 
-    // Returns a target representing the exit point for a leaving visitor.
-    // Prefers the entrance they came in through; falls back to the other if sealed;
-    // returns nil if no usable entrance (visitor should be despawned immediately).
+    // v9 Prompt 6.5 — exit preference for leaving visitors.
+    // Prefers the corner they came in through; falls back to any open corner;
+    // returns nil if no usable entrance (visitor despawns immediately).
     private func chooseExitTarget(for visitorId: UUID, in state: GameState) -> VisitorTarget? {
-        let entryWing = visitorEntryWing[visitorId]
-        let northUsable = !state.northEntranceSealed && !Mall.isWingClosed(.north, in: state)
-        let southUsable = !state.southEntranceSealed && !Mall.isWingClosed(.south, in: state)
-        if let entry = entryWing {
-            if entry == .north, northUsable {
-                return VisitorTarget(x: Self.northEntranceCSS.x, y: Self.northEntranceCSS.y, storeId: nil)
-            }
-            if entry == .south, southUsable {
-                return VisitorTarget(x: Self.southEntranceCSS.x, y: Self.southEntranceCSS.y, storeId: nil)
-            }
+        let open = Mall.openEntrances(in: state)
+        guard !open.isEmpty else { return nil }
+
+        // Prefer the entry corner if it's still open.
+        if let entry = visitorEntryCorner[visitorId],
+           open.contains(entry),
+           let pos = Self.entranceCSS[entry] {
+            return VisitorTarget(x: pos.x, y: pos.y, storeId: nil)
         }
-        if northUsable {
-            return VisitorTarget(x: Self.northEntranceCSS.x, y: Self.northEntranceCSS.y, storeId: nil)
-        }
-        if southUsable {
-            return VisitorTarget(x: Self.southEntranceCSS.x, y: Self.southEntranceCSS.y, storeId: nil)
+        // Otherwise head for any open corner. Deterministic choice (first
+        // in allCases order) so exit paths are reproducible in replays.
+        for corner in EntranceCorner.allCases where open.contains(corner) {
+            if let pos = Self.entranceCSS[corner] {
+                return VisitorTarget(x: pos.x, y: pos.y, storeId: nil)
+            }
         }
         return nil
     }
@@ -943,14 +949,22 @@ final class MallScene: SKScene {
 
     // Nested so it stays scoped to MallScene and doesn't fan out into a new file.
     // 40pt × 24pt double-door glyph: dark frame + warm glow + vertical mullion
-    // (reads as double doors) + "MALL" sign on the corridor side. When sealed:
-    // plywood overlay with horizontal plank lines and a "USE OTHER" tag.
+    // (reads as double doors). Sealed state overlays plywood with horizontal
+    // planks.
+    //
+    // v9 Prompt 6.5 — EntranceNode now takes an EntranceCorner instead of a
+    // Wing, and the "MALL" / "USE OTHER" text labels are removed per design
+    // direction: a door sprite reads as a door without annotation. The
+    // corner parameter is retained for future asymmetric visuals (e.g.,
+    // directional cues toward the corridor) but the current draw is
+    // symmetric and orientation-agnostic.
     private final class EntranceNode: SKNode {
-        private let wing: Wing
+        // swiftlint:disable:next unused_declaration
+        private let corner: EntranceCorner
         private var sealedOverlay: SKNode?
 
-        init(wing: Wing) {
-            self.wing = wing
+        init(corner: EntranceCorner) {
+            self.corner = corner
             super.init()
 
             let doorRect = CGRect(x: -20, y: -12, width: 40, height: 24)
@@ -975,18 +989,6 @@ final class MallScene: SKScene {
             mullion.strokeColor = .clear
             mullion.zPosition = 2
             addChild(mullion)
-
-            // "MALL" sign on the corridor side. In SpriteKit y-up, north's
-            // corridor lives at negative local y, south's at positive.
-            let sign = SKLabelNode(fontNamed: "Courier-Bold")
-            sign.text = "MALL"
-            sign.fontSize = 9
-            sign.fontColor = Palette.signLight
-            sign.verticalAlignmentMode = .center
-            sign.horizontalAlignmentMode = .center
-            sign.position = CGPoint(x: 0, y: wing == .north ? -20 : 20)
-            sign.zPosition = 2
-            addChild(sign)
         }
 
         required init?(coder: NSCoder) { fatalError() }
@@ -1011,16 +1013,6 @@ final class MallScene: SKScene {
                     plank.lineWidth = 1
                     overlay.addChild(plank)
                 }
-
-                let tag = SKLabelNode(fontNamed: "Courier-Bold")
-                tag.text = "USE OTHER"
-                tag.fontSize = 7
-                tag.fontColor = Palette.wingSealedLabel
-                tag.verticalAlignmentMode = .center
-                tag.horizontalAlignmentMode = .center
-                tag.position = CGPoint(x: 0, y: wing == .north ? -20 : 20)
-                tag.zPosition = 4
-                overlay.addChild(tag)
 
                 addChild(overlay)
                 sealedOverlay = overlay

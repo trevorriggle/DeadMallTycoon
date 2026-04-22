@@ -37,6 +37,31 @@ enum Mall {
         state.wingsDowngraded[wing] ?? false
     }
 
+    // v9 Prompt 6.5 — per-corner sealing + open-count helpers.
+    //
+    // An entrance is "open" iff the corner isn't in sealedEntrances AND its
+    // wing isn't closed. Wing closure is a broader cut (both corners on that
+    // wing get hidden); sealing is per-corner. Consumers should call
+    // openEntrances/openEntranceCount — never inspect sealedEntrances directly
+    // so the wing-closure rule stays coherent.
+    static func isEntranceSealed(_ corner: EntranceCorner, in state: GameState) -> Bool {
+        state.sealedEntrances.contains(corner)
+    }
+
+    static func openEntrances(in state: GameState) -> Set<EntranceCorner> {
+        var open: Set<EntranceCorner> = []
+        for corner in EntranceCorner.allCases {
+            if state.sealedEntrances.contains(corner) { continue }
+            if isWingClosed(corner.wing, in: state) { continue }
+            open.insert(corner)
+        }
+        return open
+    }
+
+    static func openEntranceCount(in state: GameState) -> Int {
+        openEntrances(in: state).count
+    }
+
     // v8: getAbandonmentLevel()
     static func abandonmentLevel(_ state: GameState) -> Int {
         switch Mall.state(state) {

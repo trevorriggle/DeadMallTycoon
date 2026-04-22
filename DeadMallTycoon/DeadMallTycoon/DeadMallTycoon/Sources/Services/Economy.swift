@@ -71,12 +71,21 @@ enum Economy {
     }
 
     // v8: rawTraffic()
+    //
+    // v9 Prompt 6.5 — four corner entrances. A diminishing-returns multiplier
+    // on open-door count scales the tenant-occupancy factor output. Two open
+    // doors = 1.0 (baseline, matching the previous two-wing layout), four
+    // open = 1.4, one open = 0.5, zero = 0 (no new visitors enter). The
+    // multiplier is applied BEFORE promo / staff / downgrade modifiers so
+    // those continue to compound on top of traffic volume.
     static func rawTraffic(_ state: GameState) -> Int {
         let openStores = Mall.openStores(state)
         let occ = openStores.filter { $0.tier != .vacant }.count
         let total = max(1, openStores.count)
         let factor = 0.55 + 0.45 * Double(occ) / Double(total)
         var t = Int(Double(openStores.reduce(0) { $0 + $1.traffic }) * factor)
+        // v9 Prompt 6.5 — open-door multiplier.
+        t = Int(Double(t) * entranceTrafficMultiplier(openEntranceCount: Mall.openEntranceCount(in: state)))
         for p in state.activePromos {
             switch p.effect {
             case .traffic:  t = Int(Double(t) * 1.25)
@@ -92,6 +101,21 @@ enum Economy {
         if state.activeStaff.marketing { t = Int(Double(t) * 1.05) }
         if state.gangMonths > 0        { t = Int(Double(t) * 0.65) }
         return t
+    }
+
+    // v9 Prompt 6.5 — diminishing-returns curve for open-door count.
+    // See TUNING.md "Entrances" section. Two open = 1.0 is the calibration
+    // anchor; it preserves traffic magnitudes from the previous two-wing
+    // layout so other tuning (rent, hardship thresholds) doesn't need
+    // recalibration.
+    static func entranceTrafficMultiplier(openEntranceCount: Int) -> Double {
+        switch openEntranceCount {
+        case 0: return 0.0
+        case 1: return 0.5
+        case 2: return 1.0
+        case 3: return 1.2
+        default: return 1.4   // 4 (or more, if the topology is ever extended)
+        }
     }
 
     // v8: aestheticMult()

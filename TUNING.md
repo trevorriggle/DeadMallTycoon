@@ -20,6 +20,25 @@ Update as part of any prompt that introduces or modifies a tunable value.
 - `MallScene.passiveThoughtMinInterval = 20` — seconds, min per-visitor cadence. (Prompt 4)
 - `MallScene.passiveThoughtMaxInterval = 30` — seconds, max per-visitor cadence. (Prompt 4)
 
+## Entrances
+
+- Open-door traffic multiplier — applied in `Economy.entranceTrafficMultiplier(openEntranceCount:)`. Diminishing-returns curve; two open is the baseline that matches the pre-Prompt-6.5 two-wing layout, so rent / hardship tuning carries over unchanged. (Prompt 6.5)
+    | open corners | multiplier |
+    |---|---|
+    | 0 | 0.0× (no new visitors spawn) |
+    | 1 | 0.5× |
+    | 2 | 1.0× (baseline) |
+    | 3 | 1.2× |
+    | 4 | 1.4× |
+- Per-tick seal probability by mall state — `TickEngine` monthly roll picks a uniformly random open corner to seal. Each corner's individual seal rate is `p / openCount`. (Prompt 6.5, values carried over from pre-6.5 two-wing logic)
+    | mall state | p |
+    |---|---|
+    | thriving / fading | 0.00 |
+    | struggling | 0.05 |
+    | dying | 0.10 |
+    | dead | 0.15 |
+- Topology: four corners — NW/NE → north wing, SW/SE → south wing. Wing closure hides both of its corners' doors; sealing is per-corner. (Prompt 6.5)
+
 ## Visual
 
 - Halo pulse: ±8% alpha, ±3% scale, 3.5s period. (Prompt 4)

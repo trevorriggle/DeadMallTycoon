@@ -147,8 +147,14 @@ enum TickEngine {
         s = Warnings.refresh(s)
 
         // 9.5 entrance sealing — v9 iPad-port addition. When mall state is
-        // struggling or worse, one still-open entrance has a monthly chance of
-        // getting boarded up. Not reversible. If both are already sealed, skip.
+        // struggling or worse, one still-open corner entrance has a monthly
+        // chance of getting boarded up. Not reversible.
+        //
+        // v9 Prompt 6.5 — was a north/south coin flip across two doors. Now
+        // picks uniformly at random from currently-open corners (open meaning
+        // not sealed AND wing not closed). Per-tick probability is unchanged;
+        // with four candidates instead of two, each corner's per-tick seal
+        // rate drops.
         let sealProbability: Double
         switch Mall.state(s) {
         case .struggling: sealProbability = 0.05
@@ -157,15 +163,11 @@ enum TickEngine {
         case .thriving, .fading: sealProbability = 0
         }
         if sealProbability > 0 && rng.chance(sealProbability) {
-            let northOpen = !s.northEntranceSealed
-            let southOpen = !s.southEntranceSealed
-            if northOpen && southOpen {
-                if rng.chance(0.5) { s.northEntranceSealed = true }
-                else               { s.southEntranceSealed = true }
-            } else if northOpen {
-                s.northEntranceSealed = true
-            } else if southOpen {
-                s.southEntranceSealed = true
+            let open = Array(Mall.openEntrances(in: s))
+                .sorted { $0.rawValue < $1.rawValue }   // deterministic ordering for RNG
+            if !open.isEmpty {
+                let pickIndex = rng.int(in: 0..<open.count)
+                s.sealedEntrances.insert(open[pickIndex])
             }
         }
 
