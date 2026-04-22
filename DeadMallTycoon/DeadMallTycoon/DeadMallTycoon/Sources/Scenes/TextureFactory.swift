@@ -26,11 +26,21 @@ enum TextureFactory {
 
     // MARK: - Floor
 
-    // v8 floor: #c8bca0 base + three offset dot patterns at 30/40/50px tile sizes.
-    // We compose a single 120×120 tile (LCM-ish) with representative dot placements.
+    // v9 — prefer the authored FloorTile asset when shipped; fall back to the
+    // original v8 procedural floor pattern (base + three offset dot layers)
+    // when the asset is absent. Lets Trevor iterate on the tile by replacing
+    // Assets.xcassets/FloorTile.imageset/FloorTile.* without code changes.
+    //
+    // .filteringMode = .nearest preserves pixel-art crispness — bilinear
+    // filtering would blur the tile when scaled to fit the corridor.
     static func floorTile() -> SKTexture {
         cached("floor") {
-            SKTexture(image: renderImage(size: CGSize(width: 120, height: 120)) { ctx, size in
+            if let authored = UIImage(named: "FloorTile") {
+                let tex = SKTexture(image: authored)
+                tex.filteringMode = .nearest
+                return tex
+            }
+            return SKTexture(image: renderImage(size: CGSize(width: 120, height: 120)) { ctx, size in
                 Palette.floor.setFill()
                 ctx.fill(CGRect(origin: .zero, size: size))
 
