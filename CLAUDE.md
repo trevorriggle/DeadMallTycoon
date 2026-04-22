@@ -41,6 +41,10 @@ via ⌘U.
 
 ## Design-intent docs
 
+- **`ENDGAME.md`** — canonical statement of design intent. Describes the
+  forty-minutes-in mall the game exists to produce. Operational, not
+  speculative: re-read when scoping is ambiguous; evaluate prompts against
+  it; ask "does this serve the endgame scene?" before expanding scope.
 - `DeadMallTycoon_Spec (1).md` — concept / pitch.
 - `DeadMallTycoon_Mechanics (2).md` — detailed mechanics spec.
 - `dead_mall_tycoon_v8.html` — the original browser prototype. Source of truth
