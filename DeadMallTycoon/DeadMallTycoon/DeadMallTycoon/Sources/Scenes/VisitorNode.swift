@@ -9,13 +9,16 @@ final class VisitorNode: SKSpriteNode {
 
     let visitorId: UUID
     private var bagNode: SKShapeNode?
+    // v9 Prompt 8 — isolation shadow, only present when the mall's active
+    // corridor visitor count is below EnvironmentTuning.isolationThreshold.
+    private var isolationShadow: SKShapeNode?
 
     init(visitor: Visitor) {
         self.visitorId = visitor.id
         let body = UIColor(hex: visitor.color)
         let head = UIColor(hex: visitor.headColor)
         let texture = TextureFactory.visitorTexture(bodyColor: body, headColor: head)
-        super.init(texture: texture, color: .clear, size: CGSize(width: 26, height: 36))
+        super.init(texture: texture, color: .gray, size: CGSize(width: 26, height: 36))
         name = "visitor:\(visitor.id.uuidString)"
         isUserInteractionEnabled = false
     }
@@ -67,6 +70,35 @@ final class VisitorNode: SKSpriteNode {
         case .kiosk:    return Palette.storeKiosk
         case .sketchy:  return Palette.storeSketchy
         case .vacant:   return .gray  // unreachable — guarded above
+        }
+    }
+
+    // v9 Prompt 8 — isolation treatment toggle. When active, the visitor
+    // gets an elongated dark shadow child and a subtle desaturation via
+    // colorBlendFactor. When inactive, both effects clear.
+    func setIsolated(_ isolated: Bool) {
+        if isolated {
+            colorBlendFactor = 0.3   // blend toward .gray (sprite's color)
+            if isolationShadow == nil {
+                let shadow = SKShapeNode(
+                    ellipseOf: CGSize(width: 18, height: 28)
+                )
+                shadow.fillColor = UIColor(white: 0, alpha: 0.45)
+                shadow.strokeColor = .clear
+                shadow.zPosition = -1    // beneath the visitor body
+                // Elongated (+60% length) toward one side so it reads as
+                // "long shadow from a distant fixture." Offset downward to
+                // match the lightbox-from-above convention.
+                shadow.yScale = 1.0
+                shadow.xScale = 1.6
+                shadow.position = CGPoint(x: 6, y: -14)
+                addChild(shadow)
+                isolationShadow = shadow
+            }
+        } else {
+            colorBlendFactor = 0
+            isolationShadow?.removeFromParent()
+            isolationShadow = nil
         }
     }
 }

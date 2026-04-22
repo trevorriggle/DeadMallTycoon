@@ -146,6 +146,16 @@ enum TickEngine {
         s.threatMeter = Threat.calculate(s)
         s = Warnings.refresh(s)
 
+        // 9.25 environmental state dwell — v9 Prompt 8. Counter drives the
+        // ghostMall transition (monthsInDeadState >= 60). Increment while in
+        // .dead; reset on any recovery so a mall that briefly drops then
+        // recovers doesn't ghost-transition from leftover dwell.
+        if Mall.state(s) == .dead {
+            s.monthsInDeadState += 1
+        } else {
+            s.monthsInDeadState = 0
+        }
+
         // 9.5 entrance sealing — v9 iPad-port addition. When mall state is
         // struggling or worse, one still-open corner entrance has a monthly
         // chance of getting boarded up. Not reversible.

@@ -50,6 +50,53 @@ Update as part of any prompt that introduces or modifies a tunable value.
     | dead | 0.15 |
 - Topology: four corners — NW/NE → north wing, SW/SE → south wing. Wing closure hides both of its corners' doors; sealing is per-corner. (Prompt 6.5)
 
+## Environmental visual
+
+Six-state visual + audio state machine keyed to mall occupancy (plus a 60-month terminal "Ghost Mall" extension beyond `.dead`). All values live in `EnvironmentTuning`. Applied to the scene via `SKEffectNode + CIColorControls` (brightness + saturation) plus dedicated overlay nodes for flicker, blackout, and vignette. (Prompt 8)
+
+- `EnvironmentTuning.brightnessMultipliers` — master scene brightness. Applied as `inputBrightness = multiplier - 1.0` on the CIColorControls filter (additive, range [-1, 1]; 0 = no change).
+    | state | mult |
+    |---|---|
+    | thriving | 1.0 |
+    | fading | 0.92 |
+    | struggling | 0.8 |
+    | dying | 0.65 |
+    | dead | 0.5 |
+    | ghostMall | 0.4 |
+- `EnvironmentTuning.saturationMultipliers` — CIColorControls inputSaturation directly (1.0 = normal, 0.25 = near-monochrome).
+    | state | mult |
+    |---|---|
+    | thriving | 1.0 |
+    | fading | 0.85 |
+    | struggling | 0.7 |
+    | dying | 0.55 |
+    | dead | 0.4 |
+    | ghostMall | 0.25 |
+- `EnvironmentTuning.fluorescentFlickerRate` — per-second probability of a corridor-wide flicker flash. Independent of the smooth state-transition tween (flicker runs on a separate overlay).
+    | state | rate |
+    |---|---|
+    | thriving | 0.0 |
+    | fading | 0.02 |
+    | struggling | 0.08 |
+    | dying | 0.2 |
+    | dead | 0.35 |
+    | ghostMall | 0.5 |
+- `EnvironmentTuning.ambientHumVolume` — AVAudioPlayer volume for `fluorescentHum.wav`. Placeholder values pending actual audio files. At `ghostMall`, hum is intentionally louder than music (see ENDGAME.md).
+    | state | vol |
+    |---|---|
+    | thriving | 0.05 |
+    | fading | 0.10 |
+    | struggling | 0.20 |
+    | dying | 0.35 |
+    | dead | 0.55 |
+    | ghostMall | 0.75 |
+- `EnvironmentTuning.isolationThreshold = 4` — corridor-visible visitors below this triggers the per-visitor shadow + desaturation treatment and the scene-wide edge vignette. (Prompt 8)
+- `EnvironmentTuning.monthsInDeadForGhostMall = 60` — consecutive months in `.dead` required to enter `.ghostMall`. Counter resets on any recovery. (Prompt 8)
+- `EnvironmentTuning.transitionDuration = 2.0` seconds — smooth tween on brightness + saturation + hum volume when `EnvironmentState` advances. Flicker/blackout are NOT tweened. (Prompt 8)
+- `EnvironmentTuning.flickerFlashDuration = 0.06` seconds — single flicker flash length. (Prompt 8)
+- `EnvironmentTuning.ghostMallBlackoutDuration = 0.4` / `ghostMallBlackoutCadence = 5.0` seconds — longer periodic full-corridor dimming, ghostMall-only, on top of the per-tick flicker. (Prompt 8)
+- `EnvironmentTuning.decayAgeTierMonths = 24` months — decay overlay texture is regenerated when `(EnvironmentState, ageMonths / 24)` changes. A year-3 struggling mall and a year-15 struggling mall get materially different wear patterns. (Prompt 8)
+
 ## Visual
 
 - Halo pulse: ±8% alpha, ±3% scale, 3.5s period. (Prompt 4)

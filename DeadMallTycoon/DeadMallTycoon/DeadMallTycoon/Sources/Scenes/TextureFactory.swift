@@ -387,3 +387,123 @@ enum TextureFactory {
 enum StorefrontVisualState: String {
     case open, boarded, longAbandoned
 }
+
+// MARK: - v9 Prompt 8 — decay overlay
+
+extension TextureFactory {
+
+    /// Procedural decay overlay covering the H-shape walkable area (main
+    /// corridor + upper/lower access corridors). Returns a full-scene-sized
+    /// texture with decay patterns drawn only in walkable regions so store
+    /// and anchor rects remain un-overlaid.
+    ///
+    /// Cached by `(env, ageTier, intensity)`. MallScene invalidates via
+    /// `lastEnvironmentState` + `lastDecayAgeTier`, so the cache read only
+    /// bypasses regeneration on same-state, same-tier re-renders.
+    static func decayTexture(env: EnvironmentState,
+                             ageTier: Int,
+                             intensity: Double,
+                             size: CGSize) -> SKTexture? {
+        let key = "decay-\(env.rawValue)-t\(ageTier)-i\(Int(intensity * 1000))-s\(Int(size.width))x\(Int(size.height))"
+        if let hit = cache[key] { return hit }
+
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 1.0
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        let image = renderer.image { ctx in
+            let g = ctx.cgContext
+            g.clear(CGRect(origin: .zero, size: size))
+
+            // Deterministic RNG from key — same state + tier produces the
+            // same layout, so transitions don't flicker the wear pattern.
+            var rng = SeededGenerator(seed: UInt64(abs(key.hashValue)) | 1)
+
+            // Walkable regions in CSS coords (y-down). Convert to image
+            // coords (which are also y-down in UIGraphicsImageRenderer).
+            let upperAccess = CGRect(x: 0, y: 110, width: size.width, height: 30)
+            let lowerAccess = CGRect(x: 0, y: 380, width: size.width, height: 30)
+            let mainCorridor = CGRect(x: 200, y: 140, width: size.width - 400, height: 240)
+            let regions = [upperAccess, lowerAccess, mainCorridor]
+
+            // Layer 1: mottling — small random dots across walkable.
+            let dotCount = Int(600.0 * intensity)
+            for _ in 0..<dotCount {
+                guard let region = regions.randomElement(using: &rng) else { continue }
+                let x = CGFloat.random(in: region.minX..<region.maxX, using: &rng)
+                let y = CGFloat.random(in: region.minY..<region.maxY, using: &rng)
+                let r = CGFloat.random(in: 0.6..<2.4, using: &rng)
+                let alpha = CGFloat.random(in: 0.12..<0.35, using: &rng) * CGFloat(intensity)
+                UIColor(white: 0.12, alpha: alpha).setFill()
+                g.fillEllipse(in: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2))
+            }
+
+            // Layer 2: scuff lines — short dark strokes.
+            let scuffCount = Int(60.0 * intensity)
+            for _ in 0..<scuffCount {
+                guard let region = regions.randomElement(using: &rng) else { continue }
+                let x = CGFloat.random(in: region.minX..<region.maxX, using: &rng)
+                let y = CGFloat.random(in: region.minY..<region.maxY, using: &rng)
+                let len = CGFloat.random(in: 6..<22, using: &rng)
+                let angle = CGFloat.random(in: 0..<CGFloat.pi, using: &rng)
+                let x2 = x + cos(angle) * len
+                let y2 = y + sin(angle) * len
+                g.setStrokeColor(UIColor(white: 0.08,
+                                          alpha: 0.35 * CGFloat(intensity)).cgColor)
+                g.setLineWidth(CGFloat.random(in: 0.7..<1.5, using: &rng))
+                g.move(to: CGPoint(x: x, y: y))
+                g.addLine(to: CGPoint(x: x2, y: y2))
+                g.strokePath()
+            }
+
+            // Layer 3: water stains (dying+). Irregular translucent brown blobs.
+            if intensity >= 0.30 {
+                let stainCount = Int(14.0 * intensity)
+                for _ in 0..<stainCount {
+                    guard let region = regions.randomElement(using: &rng) else { continue }
+                    let cx = CGFloat.random(in: region.minX..<region.maxX, using: &rng)
+                    let cy = CGFloat.random(in: region.minY..<region.maxY, using: &rng)
+                    let radius = CGFloat.random(in: 14..<36, using: &rng)
+                    let stain = UIColor(red: 0.35, green: 0.28, blue: 0.18,
+                                        alpha: 0.18 * CGFloat(intensity))
+                    stain.setFill()
+                    g.fillEllipse(in: CGRect(x: cx - radius, y: cy - radius,
+                                              width: radius * 2, height: radius * 2))
+                    // Darker core
+                    let core = UIColor(red: 0.20, green: 0.15, blue: 0.10,
+                                       alpha: 0.22 * CGFloat(intensity))
+                    core.setFill()
+                    let coreR = radius * 0.5
+                    g.fillEllipse(in: CGRect(x: cx - coreR, y: cy - coreR,
+                                              width: coreR * 2, height: coreR * 2))
+                }
+            }
+
+            // Layer 4: cracked tile patches (dying+). Jagged polylines.
+            if intensity >= 0.30 {
+                let crackCount = Int(9.0 * intensity)
+                for _ in 0..<crackCount {
+                    guard let region = regions.randomElement(using: &rng) else { continue }
+                    var x = CGFloat.random(in: region.minX..<region.maxX, using: &rng)
+                    var y = CGFloat.random(in: region.minY..<region.maxY, using: &rng)
+                    g.setStrokeColor(UIColor(white: 0.04,
+                                              alpha: 0.55 * CGFloat(intensity)).cgColor)
+                    g.setLineWidth(0.8)
+                    g.move(to: CGPoint(x: x, y: y))
+                    let segments = Int.random(in: 3..<6, using: &rng)
+                    for _ in 0..<segments {
+                        x += CGFloat.random(in: -12..<12, using: &rng)
+                        y += CGFloat.random(in: -12..<12, using: &rng)
+                        g.addLine(to: CGPoint(x: x, y: y))
+                    }
+                    g.strokePath()
+                }
+            }
+        }
+
+        let texture = SKTexture(image: image)
+        texture.filteringMode = .nearest
+        cache[key] = texture
+        return texture
+    }
+}

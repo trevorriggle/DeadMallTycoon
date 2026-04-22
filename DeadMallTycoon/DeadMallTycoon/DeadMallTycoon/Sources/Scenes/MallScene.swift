@@ -1,4 +1,6 @@
 import SpriteKit
+import CoreImage
+import CoreImage.CIFilterBuiltins
 import Observation
 
 // The mall corridor renderer. Reads GameViewModel; mutates only via explicit player-action
@@ -22,8 +24,38 @@ final class MallScene: SKScene {
 
     // MARK: Private
 
-    private let worldNode = SKNode()     // background + corridor + nodes (y-down coord system)
+    // v9 Prompt 8 — worldNode is an SKEffectNode so a CIColorControls filter
+    // can apply scene-wide brightness + saturation. shouldRasterize stays
+    // false so the subtree keeps animating. HUD is SwiftUI above SpriteKit,
+    // so UI is not affected by the filter.
+    private let worldNode: SKEffectNode = {
+        let n = SKEffectNode()
+        n.shouldRasterize = false
+        n.filter = CIFilter(name: "CIColorControls", parameters: [
+            "inputBrightness": 0.0,   // additive, range [-1, 1]; 0 = no change
+            "inputSaturation": 1.0,   // multiplicative, 1.0 = normal
+            "inputContrast":   1.0,
+        ])
+        return n
+    }()
     private let corridorNode = SKNode()
+
+    // v9 Prompt 8 — environmental-visual scaffolding. Four overlays:
+    //   - decayLayer       : procedural wear texture; above corridor, below stores.
+    //   - flickerOverlay   : scene-wide black mask for per-state flicker flashes.
+    //   - blackoutOverlay  : ghostMall-only longer full dimming events.
+    //   - vignetteOverlay  : edge vignette when visitor isolation triggers.
+    private let decayLayer = SKNode()
+    private let flickerOverlay = SKShapeNode()
+    private let blackoutOverlay = SKShapeNode()
+    private let vignetteOverlay = SKNode()
+
+    // Remember the last rendered EnvironmentState + decay age tier so we
+    // know when to regenerate the decay texture / restart the ghostMall
+    // blackout action / re-tween the filter. Start as nil so the first
+    // reconcile always applies values.
+    private var lastEnvironmentState: EnvironmentState?
+    private var lastDecayAgeTier: Int = -1
     private let storesLayer = SKNode()
     private let decorationsLayer = SKNode()
     private let entrancesLayer = SKNode()
@@ -137,12 +169,38 @@ final class MallScene: SKScene {
         addChild(worldNode)
         worldNode.addChild(corridorNode)
 
-        // Layer order: corridor floor, decorations, stores, entrances, visitors, overlays
+        // v9 Prompt 8 — decay overlay sits above the corridor floor but
+        // below stores so wear patterns show beneath storefront sprites.
+        worldNode.addChild(decayLayer)
+        decayLayer.zPosition = -40   // above corridor (-50), below stores (default 0)
+
+        // Layer order: corridor floor, decay, decorations, stores, entrances, visitors, overlays
         worldNode.addChild(decorationsLayer)
         worldNode.addChild(storesLayer)
         worldNode.addChild(entrancesLayer)
         worldNode.addChild(visitorsLayer)
         worldNode.addChild(overlayLayer)
+
+        // v9 Prompt 8 — flicker/blackout/vignette overlays live OUTSIDE the
+        // effect node so the CIColorControls filter doesn't darken them
+        // (they already ARE the darkening effect). Configured lazy; shapes
+        // get their size set in didChangeSize.
+        flickerOverlay.alpha = 0
+        flickerOverlay.zPosition = 900
+        flickerOverlay.isUserInteractionEnabled = false
+        addChild(flickerOverlay)
+
+        blackoutOverlay.alpha = 0
+        blackoutOverlay.zPosition = 901
+        blackoutOverlay.isUserInteractionEnabled = false
+        addChild(blackoutOverlay)
+
+        vignetteOverlay.alpha = 0
+        vignetteOverlay.zPosition = 905
+        vignetteOverlay.isUserInteractionEnabled = false
+        addChild(vignetteOverlay)
+
+        sizeEnvironmentOverlays()
 
         // Register observation: reconcile whenever any observable state property is read
         // the next time it changes. We continually re-register after each change so
@@ -285,6 +343,13 @@ final class MallScene: SKScene {
             _ = vm.state.selectedStoreId
             _ = vm.state.started
             _ = vm.state.gameover
+            // v9 Prompt 8 — env state is a function of (Mall.state, monthsInDeadState).
+            // Touch monthsInDeadState directly so the observer picks up
+            // the ghostMall transition. Mall.state is recomputed from
+            // already-touched fields above.
+            _ = vm.state.monthsInDeadState
+            _ = vm.state.year
+            _ = vm.state.month
             handleLifecycleTransition(vm.state)
             reconcile(state: vm.state)
         } onChange: { [weak self] in
@@ -323,6 +388,10 @@ final class MallScene: SKScene {
         reconcileThreatFlash(state)     // Phase C — vignette flash when entering critical
         reconcileDim(state)
         publishSelectionAnchors(state)  // Phase C — SwiftUI card pinning
+        // v9 Prompt 8 — environmental visual state machine. Drives the
+        // CIColorControls filter, fluorescent flicker, ghostMall blackout,
+        // decay overlay, isolation vignette, and ambient hum volume.
+        reconcileEnvironment(state)
         // visitor selection highlight (visitors themselves are scene-local)
         for (id, node) in visitorNodes {
             node.markSelected(state.selectedVisitorId == id)
@@ -722,6 +791,14 @@ final class MallScene: SKScene {
 
         // 3. Node sync — skip insideStore visitors (no render), refresh positions
         // + bag tint for everyone else.
+        // v9 Prompt 8 — compute corridor-visible visitor count ONCE so every
+        // node gets the same isolation answer this frame.
+        let corridorVisitorCount = visitors.filter { v -> Bool in
+            if case .insideStore = visitorBehavior[v.id]?.phase { return false }
+            return true
+        }.count
+        let isolationActive = corridorVisitorCount < EnvironmentTuning.isolationThreshold
+
         for v in visitors {
             let inside: Bool = {
                 if case .insideStore = visitorBehavior[v.id]?.phase { return true }
@@ -745,6 +822,7 @@ final class MallScene: SKScene {
                 visitorNodes[v.id]?.position = csToScene(x: v.x, y: v.y)
             }
             visitorNodes[v.id]?.setBag(tier: visitorBehavior[v.id]?.bagTier)
+            visitorNodes[v.id]?.setIsolated(isolationActive)
         }
     }
 
@@ -1208,6 +1286,208 @@ final class MallScene: SKScene {
                 sealedOverlay?.removeFromParent()
                 sealedOverlay = nil
             }
+        }
+    }
+
+    // MARK: v9 Prompt 8 — environmental visual state
+
+    // Size the scene-wide flicker/blackout/vignette overlays to the full
+    // scene rect. Called once from didMove and on any size change.
+    private func sizeEnvironmentOverlays() {
+        let rect = CGRect(origin: .zero, size: size)
+        flickerOverlay.path = CGPath(rect: rect, transform: nil)
+        flickerOverlay.fillColor = .black
+        flickerOverlay.strokeColor = .clear
+
+        blackoutOverlay.path = CGPath(rect: rect, transform: nil)
+        blackoutOverlay.fillColor = .black
+        blackoutOverlay.strokeColor = .clear
+
+        // Vignette: four darkened border shapes layered at the scene edges
+        // (top, bottom, left, right). Cheaper than a radial gradient and
+        // reads as "remaining visitors are isolated in a dim corridor."
+        vignetteOverlay.removeAllChildren()
+        let thickness: CGFloat = min(size.width, size.height) * 0.22
+        let color = SKColor(white: 0, alpha: 1)
+        for rectSpec in [
+            CGRect(x: 0, y: 0, width: size.width, height: thickness),
+            CGRect(x: 0, y: size.height - thickness, width: size.width, height: thickness),
+            CGRect(x: 0, y: 0, width: thickness, height: size.height),
+            CGRect(x: size.width - thickness, y: 0, width: thickness, height: size.height),
+        ] {
+            let edge = SKShapeNode(rect: rectSpec)
+            edge.fillColor = color
+            edge.strokeColor = .clear
+            edge.alpha = 0.7
+            vignetteOverlay.addChild(edge)
+        }
+    }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        sizeEnvironmentOverlays()
+    }
+
+    // Main reconcile entry for environmental visual state. Called once per
+    // observation pass (see reconcile()) to keep the filter, decay texture,
+    // flicker action, and vignette in sync with GameState.
+    private func reconcileEnvironment(_ state: GameState) {
+        let env = EnvironmentState.from(state)
+        let ageMonths = (state.year - GameConstants.startingYear) * 12 + state.month
+        let ageTier = max(0, ageMonths / EnvironmentTuning.decayAgeTierMonths)
+
+        let envChanged = (env != lastEnvironmentState)
+        let decayChanged = envChanged || (ageTier != lastDecayAgeTier)
+
+        if envChanged {
+            applyEnvironmentFilter(for: env)
+            restartFlickerAction(for: env)
+            restartGhostBlackoutAction(for: env)
+            AmbientHumPlayer.shared.setVolume(
+                EnvironmentTuning.ambientHumVolume[env] ?? 0.0
+            )
+            lastEnvironmentState = env
+        }
+
+        if decayChanged {
+            rebuildDecayLayer(state: env, ageTier: ageTier)
+            lastDecayAgeTier = ageTier
+        }
+
+        reconcileIsolationVignette()
+    }
+
+    // Smooth CIColorControls tween. brightness: multiplier 0..1 mapped to
+    // inputBrightness (multiplier - 1.0) which is -1..0 (dimming only);
+    // saturation: direct multiplier.
+    private func applyEnvironmentFilter(for env: EnvironmentState) {
+        let targetBrightness = (EnvironmentTuning.brightnessMultipliers[env] ?? 1.0) - 1.0
+        let targetSaturation = EnvironmentTuning.saturationMultipliers[env] ?? 1.0
+
+        guard let filter = worldNode.filter else { return }
+        let startBrightness = (filter.value(forKey: "inputBrightness") as? Double) ?? 0.0
+        let startSaturation = (filter.value(forKey: "inputSaturation") as? Double) ?? 1.0
+        let duration = EnvironmentTuning.transitionDuration
+
+        worldNode.removeAction(forKey: "envFilterTween")
+        let action = SKAction.customAction(withDuration: duration) { [weak self] _, elapsed in
+            guard let self, let filter = self.worldNode.filter else { return }
+            let t = min(1.0, max(0.0, elapsed / CGFloat(duration)))
+            let b = startBrightness + (targetBrightness - startBrightness) * Double(t)
+            let s = startSaturation + (targetSaturation - startSaturation) * Double(t)
+            filter.setValue(b, forKey: "inputBrightness")
+            filter.setValue(s, forKey: "inputSaturation")
+        }
+        worldNode.run(action, withKey: "envFilterTween")
+    }
+
+    // Per-state flicker — probabilistic scene-wide brightness dip every
+    // tickish (1s check cadence). Independent of the smooth state-transition
+    // tween: the tween runs on the CIColorControls filter, the flicker runs
+    // on the flickerOverlay alpha.
+    private func restartFlickerAction(for env: EnvironmentState) {
+        flickerOverlay.removeAllActions()
+        let rate = EnvironmentTuning.fluorescentFlickerRate[env] ?? 0.0
+        guard rate > 0 else {
+            flickerOverlay.alpha = 0
+            return
+        }
+        let checkCadence: TimeInterval = 1.0
+        let flashDuration = EnvironmentTuning.flickerFlashDuration
+        let rollAndMaybeFlash = SKAction.run { [weak self] in
+            guard let self else { return }
+            if Double.random(in: 0..<1) < rate {
+                let half = flashDuration / 2
+                self.flickerOverlay.run(SKAction.sequence([
+                    SKAction.fadeAlpha(to: 0.55, duration: half),
+                    SKAction.fadeAlpha(to: 0.0, duration: half),
+                ]))
+            }
+        }
+        let loop = SKAction.repeatForever(SKAction.sequence([
+            rollAndMaybeFlash,
+            SKAction.wait(forDuration: checkCadence),
+        ]))
+        flickerOverlay.run(loop)
+    }
+
+    // Ghost Mall-only periodic full-corridor lighting failure. Separate
+    // overlay, separate timer so flicker + blackout can overlap visually.
+    private func restartGhostBlackoutAction(for env: EnvironmentState) {
+        blackoutOverlay.removeAllActions()
+        guard env == .ghostMall else {
+            blackoutOverlay.alpha = 0
+            return
+        }
+        let dur = EnvironmentTuning.ghostMallBlackoutDuration
+        let cadence = EnvironmentTuning.ghostMallBlackoutCadence
+        let fadeIn = SKAction.fadeAlpha(to: 0.85, duration: dur / 2)
+        let fadeOut = SKAction.fadeAlpha(to: 0.0, duration: dur / 2)
+        let wait = SKAction.wait(forDuration: cadence)
+        blackoutOverlay.run(SKAction.repeatForever(
+            SKAction.sequence([fadeIn, fadeOut, wait])
+        ))
+    }
+
+    // Rebuild the procedural decay texture for (state, age tier). Cached
+    // via lastEnvironmentState + lastDecayAgeTier — regenerated only when
+    // either changes.
+    private func rebuildDecayLayer(state env: EnvironmentState, ageTier: Int) {
+        decayLayer.removeAllChildren()
+        let intensity = decayIntensity(for: env)
+        guard intensity > 0.0 else { return }
+        // Scale intensity by age tier: a year-15 struggling mall reads
+        // meaningfully more worn than year-3 struggling. Capped so late-game
+        // doesn't blow out the overlay completely.
+        let ageBoost = min(Double(ageTier) * 0.08, 0.4)
+        let finalIntensity = min(0.85, intensity + ageBoost)
+
+        if let texture = TextureFactory.decayTexture(
+            env: env, ageTier: ageTier, intensity: finalIntensity,
+            size: CGSize(width: GameConstants.worldWidth,
+                         height: GameConstants.worldHeight)
+        ) {
+            let sprite = SKSpriteNode(texture: texture)
+            // World coords are CSS (y-down); csToScene flips to SpriteKit y-up.
+            // Anchor at (0,0) so the sprite's bottom-left aligns with the
+            // scene's bottom-left after csToScene(0, worldHeight).
+            let pos = csToScene(x: GameConstants.worldWidth / 2,
+                                y: GameConstants.worldHeight / 2)
+            sprite.position = pos
+            sprite.alpha = 1.0
+            decayLayer.addChild(sprite)
+        }
+    }
+
+    private func decayIntensity(for env: EnvironmentState) -> Double {
+        switch env {
+        case .thriving:   return 0.0
+        case .fading:     return 0.08
+        case .struggling: return 0.18
+        case .dying:      return 0.32
+        case .dead:       return 0.48
+        case .ghostMall:  return 0.55
+        }
+    }
+
+    // Vignette visibility tracks whether corridor visitors have dropped
+    // below the isolation threshold. Per-visitor shadow elongation + desat
+    // are applied inside the visitor render sync (see reconcileVisitorIsolation).
+    private func reconcileIsolationVignette() {
+        let corridorCount = visitors.filter { v -> Bool in
+            let phase = visitorBehavior[v.id]?.phase ?? .arriving
+            if case .insideStore = phase { return false }
+            return true
+        }.count
+        let isolated = corridorCount < EnvironmentTuning.isolationThreshold
+        let targetAlpha: CGFloat = isolated ? 1.0 : 0.0
+        // Smooth fade so vignette doesn't pop in/out as visitors spawn/despawn.
+        if abs(vignetteOverlay.alpha - targetAlpha) > 0.01 {
+            vignetteOverlay.removeAction(forKey: "vignetteFade")
+            vignetteOverlay.run(
+                SKAction.fadeAlpha(to: targetAlpha, duration: 1.2),
+                withKey: "vignetteFade"
+            )
         }
     }
 }

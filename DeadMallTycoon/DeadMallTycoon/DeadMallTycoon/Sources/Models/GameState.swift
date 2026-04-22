@@ -121,4 +121,10 @@ struct GameState: Equatable {
     // Non-nil → SealConfirmOverlay is mounted in MallView. Confirming
     // routes to ArtifactActions.sealStorefront; cancelling clears the id.
     var pendingSealConfirmationArtifactId: Int? = nil
+
+    // v9 Prompt 8 — consecutive months in MallState.dead. Incremented per
+    // tick while Mall.state == .dead; reset to 0 on any recovery. Drives
+    // the ghostMall environmental state transition at
+    // EnvironmentTuning.monthsInDeadForGhostMall (60 months / 5 years).
+    var monthsInDeadState: Int = 0
 }
