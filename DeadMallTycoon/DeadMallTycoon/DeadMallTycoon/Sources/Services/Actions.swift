@@ -5,13 +5,67 @@ import Foundation
 // approachTenant, beginPlacement/placementClickHandler, repairDec, removeDec,
 // toggleWingClosed, toggleWingDowngrade, launchPromo, toggleAdDeal, toggleStaff.
 
+// v9 Prompt 6 — memorial cost displayed on the tenant-offer banner when
+// accepting would destroy a boardedStorefront memorial. Pure value type so
+// SwiftUI can diff it without reference tracking.
+struct MemorialCost: Equatable {
+    let artifactId: Int
+    let tenantName: String
+    let yearsBoarded: Int
+    let memoryWeight: Double
+    let thoughtReferenceCount: Int
+}
+
 enum StoreActions {
+
+    // v9 Prompt 6 — the slot that acceptOffer WOULD fill, if called now.
+    // Extracted so the offer UI can look up the prospective slot to render
+    // the memorial-cost line. Matches acceptOffer's selection exactly:
+    // first vacant open slot, anchor-to-anchor / non-anchor-to-non-anchor.
+    static func prospectiveSlotIndex(for offer: TenantOffer, in state: GameState) -> Int? {
+        let offerIsAnchor = offer.tier == .anchor
+        return state.stores.firstIndex(where: { store in
+            let slotIsAnchor = store.position.w >= 180
+            return store.tier == .vacant
+                && !Mall.isWingClosed(store.wing, in: state)
+                && slotIsAnchor == offerIsAnchor
+        })
+    }
+
+    // v9 Prompt 6 — resolve the boardedStorefront memorial on the prospective
+    // slot, if any. Returns nil for fresh vacancies (no prior tenant) and for
+    // offers that have no compatible slot.
+    //
+    // Defensive tiebreaker: if more than one boardedStorefront references
+    // the same slot (shouldn't happen — closures only hit occupied slots and
+    // slots can't be re-closed before being re-occupied), pick the most
+    // recent by artifact id.
+    static func memorialCost(for offer: TenantOffer, in state: GameState) -> MemorialCost? {
+        guard let idx = prospectiveSlotIndex(for: offer, in: state) else { return nil }
+        let slotId = state.stores[idx].id
+        let candidates = state.artifacts.filter {
+            $0.type == .boardedStorefront && $0.storeSlotId == slotId
+        }
+        guard let artifact = candidates.max(by: { $0.id < $1.id }) else { return nil }
+        return MemorialCost(
+            artifactId: artifact.id,
+            tenantName: artifact.name,
+            yearsBoarded: max(0, state.year - artifact.yearCreated),
+            memoryWeight: artifact.memoryWeight,
+            thoughtReferenceCount: artifact.thoughtReferenceCount
+        )
+    }
 
     // v8: acceptTenant()
     // Anchor slot gate: a slot with w >= 180 (the two department-store end-caps) only
     // accepts an anchor-tier offer, and anchor-tier offers only go to anchor slots.
     // If no compatible slot exists, the decision is cleared without filling — matching
     // v8 behavior for "no vacant slot" but extended to respect architectural size.
+    //
+    // v9 Prompt 6 — when the chosen slot carries a boardedStorefront memorial,
+    // accepting destroys it (removes from state.artifacts) and appends a
+    // .offerDestruction LedgerEntry with a snapshot of the memorial's final
+    // state. Declining leaves the artifact untouched (see declineOffer).
     static func acceptOffer(_ state: GameState) -> GameState {
         var s = state
         guard case .tenant(let offer) = s.decision else { return s }
@@ -25,6 +79,27 @@ enum StoreActions {
             s.decision = nil; s.paused = false
             return s
         }
+
+        // v9 Prompt 6 — memorial destruction on accept. Compute BEFORE the slot
+        // mutation so the lookup still matches by storeSlotId, and take the
+        // snapshot for the ledger before removing the artifact.
+        let slotId = s.stores[vi].id
+        let memorialCandidates = s.artifacts.filter {
+            $0.type == .boardedStorefront && $0.storeSlotId == slotId
+        }
+        if let memorial = memorialCandidates.max(by: { $0.id < $1.id }) {
+            s.ledger.append(.offerDestruction(
+                tenantName: memorial.name,
+                newTenantName: offer.name,
+                yearsBoarded: max(0, s.year - memorial.yearCreated),
+                memoryWeight: memorial.memoryWeight,
+                thoughtReferenceCount: memorial.thoughtReferenceCount,
+                year: s.year,
+                month: s.month
+            ))
+            s.artifacts.removeAll { $0.id == memorial.id }
+        }
+
         let pos = s.stores[vi].position
         s.stores[vi] = Store(
             id: s.stores[vi].id,

@@ -71,6 +71,16 @@ struct MallView: View {
                     .padding(.bottom, 8)
             }
             .allowsHitTesting(vm.state.selectedVisitorIdentity != nil)
+
+            // v9 Prompt 6 — closure event card. Silent-queue overlay; the
+            // front event in state.pendingClosureEvents renders while the
+            // rest wait. No pause — time continues underneath. Obeys the
+            // Phase 0 overlay-only invariant: the mall scene's size and
+            // position do not shift when this card appears or dismisses.
+            if let frontClosure = vm.state.pendingClosureEvents.first {
+                ClosureEventCard(vm: vm, event: frontClosure)
+                    .transition(.opacity)
+            }
         }
     }
 

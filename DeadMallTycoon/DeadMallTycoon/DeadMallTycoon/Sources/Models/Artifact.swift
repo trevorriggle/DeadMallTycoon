@@ -123,6 +123,13 @@ struct Artifact: Identifiable, Equatable, Codable {
     // v9 Prompt 3 — migrated from deleted Decoration.
     var monthsAtCondition: Int = 0
 
+    // v9 Prompt 6 — raw count of visitor thoughts that have named this
+    // artifact. Incremented by GameViewModel.recordThoughtFired alongside
+    // memoryWeight. Informational only — does NOT feed scoring; memoryWeight
+    // carries the cohort-weighted signal. Surfaced in the tenant-offer
+    // memorial-cost line ("referenced in N visitor thoughts").
+    var thoughtReferenceCount: Int = 0
+
     // v9 Prompt 5 — decay amplifier on memorial value. The thesis is "compose a
     // ruin": decayed artifacts carry more memorial weight than pristine ones.
     // Scoring consumes this as memoryWeight × decayMultiplier.

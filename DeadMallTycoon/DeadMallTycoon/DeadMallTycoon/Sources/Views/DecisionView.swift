@@ -24,7 +24,11 @@ struct DecisionBanner: View {
     }
 
     private func tenantOffer(_ o: TenantOffer) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        // v9 Prompt 6 — resolve the memorial cost of accepting this offer
+        // (nil for fresh vacancies or offers with no compatible slot).
+        let memorial = StoreActions.memorialCost(for: o, in: vm.state)
+
+        return VStack(alignment: .leading, spacing: 6) {
             Text("TENANT OFFER · PAUSED")
                 .font(.system(size: 12, weight: .bold, design: .monospaced))
                 .tracking(0.8)
@@ -37,6 +41,11 @@ struct DecisionBanner: View {
             Text("\(o.tier.rawValue) · \(o.lease)mo lease")
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .foregroundStyle(Color(hex: "#6a6a78"))
+
+            if let m = memorial {
+                memorialCostRow(m)
+            }
+
             HStack(spacing: 8) {
                 decisionButton(primary: true,
                                title: "Sign",
@@ -47,6 +56,34 @@ struct DecisionBanner: View {
             }
             .padding(.top, 4)
         }
+    }
+
+    // v9 Prompt 6 — memorial-cost row. Surfaces what the player is about
+    // to destroy by signing this offer. Live numbers: years since the
+    // boardedStorefront was spawned, its accumulated memoryWeight, and
+    // the raw count of visitor thoughts that have referenced it.
+    private func memorialCostRow(_ m: MemorialCost) -> some View {
+        let years = m.yearsBoarded == 1 ? "1 year" : "\(m.yearsBoarded) years"
+        let weight = Int(m.memoryWeight.rounded())
+        let thoughts = m.thoughtReferenceCount
+        let thoughtWord = thoughts == 1 ? "visitor thought" : "visitor thoughts"
+        return VStack(alignment: .leading, spacing: 3) {
+            Text("ACCEPTING DESTROYS THIS MEMORY")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(Color(hex: "#ff4dbd"))
+            Text("\(m.tenantName) · boarded \(years) · memory weight \(weight) · \(thoughts) \(thoughtWord)")
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .foregroundStyle(Color(hex: "#d8d8e0"))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: "#2a0a1a"))
+        .overlay(RoundedRectangle(cornerRadius: 3)
+                    .strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 3))
+        .padding(.top, 2)
     }
 
     private func flavorEvent(_ ev: FlavorEvent) -> some View {

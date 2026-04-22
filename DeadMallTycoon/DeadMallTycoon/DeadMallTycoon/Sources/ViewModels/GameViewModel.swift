@@ -193,12 +193,24 @@ final class GameViewModel {
     // v9 Prompt 4 Phase 3 — single place memory weight is incremented.
     // Base +0.5 × cohort multiplier (Originals 2.5, Nostalgics 1.5, Explorers 1.0).
     // Monotonic — never decreases in Prompt 4. Prompt 6 introduces the
-    // destruction-on-vacancy-fill rule; Prompt 7 introduces the preservation
-    // ×1.5 rate. Neither is wired here.
+    // destruction-on-vacancy-fill rule (see StoreActions.acceptOffer);
+    // Prompt 7 introduces the preservation ×1.5 rate.
+    //
+    // v9 Prompt 6 — also increments thoughtReferenceCount (raw, uncohorted).
+    // Surfaced in the memorial-cost line as "referenced in N visitor thoughts."
     func recordThoughtFired(artifactId: Int, cohort: AgeCohort) {
         guard let idx = state.artifacts.firstIndex(where: { $0.id == artifactId }) else { return }
         let increment = ThoughtTuning.memoryWeightBaseIncrement * cohort.memoryWeightMultiplier
         state.artifacts[idx].memoryWeight += increment
+        state.artifacts[idx].thoughtReferenceCount += 1
+    }
+
+    // v9 Prompt 6 — pop the front closure event. Called from the
+    // ClosureEventCard's Continue button. If the queue is empty the call is
+    // a defensive no-op; the card would already be unmounted.
+    func dismissClosureEvent() {
+        guard !state.pendingClosureEvents.isEmpty else { return }
+        state.pendingClosureEvents.removeFirst()
     }
 
     func selectStore(_ id: Int) {

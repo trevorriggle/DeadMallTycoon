@@ -97,4 +97,20 @@ struct GameState: Equatable {
     var totalMemoryWeight: Double {
         artifacts.reduce(0) { $0 + $1.memoryWeight }
     }
+
+    // v9 Prompt 6 — closure-event queue. Populated by TenantLifecycle.vacateSlot
+    // on every tenant loss. Drives the ClosureEventCard overlay; the card
+    // pops pendingClosureEvents.first on Continue. Silent queue: when
+    // multiple closures arrive the same tick, only the front card renders
+    // and the Continue button shows a small "N pending" badge.
+    //
+    // Deliberately NOT cleared by pause/speed changes — the cards are
+    // narrative beats the player opts into, not interrupts.
+    var pendingClosureEvents: [ClosureEvent] = []
+
+    // v9 Prompt 6 — provenance ledger (data-only; Prompt 8 adds UI).
+    // Monotonic; appended by TenantLifecycle on closure and by
+    // StoreActions.acceptOffer when a memorial is destroyed. Never mutated
+    // or truncated in-place.
+    var ledger: [LedgerEntry] = []
 }
