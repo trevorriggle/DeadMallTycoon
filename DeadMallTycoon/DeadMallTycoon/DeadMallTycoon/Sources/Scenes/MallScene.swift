@@ -281,21 +281,30 @@ final class MallScene: SKScene {
     private func buildStaticBackground() {
         // CSS coord system: (0,0) top-left, y increases down.
         // SpriteKit: (0,0) bottom-left. Convert via sceneY().
+        //
+        // v9 — all three regions use the authored floor tile so the entire
+        // mall scene reads as one continuous floor (the original
+        // Palette.ceilingBg fill was near-black #1a1a22, which read as
+        // "black voids" above and below the corridor). Half-scale the
+        // tile (64pt instead of the asset's natural 128pt) for a denser
+        // pattern that matches the storefront proportions.
+        let floorTile = TextureFactory.floorTile()
+        let tileSize = CGSize(width: 64, height: 64)
 
         // ceiling-bg: top 0..130
-        addTiled(texture: TextureFactory.ceilingTile(),
+        addTiled(texture: floorTile, tileSize: tileSize,
                  rectCSS: CGRect(x: 0, y: 0,
                                   width: GameConstants.worldWidth,
                                   height: GameConstants.corridorTop))
 
         // floor-bg (below corridor): y 390..520
-        addTiled(texture: TextureFactory.ceilingTile(),
+        addTiled(texture: floorTile, tileSize: tileSize,
                  rectCSS: CGRect(x: 0, y: GameConstants.corridorBottom,
                                   width: GameConstants.worldWidth,
                                   height: GameConstants.worldHeight - GameConstants.corridorBottom))
 
         // corridor: y 130..390
-        addTiled(texture: TextureFactory.floorTile(),
+        addTiled(texture: floorTile, tileSize: tileSize,
                  rectCSS: CGRect(x: 0, y: GameConstants.corridorTop,
                                   width: GameConstants.worldWidth,
                                   height: GameConstants.corridorBottom - GameConstants.corridorTop))
@@ -305,24 +314,27 @@ final class MallScene: SKScene {
         addWall(atCSSy: 388)
     }
 
-    private func addTiled(texture: SKTexture, rectCSS: CGRect) {
-        // SKSpriteNode with texture set to tile by using SKAction? No — SKTexture does not
-        // auto-tile. Instead, replicate the tile by setting the sprite to the tile's size
-        // and stepping across the rect. Keep tile count manageable.
-        let tileSize = texture.size()
+    // v9 — `tileSize` lets callers render a texture at a non-natural size
+    // (e.g., the 128px authored floor tile rendered at 64pt for half-scale
+    // density). When omitted, falls back to the texture's intrinsic size
+    // for backwards compatibility with non-floor tiles.
+    private func addTiled(texture: SKTexture,
+                          tileSize: CGSize? = nil,
+                          rectCSS: CGRect) {
+        let renderSize = tileSize ?? texture.size()
         var y: CGFloat = 0
         while y < rectCSS.height {
             var x: CGFloat = 0
             while x < rectCSS.width {
                 let sprite = SKSpriteNode(texture: texture)
-                sprite.size = tileSize
-                sprite.position = csToScene(x: rectCSS.origin.x + x + tileSize.width / 2,
-                                            y: rectCSS.origin.y + y + tileSize.height / 2)
+                sprite.size = renderSize
+                sprite.position = csToScene(x: rectCSS.origin.x + x + renderSize.width / 2,
+                                            y: rectCSS.origin.y + y + renderSize.height / 2)
                 sprite.zPosition = -100
                 corridorNode.addChild(sprite)
-                x += tileSize.width
+                x += renderSize.width
             }
-            y += tileSize.height
+            y += renderSize.height
         }
     }
 

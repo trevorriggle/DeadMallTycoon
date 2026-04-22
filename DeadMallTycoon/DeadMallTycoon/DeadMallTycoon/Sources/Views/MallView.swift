@@ -20,6 +20,15 @@ struct MallView: View {
 
     var body: some View {
         ZStack {
+            // v9 — tile the authored floor behind the entire MallView so
+            // the iPad screen reads as one continuous mall floor instead of
+            // black void above and below the aspect-fit scene. Sits at the
+            // back of the ZStack; the SKView and all overlays render on top.
+            Image("FloorTile")
+                .resizable(resizingMode: .tile)
+                .interpolation(.none)
+                .ignoresSafeArea()
+
             MallSceneView(
                 vm: vm,
                 onStoreAnchorChange: { storeAnchor = $0 },
