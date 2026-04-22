@@ -215,6 +215,12 @@ final class MallScene: SKScene {
     // a real destination + random entry-wing record so the Phase 3 state machine
     // drives them forward on the first frame (no idle "no target" drift).
     private var didSeedVisitors = false
+
+    // v9 Prompt 8 fix — throttled per-frame isolation-vignette check. Visitor
+    // count changes (spawn, despawn, enterStore) don't trigger the
+    // observation-driven reconcile path, so the vignette needs its own
+    // ticker. 1Hz is plenty for a 1.2s fade.
+    private var lastIsolationCheckTime: TimeInterval = 0
     private func seedInitialVisitors() {
         guard let vm, vm.state.started, !didSeedVisitors else { return }
         didSeedVisitors = true
@@ -648,6 +654,15 @@ final class MallScene: SKScene {
         // v9 Prompt 4 Phase 3 — passive thoughts. For every visitor whose
         // clock has elapsed, fire a thought via the VM and schedule the next.
         tickPassiveThoughts(now: currentTime)
+
+        // v9 Prompt 8 fix — keep the isolation vignette tracking visitor
+        // count changes that don't trigger reconcile (spawn, despawn,
+        // enterStore/emerge). 1Hz cadence is cheap and matches the 1.2s
+        // fade tween.
+        if currentTime - lastIsolationCheckTime >= 1.0 {
+            lastIsolationCheckTime = currentTime
+            reconcileIsolationVignette()
+        }
 
         // Phase C — re-publish SwiftUI card anchors every frame while a selection exists.
         if s.selectedStoreId != nil || s.selectedDecorationId != nil {
@@ -1472,8 +1487,20 @@ final class MallScene: SKScene {
 
     // Vignette visibility tracks whether corridor visitors have dropped
     // below the isolation threshold. Per-visitor shadow elongation + desat
-    // are applied inside the visitor render sync (see reconcileVisitorIsolation).
+    // are applied inside the visitor render sync (inside update()).
+    //
+    // Suppressed until didSeedVisitors flips true. Without the gate, the
+    // very first reconcile fires BEFORE the scene's initial seed of 12
+    // visitors runs in update(), so visitors.count == 0 → isolation active
+    // → vignette fades in for a second, then fades out once the seed
+    // populates. That brief dark pulse reads as an inexplicable flash on
+    // fresh-run startup.
     private func reconcileIsolationVignette() {
+        guard didSeedVisitors else {
+            vignetteOverlay.removeAction(forKey: "vignetteFade")
+            vignetteOverlay.alpha = 0
+            return
+        }
         let corridorCount = visitors.filter { v -> Bool in
             let phase = visitorBehavior[v.id]?.phase ?? .arriving
             if case .insideStore = phase { return false }
