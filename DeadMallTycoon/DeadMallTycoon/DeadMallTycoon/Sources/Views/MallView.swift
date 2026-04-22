@@ -81,6 +81,15 @@ struct MallView: View {
                 ClosureEventCard(vm: vm, event: frontClosure)
                     .transition(.opacity)
             }
+
+            // v9 Prompt 7 — seal confirmation dialog. Appears when the player
+            // taps Seal in the artifact inspector; SealConfirmOverlay gates
+            // the destructive action behind one extra tap because sealing
+            // is irreversible.
+            if vm.state.pendingSealConfirmationArtifactId != nil {
+                SealConfirmOverlay(vm: vm)
+                    .transition(.opacity)
+            }
         }
     }
 

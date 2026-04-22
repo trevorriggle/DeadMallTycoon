@@ -58,6 +58,27 @@ struct ArtifactInfoCard: View {
                     .tint(.red)
                     .frame(maxWidth: .infinity)
             }
+
+            // v9 Prompt 7 — memorial verbs on former-tenant slots.
+            //   boardedStorefront → [Seal…] + [Repurpose as Display]
+            //   displaySpace      → [Seal…] + [Revert to Boarded]
+            //   sealedStorefront  → read-only; no verbs (terminal state)
+            switch a.type {
+            case .boardedStorefront:
+                verbsForBoarded(a)
+            case .displaySpace:
+                displayContentLabel(a)
+                verbsForDisplay(a)
+            case .sealedStorefront:
+                Text("SEALED · TERMINAL")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(Color(hex: "#6a6a78"))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 4)
+            default:
+                EmptyView()
+            }
         }
         .padding(14)
         .frame(maxWidth: 360)
@@ -101,5 +122,52 @@ struct ArtifactInfoCard: View {
             Text(value).foregroundStyle(color).monospacedDigit()
         }
         .font(.system(size: 14, design: .monospaced))
+    }
+
+    // v9 Prompt 7 — verb buttons on boardedStorefront.
+    private func verbsForBoarded(_ a: Artifact) -> some View {
+        VStack(spacing: 6) {
+            Button("Seal Permanently…") { vm.requestSealConfirmation(artifactId: a.id) }
+                .buttonStyle(.bordered)
+                .tint(Color(hex: "#ff4dbd"))
+                .frame(maxWidth: .infinity)
+            Button("Repurpose as Display") { vm.repurposeAsDisplay(artifactId: a.id) }
+                .buttonStyle(.bordered)
+                .tint(Color(hex: "#7fd3f0"))
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    // v9 Prompt 7 — verb buttons on displaySpace.
+    private func verbsForDisplay(_ a: Artifact) -> some View {
+        VStack(spacing: 6) {
+            Button("Seal Permanently…") { vm.requestSealConfirmation(artifactId: a.id) }
+                .buttonStyle(.bordered)
+                .tint(Color(hex: "#ff4dbd"))
+                .frame(maxWidth: .infinity)
+            Button("Revert to Boarded") { vm.revertToBoarded(artifactId: a.id) }
+                .buttonStyle(.bordered)
+                .tint(Color(hex: "#d8d8e0"))
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    // v9 Prompt 7 — current display content label + tint swatch.
+    @ViewBuilder
+    private func displayContentLabel(_ a: Artifact) -> some View {
+        if let content = a.displayContent {
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color(hex: content.tintHex))
+                    .frame(width: 14, height: 14)
+                    .overlay(RoundedRectangle(cornerRadius: 3)
+                                .strokeBorder(Color(hex: "#3a3a48"), lineWidth: 1))
+                Text(content.displayName.uppercased())
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(1.0)
+                    .foregroundStyle(Color(hex: "#7fd3f0"))
+                Spacer(minLength: 0)
+            }
+        }
     }
 }

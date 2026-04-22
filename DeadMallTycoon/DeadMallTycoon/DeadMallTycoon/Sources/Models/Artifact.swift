@@ -69,9 +69,29 @@ enum ArtifactType: String, Codable, CaseIterable, Equatable {
 
     // Ambient / event-spawned (not player-placeable; cost == 0 in catalog).
     case boardedStorefront   // v9 Prompt 2 — tenant closure memorial
+    case sealedStorefront    // v9 Prompt 7 — player sealed the memorial permanently
+    case displaySpace        // v9 Prompt 7 — player converted memorial to non-commercial display
     case sealedEntrance      // v9 Prompt 1 — reserved; not spawned in mechanics yet
     case emptyFoodCourt      // v9 Prompt 1 — reserved
     case custom              // escape hatch for scripted / event content
+}
+
+// v9 Prompt 7 — memory-weight accrual rate multiplier per artifact type.
+// Applied on top of base increment × cohort multiplier in
+// GameViewModel.recordThoughtFired. All other types default to 1.0 so
+// this is additive surface, not a rewrite.
+//
+//   .boardedStorefront → 1.0  (baseline from Prompt 4)
+//   .sealedStorefront  → 0.5  (walled off; less noticed, less remembered)
+//   .displaySpace      → 1.5  (curated, intentional; engages visitors more)
+extension ArtifactType {
+    var memoryAccrualRate: Double {
+        switch self {
+        case .sealedStorefront: return 0.5
+        case .displaySpace:     return 1.5
+        default:                return 1.0
+        }
+    }
 }
 
 // v9: Origin tracks what caused an artifact to exist. Kept as a three-case
@@ -129,6 +149,13 @@ struct Artifact: Identifiable, Equatable, Codable {
     // carries the cohort-weighted signal. Surfaced in the tenant-offer
     // memorial-cost line ("referenced in N visitor thoughts").
     var thoughtReferenceCount: Int = 0
+
+    // v9 Prompt 7 — display content variant, populated ONLY when type is
+    // .displaySpace. ArtifactActions.repurposeAsDisplay sets it at conversion
+    // time (caller passes a DisplayContent picked via rng); revertToBoarded
+    // and sealStorefront clear it. The specific content type drives the
+    // artifact's thoughtTriggers pool and the render tint.
+    var displayContent: DisplayContent? = nil
 
     // v9 Prompt 5 — decay amplifier on memorial value. The thesis is "compose a
     // ruin": decayed artifacts carry more memorial weight than pristine ones.

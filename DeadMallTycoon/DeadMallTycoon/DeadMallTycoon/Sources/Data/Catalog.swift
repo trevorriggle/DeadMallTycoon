@@ -433,6 +433,40 @@ enum ArtifactCatalog {
                     "[placeholder: boarded storefront thought 3]",
                 ],
                 pathingClass: .obstacle)
+        case .sealedStorefront:
+            // v9 Prompt 7 — player-chosen terminal state for a boardedStorefront.
+            // No tenant offers, no $350 vacancy penalty, 0.5× memory accrual.
+            // Size/shape mirrors boardedStorefront (occupies a full slot).
+            return ArtifactTypeInfo(
+                type: .sealedStorefront, name: "Sealed Storefront",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 100, height: 90),
+                cost: 0, repair: 0,
+                description: "Drywalled over. The mall has given up on this space.",
+                defaultTriggers: [
+                    "[placeholder: sealed storefront thought 1]",
+                    "[placeholder: sealed storefront thought 2]",
+                    "[placeholder: sealed storefront thought 3]",
+                ],
+                pathingClass: .obstacle)
+        case .displaySpace:
+            // v9 Prompt 7 — non-commercial curated window. +$75/mo maintenance,
+            // 1.5× memory accrual. Content variant lives on Artifact.displayContent
+            // and overrides thoughtTriggers at conversion time; this catalog
+            // entry's defaultTriggers is a generic fallback that shouldn't
+            // normally be seen by the UI.
+            return ArtifactTypeInfo(
+                type: .displaySpace, name: "Display Space",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 100, height: 90),
+                cost: 0, repair: 0,
+                description: "Curated in absence of a tenant.",
+                defaultTriggers: [
+                    "[placeholder: display space fallback thought 1]",
+                    "[placeholder: display space fallback thought 2]",
+                    "[placeholder: display space fallback thought 3]",
+                ],
+                pathingClass: .obstacle)
         case .sealedEntrance:
             return ArtifactTypeInfo(
                 type: .sealedEntrance, name: "Sealed Entrance",

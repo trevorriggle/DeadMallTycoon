@@ -22,12 +22,24 @@ enum StoreActions {
     // Extracted so the offer UI can look up the prospective slot to render
     // the memorial-cost line. Matches acceptOffer's selection exactly:
     // first vacant open slot, anchor-to-anchor / non-anchor-to-non-anchor.
+    //
+    // v9 Prompt 7 — slots that carry a sealedStorefront OR displaySpace
+    // artifact are LOCKED from the offer pool. Both verbs are thesis-aligned
+    // curation actions — the player chose what the space becomes, so no
+    // future tenant is eligible for it. Sealed is permanent; display is
+    // reversible via ArtifactActions.revertToBoarded.
     static func prospectiveSlotIndex(for offer: TenantOffer, in state: GameState) -> Int? {
         let offerIsAnchor = offer.tier == .anchor
+        let lockedSlotIds: Set<Int> = Set(
+            state.artifacts
+                .filter { $0.type == .sealedStorefront || $0.type == .displaySpace }
+                .compactMap { $0.storeSlotId }
+        )
         return state.stores.firstIndex(where: { store in
             let slotIsAnchor = store.position.w >= 180
             return store.tier == .vacant
                 && !Mall.isWingClosed(store.wing, in: state)
+                && !lockedSlotIds.contains(store.id)
                 && slotIsAnchor == offerIsAnchor
         })
     }

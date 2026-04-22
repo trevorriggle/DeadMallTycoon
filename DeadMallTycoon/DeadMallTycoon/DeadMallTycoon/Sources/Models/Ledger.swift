@@ -68,6 +68,40 @@ enum LedgerEntry: Equatable, Codable {
         month: Int
     )
 
+    // v9 Prompt 7 — player permanently sealed a memorial. Applies to BOTH
+    // boardedStorefront→sealed and displaySpace→sealed transitions; `source`
+    // records which starting state the artifact came from.
+    case artifactSealed(
+        tenantName: String,
+        sourceType: ArtifactType,
+        memoryWeight: Double,
+        thoughtReferenceCount: Int,
+        year: Int,
+        month: Int
+    )
+
+    // v9 Prompt 7 — player converted a boardedStorefront into a curated display.
+    case displayConversion(
+        tenantName: String,
+        content: DisplayContent,
+        memoryWeight: Double,
+        thoughtReferenceCount: Int,
+        year: Int,
+        month: Int
+    )
+
+    // v9 Prompt 7 — player reverted a displaySpace back to a boardedStorefront.
+    // Captures the content type being abandoned so the ledger can narrate
+    // "the community art installation came down in 1987."
+    case displayReverted(
+        tenantName: String,
+        content: DisplayContent,
+        memoryWeight: Double,
+        thoughtReferenceCount: Int,
+        year: Int,
+        month: Int
+    )
+
     // Convenience for UI/test filtering.
     var isClosure: Bool {
         if case .closure = self { return true }
@@ -75,6 +109,18 @@ enum LedgerEntry: Equatable, Codable {
     }
     var isOfferDestruction: Bool {
         if case .offerDestruction = self { return true }
+        return false
+    }
+    var isArtifactSealed: Bool {
+        if case .artifactSealed = self { return true }
+        return false
+    }
+    var isDisplayConversion: Bool {
+        if case .displayConversion = self { return true }
+        return false
+    }
+    var isDisplayReverted: Bool {
+        if case .displayReverted = self { return true }
         return false
     }
 }

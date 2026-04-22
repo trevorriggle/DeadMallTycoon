@@ -46,9 +46,23 @@ enum Economy {
     }
 
     // v8: operatingCost()
+    //
+    // v9 Prompt 7 — sealed slots (artifact.type == .sealedStorefront) no longer
+    // incur the $350/mo vacancy penalty. The space is walled off and not
+    // maintained. Each .displaySpace artifact adds $75/mo maintenance
+    // (cleaning, lighting, occasional content refresh).
     static func operatingCost(_ state: GameState) -> Int {
         let openStores = Mall.openStores(state)
-        let vac = openStores.filter { $0.tier == .vacant }.count
+        // v9 Prompt 7 — vacant slots with a sealedStorefront artifact opt out
+        // of the $350 penalty; everything else is unchanged.
+        let sealedSlotIds: Set<Int> = Set(
+            state.artifacts
+                .filter { $0.type == .sealedStorefront }
+                .compactMap { $0.storeSlotId }
+        )
+        let vac = openStores.filter {
+            $0.tier == .vacant && !sealedSlotIds.contains($0.id)
+        }.count
         var base = 9500
         if Mall.isWingClosed(.north, in: state) { base -= 2500 }
         if Mall.isWingClosed(.south, in: state) { base -= 2500 }
@@ -57,7 +71,10 @@ enum Economy {
         var downgradeSavings = 0
         if Mall.isWingDowngraded(.north, in: state) { downgradeSavings += 1500 }
         if Mall.isWingDowngraded(.south, in: state) { downgradeSavings += 1500 }
-        return max(2000, base + perStore + vacancyPenalty - downgradeSavings)
+        // v9 Prompt 7 — display-space maintenance. $75/mo per displaySpace.
+        let displayCount = state.artifacts.filter { $0.type == .displaySpace }.count
+        let displayMaintenance = displayCount * 75
+        return max(2000, base + perStore + vacancyPenalty - downgradeSavings + displayMaintenance)
     }
 
     // v8: hazardFines()

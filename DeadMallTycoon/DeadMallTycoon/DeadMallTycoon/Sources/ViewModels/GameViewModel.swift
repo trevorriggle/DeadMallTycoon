@@ -193,14 +193,23 @@ final class GameViewModel {
     // v9 Prompt 4 Phase 3 — single place memory weight is incremented.
     // Base +0.5 × cohort multiplier (Originals 2.5, Nostalgics 1.5, Explorers 1.0).
     // Monotonic — never decreases in Prompt 4. Prompt 6 introduces the
-    // destruction-on-vacancy-fill rule (see StoreActions.acceptOffer);
-    // Prompt 7 introduces the preservation ×1.5 rate.
+    // destruction-on-vacancy-fill rule (see StoreActions.acceptOffer).
     //
     // v9 Prompt 6 — also increments thoughtReferenceCount (raw, uncohorted).
     // Surfaced in the memorial-cost line as "referenced in N visitor thoughts."
+    //
+    // v9 Prompt 7 — additionally multiplied by ArtifactType.memoryAccrualRate
+    //   sealedStorefront → 0.5×   (less noticed, less remembered)
+    //   displaySpace     → 1.5×   (curated, engages visitors more)
+    //   everything else  → 1.0×
+    // The Prompt-6 thoughtReferenceCount is NOT scaled — it stays a raw
+    // count ("referenced in N thoughts" reads honestly).
     func recordThoughtFired(artifactId: Int, cohort: AgeCohort) {
         guard let idx = state.artifacts.firstIndex(where: { $0.id == artifactId }) else { return }
-        let increment = ThoughtTuning.memoryWeightBaseIncrement * cohort.memoryWeightMultiplier
+        let typeRate = state.artifacts[idx].type.memoryAccrualRate
+        let increment = ThoughtTuning.memoryWeightBaseIncrement
+                      * cohort.memoryWeightMultiplier
+                      * typeRate
         state.artifacts[idx].memoryWeight += increment
         state.artifacts[idx].thoughtReferenceCount += 1
     }
@@ -211,6 +220,38 @@ final class GameViewModel {
     func dismissClosureEvent() {
         guard !state.pendingClosureEvents.isEmpty else { return }
         state.pendingClosureEvents.removeFirst()
+    }
+
+    // MARK: v9 Prompt 7 — memorial verbs
+
+    // UI entry: called from ArtifactInfoCard when the player taps Seal on a
+    // boardedStorefront or displaySpace. Opens the SealConfirmOverlay; the
+    // actual mutation happens in confirmSeal() after the player confirms.
+    // Sealing is irreversible, so the extra tap is an intentional guard.
+    func requestSealConfirmation(artifactId: Int) {
+        state.pendingSealConfirmationArtifactId = artifactId
+    }
+
+    func cancelSealConfirmation() {
+        state.pendingSealConfirmationArtifactId = nil
+    }
+
+    func confirmSeal() {
+        guard let id = state.pendingSealConfirmationArtifactId else { return }
+        state = ArtifactActions.sealStorefront(artifactId: id, state)
+        state.pendingSealConfirmationArtifactId = nil
+    }
+
+    // UI entry: one-tap conversion from the inspector. Content variant is
+    // chosen here via seeded rng; tests call ArtifactActions.repurposeAsDisplay
+    // directly with a deterministic content argument.
+    func repurposeAsDisplay(artifactId: Int) {
+        let content = DisplayContent.allCases.randomElement(using: &rng) ?? .historicalPlaque
+        state = ArtifactActions.repurposeAsDisplay(artifactId: artifactId, content: content, state)
+    }
+
+    func revertToBoarded(artifactId: Int) {
+        state = ArtifactActions.revertToBoarded(artifactId: artifactId, state)
     }
 
     func selectStore(_ id: Int) {

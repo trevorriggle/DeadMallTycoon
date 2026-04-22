@@ -116,4 +116,9 @@ struct GameState: Equatable {
     // StoreActions.acceptOffer when a memorial is destroyed. Never mutated
     // or truncated in-place.
     var ledger: [LedgerEntry] = []
+
+    // v9 Prompt 7 — artifact id awaiting the Seal-confirmation overlay.
+    // Non-nil → SealConfirmOverlay is mounted in MallView. Confirming
+    // routes to ArtifactActions.sealStorefront; cancelling clears the id.
+    var pendingSealConfirmationArtifactId: Int? = nil
 }
