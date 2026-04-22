@@ -21,12 +21,10 @@ enum TenantLifecycle {
     // - tenantId is reserved for the future tenant-identity system and left
     //   nil in Prompt 2.
     //
-    // v9 Prompt 6 — vacateSlot now also:
-    //   - enqueues a ClosureEvent onto state.pendingClosureEvents (drives the
-    //     overlay closure card).
-    //   - appends a .closure LedgerEntry to state.ledger.
-    // Game is NOT paused by either side effect — closure cards are narrative
-    // beats the player dismisses at their own cadence.
+    // v9 Prompt 6 — vacateSlot also writes a .closure LedgerEntry.
+    // v9 patch — surface to player as an auto-dismiss Toast (style:
+    // .closure) instead of the original modal ClosureEventCard. No tap
+    // required; the ledger remains the durable record.
     static func vacateSlot(storeIndex: Int, state: GameState) -> GameState {
         var s = state
         guard storeIndex >= 0, storeIndex < s.stores.count else { return s }
@@ -61,7 +59,7 @@ enum TenantLifecycle {
         )
         s.artifacts.append(artifact)
 
-        // v9 Prompt 6 — closure event + ledger entry.
+        // v9 Prompt 6 — closure event for the ledger.
         let event = ClosureEvent(
             id: UUID(),
             tenantName: tenantName,
@@ -71,8 +69,17 @@ enum TenantLifecycle {
             year: s.year,
             month: s.month
         )
-        s.pendingClosureEvents.append(event)
         s.ledger.append(.closure(event))
+
+        // v9 patch — push an auto-dismiss closure toast. Title is the
+        // retailer name, subtitle is the authored ClosureFlavor line
+        // (or the [flavor line pending] placeholder until copy lands).
+        let toast = Toast(
+            title: tenantName,
+            subtitle: ClosureFlavor.line(for: event),
+            style: .closure
+        )
+        s.toasts.append(toast)
 
         return s
     }

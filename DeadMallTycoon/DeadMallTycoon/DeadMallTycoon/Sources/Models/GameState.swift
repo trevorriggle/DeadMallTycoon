@@ -101,15 +101,12 @@ struct GameState: Equatable {
         artifacts.reduce(0) { $0 + $1.memoryWeight }
     }
 
-    // v9 Prompt 6 — closure-event queue. Populated by TenantLifecycle.vacateSlot
-    // on every tenant loss. Drives the ClosureEventCard overlay; the card
-    // pops pendingClosureEvents.first on Continue. Silent queue: when
-    // multiple closures arrive the same tick, only the front card renders
-    // and the Continue button shows a small "N pending" badge.
-    //
-    // Deliberately NOT cleared by pause/speed changes — the cards are
-    // narrative beats the player opts into, not interrupts.
-    var pendingClosureEvents: [ClosureEvent] = []
+    // v9 — auto-dismiss toast queue. Replaced the Prompt 6 modal
+    // ClosureEventCard (which required a Continue tap) with non-blocking
+    // banners that fade in, hold for `Toast.duration`, and fade out
+    // automatically. Closures, lawsuit outcomes, and other ephemeral
+    // events all push here. The ledger remains the durable record.
+    var toasts: [Toast] = []
 
     // v9 Prompt 6 — provenance ledger (data-only; Prompt 8 adds UI).
     // Monotonic; appended by TenantLifecycle on closure and by

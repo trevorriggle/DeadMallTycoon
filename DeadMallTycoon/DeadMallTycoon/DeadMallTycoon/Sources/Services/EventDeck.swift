@@ -150,9 +150,31 @@ enum EventDeck {
 
         case (.openingLawsuit(let cost), .accept):
             s.cash -= cost
+            // v9 patch — quiet info toast confirming the settlement landed.
+            s.toasts.append(Toast(
+                title: "CASE SETTLED",
+                subtitle: "The city took the $\(cost) and dropped it.",
+                style: .info
+            ))
 
         case (.openingLawsuit, .decline):
-            if rng.chance(0.5) { s.cash -= 5000 }
+            // v9 patch — surface the RNG outcome so the player knows
+            // whether the gamble paid off. Without this, a favorable roll
+            // (no charge) was completely silent.
+            if rng.chance(0.5) {
+                s.cash -= 5000
+                s.toasts.append(Toast(
+                    title: "THE COURT RULED AGAINST YOU",
+                    subtitle: "Judgment: $5,000.",
+                    style: .loss
+                ))
+            } else {
+                s.toasts.append(Toast(
+                    title: "THE CASE WAS DROPPED",
+                    subtitle: "No charges. Move on.",
+                    style: .victory
+                ))
+            }
 
         case (.burstPipes(let cost), .accept):
             s.cash -= cost

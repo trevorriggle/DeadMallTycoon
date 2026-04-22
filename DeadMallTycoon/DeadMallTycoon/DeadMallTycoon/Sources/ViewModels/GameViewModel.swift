@@ -214,12 +214,14 @@ final class GameViewModel {
         state.artifacts[idx].thoughtReferenceCount += 1
     }
 
-    // v9 Prompt 6 — pop the front closure event. Called from the
-    // ClosureEventCard's Continue button. If the queue is empty the call is
-    // a defensive no-op; the card would already be unmounted.
-    func dismissClosureEvent() {
-        guard !state.pendingClosureEvents.isEmpty else { return }
-        state.pendingClosureEvents.removeFirst()
+    // v9 — toast queue helpers. Pure state mutators; the view layer
+    // schedules dismissal via .task {} after each toast's duration.
+    func pushToast(_ toast: Toast) {
+        state.toasts.append(toast)
+    }
+
+    func dismissToast(id: UUID) {
+        state.toasts.removeAll { $0.id == id }
     }
 
     // MARK: v9 Prompt 7 — memorial verbs

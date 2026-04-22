@@ -1,14 +1,12 @@
 import XCTest
 @testable import DeadMallTycoon
 
-// v9 Prompt 6 coverage. Every vacate path must:
-//   1. Enqueue a ClosureEvent onto state.pendingClosureEvents.
-//   2. Append a .closure entry to state.ledger.
-// AND the closure card UI must show one card at a time (silent queue).
-// AND the game must NOT be paused by closure emission (pauses only come
-// from Decision, not closure events).
+// v9 Prompt 6 + auto-dismiss patch coverage. Every vacate path must:
+//   1. Append a .closure entry to state.ledger (durable record).
+//   2. Append a Toast (style: .closure) to state.toasts (player awareness).
+// Game must NOT pause.
 
-// MARK: - Helpers (local to Prompt 6 tests)
+// MARK: - Helpers (local to these tests)
 
 private func plantTenant(_ state: GameState, at slotId: Int,
                          name: String, tier: StoreTier = .standard,
@@ -31,24 +29,6 @@ final class ClosureEventEmissionTests: XCTestCase {
 
     // MARK: Direct TenantLifecycle
 
-    func testVacateEnqueuesClosureEvent() {
-        var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
-        let idx = s.stores.firstIndex(where: { $0.id == 2 })!
-
-        let before = s.pendingClosureEvents.count
-        s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
-
-        XCTAssertEqual(s.pendingClosureEvents.count, before + 1)
-        let ev = s.pendingClosureEvents.last!
-        XCTAssertEqual(ev.tenantName, "Waldenbooks")
-        XCTAssertEqual(ev.tenantTier, .standard)
-        XCTAssertEqual(ev.slotId, 2)
-        XCTAssertEqual(ev.year, s.year)
-        XCTAssertEqual(ev.month, s.month)
-        XCTAssertFalse(ev.isAnchor)
-    }
-
     func testVacateAppendsClosureLedgerEntry() {
         var s = StartingMall.initialState()
         s = plantTenant(s, at: 2, name: "Claire's")
@@ -61,17 +41,40 @@ final class ClosureEventEmissionTests: XCTestCase {
             return XCTFail("expected .closure ledger entry, got \(s.ledger[0])")
         }
         XCTAssertEqual(ev.tenantName, "Claire's")
+        XCTAssertEqual(ev.tenantTier, .standard)
+        XCTAssertEqual(ev.slotId, 2)
+        XCTAssertEqual(ev.year, s.year)
+        XCTAssertEqual(ev.month, s.month)
+        XCTAssertFalse(ev.isAnchor)
     }
 
-    func testAnchorClosureSetsIsAnchor() {
+    func testVacatePushesClosureToast() {
+        var s = StartingMall.initialState()
+        s = plantTenant(s, at: 2, name: "Waldenbooks")
+        let idx = s.stores.firstIndex(where: { $0.id == 2 })!
+
+        let before = s.toasts.count
+        s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
+
+        XCTAssertEqual(s.toasts.count, before + 1)
+        let toast = s.toasts.last!
+        XCTAssertEqual(toast.title, "Waldenbooks",
+                       "closure toast title is the retailer name")
+        XCTAssertEqual(toast.style, .closure)
+        XCTAssertNotNil(toast.subtitle, "closure flavor line lives in subtitle")
+    }
+
+    func testAnchorClosureLedgerEntryRecordsAnchorTier() {
         var s = StartingMall.initialState()
         s = plantTenant(s, at: 1, name: "Sears", tier: .anchor)
         let idx = s.stores.firstIndex(where: { $0.id == 1 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
 
-        let ev = s.pendingClosureEvents.last!
-        XCTAssertTrue(ev.isAnchor, "anchor-tier closure must set isAnchor")
+        guard case .closure(let ev) = s.ledger.last! else {
+            return XCTFail("expected .closure ledger entry")
+        }
+        XCTAssertTrue(ev.isAnchor)
         XCTAssertEqual(ev.tenantTier, .anchor)
     }
 
@@ -82,7 +85,10 @@ final class ClosureEventEmissionTests: XCTestCase {
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
 
-        XCTAssertEqual(s.pendingClosureEvents.last!.yearsOpen, 4,
+        guard case .closure(let ev) = s.ledger.last! else {
+            return XCTFail("expected .closure ledger entry")
+        }
+        XCTAssertEqual(ev.yearsOpen, 4,
                        "48 monthsOccupied → 4 yearsOpen via integer division")
     }
 
@@ -98,9 +104,9 @@ final class ClosureEventEmissionTests: XCTestCase {
                        "closure events must NOT pause the game (only tenant Decisions do)")
     }
 
-    // MARK: Multiple closures — silent queue
+    // MARK: Multiple closures — independent toasts + ledger entries
 
-    func testMultipleClosuresQueueIndividually() {
+    func testMultipleClosuresStackToasts() {
         var s = StartingMall.initialState()
         s = plantTenant(s, at: 1, name: "Sam Goody")
         s = plantTenant(s, at: 2, name: "Waldenbooks")
@@ -110,26 +116,26 @@ final class ClosureEventEmissionTests: XCTestCase {
         s = TenantLifecycle.vacateSlot(storeIndex: 2, state: s)
         s = TenantLifecycle.vacateSlot(storeIndex: 3, state: s)
 
-        XCTAssertEqual(s.pendingClosureEvents.count, 3,
-                       "each closure appends a card — never coalesced")
-        XCTAssertEqual(s.pendingClosureEvents.map(\.tenantName),
-                       ["Sam Goody", "Waldenbooks", "Foot Locker"],
-                       "FIFO order — first to close pops first")
-        XCTAssertEqual(s.ledger.count, 3)
+        XCTAssertEqual(s.ledger.count, 3, "each closure writes its own ledger entry")
+        // Toast queue gains three closures, in chronological order.
+        let closureToasts = s.toasts.filter { $0.style == .closure }
+        XCTAssertEqual(closureToasts.count, 3)
+        XCTAssertEqual(closureToasts.map(\.title),
+                       ["Sam Goody", "Waldenbooks", "Foot Locker"])
     }
 
     // MARK: Eviction path
 
-    func testEvictPathAlsoEnqueuesClosureEvent() {
+    func testEvictPathAlsoEmitsClosure() {
         var s = StartingMall.initialState()
         s = plantTenant(s, at: 4, name: "Hot Topic")
         s.score = 1000
 
         s = StoreActions.evict(storeId: 4, s)
 
-        XCTAssertEqual(s.pendingClosureEvents.count, 1)
-        XCTAssertEqual(s.pendingClosureEvents.last!.tenantName, "Hot Topic")
         XCTAssertEqual(s.ledger.count, 1)
+        let closureToasts = s.toasts.filter { $0.style == .closure }
+        XCTAssertEqual(closureToasts.last?.title, "Hot Topic")
     }
 }
 
@@ -144,19 +150,12 @@ final class ClosureFlavorLookupTests: XCTestCase {
     }
 
     func testPerTenantLookupReturnsPlaceholderWhilePending() {
-        // All entries ship as "[flavor line pending]" and remain so until
-        // Trevor authors them. The card still renders a legible string.
         let line = ClosureFlavor.line(for: event("Waldenbooks"))
         XCTAssertEqual(line, "[flavor line pending]",
                        "per-tenant entry returns the placeholder until authored")
     }
 
     func testPerTenantTakesPrecedenceOverTier() {
-        // Both perTenant and perTier currently return placeholder; distinguish
-        // via an off-roster name so the lookup falls to the tier line, then
-        // assert the per-tenant path returns its (own) placeholder for a
-        // rostered name. Both are "[flavor line pending]" today but the
-        // dispatcher path they took differs.
         let rostered = ClosureFlavor.line(for: event("Sears", tier: .anchor))
         let unrostered = ClosureFlavor.line(for: event("Unknown Retailer", tier: .anchor))
         XCTAssertEqual(rostered, "[flavor line pending]")
@@ -165,10 +164,6 @@ final class ClosureFlavorLookupTests: XCTestCase {
     }
 
     func testNeutralFallbackUnreachableWithAllTiersCovered() {
-        // All four StoreTiers have a perTier entry today. Any tier will
-        // resolve to that entry before reaching the neutral template. This
-        // test pins the invariant; removing a perTier entry would cause
-        // this to fail.
         for tier in [StoreTier.anchor, .standard, .kiosk, .sketchy] {
             let line = ClosureFlavor.line(for: event("Unknown Retailer", tier: tier))
             XCTAssertNotEqual(line, "Unknown Retailer has closed after 3 years.",
@@ -177,29 +172,106 @@ final class ClosureFlavorLookupTests: XCTestCase {
     }
 }
 
-// MARK: - GameViewModel dismissal
+// MARK: - Toast queue (v9 patch)
 
-final class ClosureEventDismissalTests: XCTestCase {
+final class ToastQueueTests: XCTestCase {
 
-    func testDismissPopsFront() {
+    func testPushToastAppendsToState() {
         let vm = GameViewModel(seed: 1)
         vm.state = StartingMall.initialState()
-        vm.state.pendingClosureEvents = [
-            ClosureEvent(id: UUID(), tenantName: "A", tenantTier: .standard,
-                         yearsOpen: 1, slotId: 1, year: 1985, month: 0),
-            ClosureEvent(id: UUID(), tenantName: "B", tenantTier: .standard,
-                         yearsOpen: 1, slotId: 2, year: 1985, month: 0),
-        ]
-        vm.dismissClosureEvent()
-        XCTAssertEqual(vm.state.pendingClosureEvents.count, 1)
-        XCTAssertEqual(vm.state.pendingClosureEvents.first!.tenantName, "B")
+        vm.pushToast(Toast(title: "Hi", style: .info))
+        XCTAssertEqual(vm.state.toasts.count, 1)
     }
 
-    func testDismissOnEmptyQueueIsNoOp() {
+    func testDismissToastRemovesById() {
         let vm = GameViewModel(seed: 1)
         vm.state = StartingMall.initialState()
-        vm.state.pendingClosureEvents = []
-        vm.dismissClosureEvent()
-        XCTAssertEqual(vm.state.pendingClosureEvents.count, 0)
+        let a = Toast(title: "A", style: .info)
+        let b = Toast(title: "B", style: .info)
+        vm.pushToast(a)
+        vm.pushToast(b)
+        vm.dismissToast(id: a.id)
+        XCTAssertEqual(vm.state.toasts.count, 1)
+        XCTAssertEqual(vm.state.toasts.first?.title, "B")
+    }
+
+    func testDismissUnknownIdIsNoOp() {
+        let vm = GameViewModel(seed: 1)
+        vm.state = StartingMall.initialState()
+        vm.pushToast(Toast(title: "A", style: .info))
+        vm.dismissToast(id: UUID())
+        XCTAssertEqual(vm.state.toasts.count, 1)
+    }
+
+    func testDefaultDurationsByStyle() {
+        XCTAssertEqual(Toast(title: "x", style: .info).duration,    2.5)
+        XCTAssertEqual(Toast(title: "x", style: .closure).duration, 5.0)
+        XCTAssertEqual(Toast(title: "x", style: .victory).duration, 3.0)
+        XCTAssertEqual(Toast(title: "x", style: .loss).duration,    3.5)
+    }
+}
+
+// MARK: - Lawsuit outcome toasts (v9 patch)
+
+final class LawsuitOutcomeToastTests: XCTestCase {
+
+    private func lawsuitDecision() -> Decision {
+        .event(EventDeck.openingLawsuit())
+    }
+
+    func testAcceptPushesSettledInfoToast() {
+        var s = StartingMall.initialState()
+        s.cash = 10_000
+        s.decision = lawsuitDecision()
+        var rng = SeededGenerator(seed: 1)
+        guard case .event(let ev) = s.decision! else { return XCTFail() }
+
+        s = EventDeck.apply(ev, choice: .accept, state: s, rng: &rng)
+        let infoToasts = s.toasts.filter { $0.style == .info }
+        XCTAssertEqual(infoToasts.count, 1)
+        XCTAssertTrue(infoToasts.first!.title.uppercased().contains("SETTLED"))
+    }
+
+    func testDeclineWinPushesVictoryToast() {
+        // Deterministic seed where rng.chance(0.5) returns false (no charge).
+        var s = StartingMall.initialState()
+        s.cash = 10_000
+        s.decision = lawsuitDecision()
+        guard case .event(let ev) = s.decision! else { return XCTFail() }
+
+        // Try seeds until we land on the favorable branch; brute-force is fine
+        // since .chance is deterministic per seed.
+        var foundVictory = false
+        for seed in UInt64(1)...UInt64(50) {
+            var rng = SeededGenerator(seed: seed)
+            let testS = EventDeck.apply(ev, choice: .decline, state: s, rng: &rng)
+            if testS.toasts.contains(where: { $0.style == .victory }) {
+                foundVictory = true
+                XCTAssertEqual(testS.cash, 10_000,
+                               "victory branch must not deduct cash")
+                break
+            }
+        }
+        XCTAssertTrue(foundVictory, "at least one seed in 1..50 should hit the victory branch")
+    }
+
+    func testDeclineLossPushesLossToast() {
+        var s = StartingMall.initialState()
+        s.cash = 10_000
+        s.decision = lawsuitDecision()
+        guard case .event(let ev) = s.decision! else { return XCTFail() }
+
+        var foundLoss = false
+        for seed in UInt64(1)...UInt64(50) {
+            var rng = SeededGenerator(seed: seed)
+            let testS = EventDeck.apply(ev, choice: .decline, state: s, rng: &rng)
+            if testS.toasts.contains(where: { $0.style == .loss }) {
+                foundLoss = true
+                XCTAssertEqual(testS.cash, 10_000 - 5_000,
+                               "loss branch deducts $5,000")
+                break
+            }
+        }
+        XCTAssertTrue(foundLoss, "at least one seed in 1..50 should hit the loss branch")
     }
 }

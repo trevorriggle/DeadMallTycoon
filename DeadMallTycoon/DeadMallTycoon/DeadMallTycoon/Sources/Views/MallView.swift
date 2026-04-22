@@ -72,15 +72,18 @@ struct MallView: View {
             }
             .allowsHitTesting(vm.state.selectedVisitorIdentity != nil)
 
-            // v9 Prompt 6 — closure event card. Silent-queue overlay; the
-            // front event in state.pendingClosureEvents renders while the
-            // rest wait. No pause — time continues underneath. Obeys the
-            // Phase 0 overlay-only invariant: the mall scene's size and
-            // position do not shift when this card appears or dismisses.
-            if let frontClosure = vm.state.pendingClosureEvents.first {
-                ClosureEventCard(vm: vm, event: frontClosure)
-                    .transition(.opacity)
+            // v9 — auto-dismiss toast stack. Replaced the modal Continue-tap
+            // ClosureEventCard with non-blocking banners. Anchored to the
+            // upper letterbox above the mall scene so toasts don't crowd
+            // either the HUD strip or the gameplay area. Obeys the Phase 0
+            // overlay-only invariant: never displaces the mall scene.
+            VStack {
+                ToastStack(vm: vm)
+                    .padding(.top, 56)   // clear the HUD strip
+                    .padding(.horizontal, 12)
+                Spacer()
             }
+            .allowsHitTesting(false)
 
             // v9 Prompt 7 — seal confirmation dialog. Appears when the player
             // taps Seal in the artifact inspector; SealConfirmOverlay gates

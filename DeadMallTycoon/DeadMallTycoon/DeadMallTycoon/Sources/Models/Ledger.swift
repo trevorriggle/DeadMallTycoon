@@ -2,13 +2,14 @@ import Foundation
 
 // v9 Prompt 6 — ClosureEvent + LedgerEntry.
 //
-// The closure-card queue and the ledger are two different consumers of the
-// same moments: every tenant loss and every memorial-artifact destruction.
-// - ClosureEvent drives the overlay card (Phase 4). It sits in
-//   GameState.pendingClosureEvents until the player dismisses.
-// - LedgerEntry is the data-only provenance log (Phase 8 will surface as
-//   UI). Appended for every closure AND for every boardedStorefront
-//   destroyed when a tenant offer is accepted over a memorial.
+// LedgerEntry is the durable provenance log appended whenever something
+// memorial-relevant happens — closures, offer destructions, seal/display
+// conversions. Surfaced as UI in Prompt 8's ledger view (forthcoming).
+//
+// ClosureEvent specifically captures the per-tenant data the ledger needs
+// to render a closure entry. Originally also drove the modal closure card
+// (since replaced with auto-dismiss Toasts — see Models/Toast.swift); now
+// it lives only in the ledger.
 //
 // Both are value types so GameState's Equatable conformance is preserved.
 
