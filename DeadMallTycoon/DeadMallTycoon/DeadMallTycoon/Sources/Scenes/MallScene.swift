@@ -41,9 +41,13 @@ final class MallScene: SKScene {
     private var entranceNodes: [EntranceCorner: EntranceNode] = [:]
 
     // v9 Prompt 6.5 — corner entrance positions in CSS coords. Each corner
-    // door sits centered in its 200×110pt corner block, in the wall band
-    // adjacent to the corridor. Spawn positions are shifted a few points
-    // inward (toward the corridor) so visitors don't render on the wall line.
+    // door sits centered in its 200×110pt corner block, on the wall line
+    // between the corner block and the access corridor.
+    //
+    // v9 Prompt 6.5 fix — spawn positions moved INTO the access corridor
+    // (y:125 / y:395) so visitors land in walkable space immediately,
+    // not inside the (now smaller) anchor footprint. Door CSS coords
+    // unchanged — they sit on the corner-block / access-corridor seam.
     private static let entranceCSS: [EntranceCorner: CGPoint] = [
         .nw: CGPoint(x: 100, y: 105),
         .ne: CGPoint(x: 1100, y: 105),
@@ -51,10 +55,10 @@ final class MallScene: SKScene {
         .se: CGPoint(x: 1100, y: 415),
     ]
     private static let spawnCSS: [EntranceCorner: CGPoint] = [
-        .nw: CGPoint(x: 100, y: 140),
-        .ne: CGPoint(x: 1100, y: 140),
-        .sw: CGPoint(x: 100, y: 380),
-        .se: CGPoint(x: 1100, y: 380),
+        .nw: CGPoint(x: 100, y: 125),
+        .ne: CGPoint(x: 1100, y: 125),
+        .sw: CGPoint(x: 100, y: 395),
+        .se: CGPoint(x: 1100, y: 395),
     ]
 
     // Scene-local visitor presentation state — not in GameState, not observed.
@@ -99,6 +103,12 @@ final class MallScene: SKScene {
         var destinationStoreId: Int? = nil   // nil = wander destination
         var lastShoppedAt: Int? = nil        // for "Shopped at X" thought-bubble suffix
         var bagTier: StoreTier? = nil        // nil = no bag; set when emerging from a store
+        // v9 Prompt 6.5 fix — intermediate waypoints from current position to
+        // v.target. Movement walks toward waypointQueue.first (or v.target
+        // when queue is empty). Arrival pops the front; arrival at the final
+        // target (queue empty) triggers the existing phase-transition logic.
+        // Queue does NOT include v.target — it's the bend points only.
+        var waypointQueue: [CGPoint] = []
     }
 
     // Detect restart transitions (gameover → started again) so we can flush scene-local state.
@@ -595,6 +605,11 @@ final class MallScene: SKScene {
                     if let exit = chooseExitTarget(for: v.id, in: s) {
                         v.target = exit
                         behavior.phase = .exiting
+                        // v9 Prompt 6.5 fix — plan H-shape route to exit door.
+                        behavior.waypointQueue = Self.planPath(
+                            from: CGPoint(x: v.x, y: v.y),
+                            to: CGPoint(x: exit.x, y: exit.y)
+                        )
                     } else {
                         toRemove.append(v.id)
                         visitorBehavior[v.id] = behavior
@@ -617,29 +632,53 @@ final class MallScene: SKScene {
                     assignFreshDestination(&v, &behavior, in: s)
                 }
                 if let target = v.target {
-                    let dx = target.x - v.x
-                    let dy = target.y - v.y
+                    // v9 Prompt 6.5 fix — consume waypoint queue first; once
+                    // empty, head to the final target. Each waypoint pops on
+                    // arrival; the final-target arrival triggers phase logic.
+                    let stepTarget: CGPoint = behavior.waypointQueue.first
+                        ?? CGPoint(x: target.x, y: target.y)
+                    let isFinalStep = behavior.waypointQueue.isEmpty
+
+                    let dx = stepTarget.x - v.x
+                    let dy = stepTarget.y - v.y
                     let dist = (dx * dx + dy * dy).squareRoot()
                     let arriveRadius: Double = {
+                        if !isFinalStep { return 4 }   // looser snap on intermediate waypoints
                         if case .exiting = behavior.phase { return 6 }
                         return 3
                     }()
+
                     if dist < arriveRadius {
-                        switch behavior.phase {
-                        case .exiting:
-                            toRemove.append(v.id)
-                        case .arriving:
-                            handleDestinationArrival(
-                                &v, &behavior,
-                                destStoreId: behavior.destinationStoreId,
-                                in: s, now: currentTime
-                            )
-                        default:
-                            break
+                        if !isFinalStep {
+                            // Pop the waypoint we just reached.
+                            behavior.waypointQueue.removeFirst()
+                        } else {
+                            switch behavior.phase {
+                            case .exiting:
+                                toRemove.append(v.id)
+                            case .arriving:
+                                handleDestinationArrival(
+                                    &v, &behavior,
+                                    destStoreId: behavior.destinationStoreId,
+                                    in: s, now: currentTime
+                                )
+                            default:
+                                break
+                            }
                         }
                     } else {
-                        v.x += (dx / dist) * v.speed
-                        v.y += (dy / dist) * v.speed
+                        // Compute intended movement, then apply local artifact
+                        // sidestep so visitors push around obstacle artifacts
+                        // (kugel ball, fountain, etc.) instead of clipping.
+                        let intendedX = v.x + (dx / dist) * v.speed
+                        let intendedY = v.y + (dy / dist) * v.speed
+                        let after = applyArtifactSidestep(
+                            intended: CGPoint(x: intendedX, y: intendedY),
+                            current: CGPoint(x: v.x, y: v.y),
+                            in: s
+                        )
+                        v.x = after.x
+                        v.y = after.y
                     }
                 }
             }
@@ -738,6 +777,11 @@ final class MallScene: SKScene {
             if visitorRNG.chance(0.2), let exit = chooseExitTarget(for: v.id, in: s) {
                 v.target = exit
                 behavior.phase = .exiting
+                // v9 Prompt 6.5 fix — plan H-shape route to exit door.
+                behavior.waypointQueue = Self.planPath(
+                    from: CGPoint(x: v.x, y: v.y),
+                    to: CGPoint(x: exit.x, y: exit.y)
+                )
             } else {
                 assignFreshDestination(&v, &behavior, in: s)
             }
@@ -775,6 +819,12 @@ final class MallScene: SKScene {
         v.targetType = (storeId != nil) ? "store" : "wander"
         behavior.destinationStoreId = storeId
         behavior.phase = .arriving
+        // v9 Prompt 6.5 fix — plan a route through the H-shape walkable
+        // geometry. Empty queue means direct path to v.target works.
+        behavior.waypointQueue = Self.planPath(
+            from: CGPoint(x: v.x, y: v.y),
+            to: CGPoint(x: target.x, y: target.y)
+        )
     }
 
     // Personality + archetype weighted destination picker. Scene-local replacement
@@ -905,6 +955,144 @@ final class MallScene: SKScene {
     }
     private func sceneToCS(_ p: CGPoint) -> CGPoint {
         CGPoint(x: p.x, y: size.height - p.y)
+    }
+
+    // MARK: Path planning
+
+    // v9 Prompt 6.5 fix — H-shape walkable geometry constants. The mall has a
+    // central main corridor (y:140..380, x:200..1000) bounded north and south
+    // by storefront rows, with anchors flanking the main corridor at x<200
+    // (Sears) and x>1000 (JCPenney). Access corridors at y:110..140 (upper)
+    // and y:380..410 (lower) span the full mall width and are the ONLY way
+    // for visitors to traverse between corner blocks and the main corridor.
+    private static let mainCorridorWestX: Double  = 200    // east edge of west anchor
+    private static let mainCorridorEastX: Double  = 1000   // west edge of east anchor
+    private static let mainCorridorNorthY: Double = 140    // top of anchors / bottom of upper access
+    private static let mainCorridorSouthY: Double = 380    // bottom of anchors / top of lower access
+    private static let upperAccessTopY: Double    = 110    // bottom of north row
+    private static let lowerAccessBottomY: Double = 410    // top of south row
+    private static let upperAccessLaneY: Double   = 125    // preferred lane (mid of upper access)
+    private static let lowerAccessLaneY: Double   = 395    // preferred lane (mid of lower access)
+    // Gate x: where corner-column traffic enters the main corridor. 10pt
+    // inside the main corridor so visitors don't skim Sears/JCPenney walls.
+    private static let westGateX: Double = 210
+    private static let eastGateX: Double = 990
+
+    /// Routes a visitor path through the H-shaped walkable geometry, emitting
+    /// intermediate waypoints. The final element is NOT included — that's
+    /// the visitor's `v.target`. Returns an empty list if no bends are needed.
+    static func planPath(from: CGPoint, to: CGPoint) -> [CGPoint] {
+        var waypoints: [CGPoint] = []
+        var cur = from
+        func push(_ p: CGPoint) {
+            if abs(p.x - cur.x) > 0.5 || abs(p.y - cur.y) > 0.5 {
+                waypoints.append(p)
+                cur = p
+            }
+        }
+
+        let srcInWestCol = cur.x < mainCorridorWestX
+        let srcInEastCol = cur.x > mainCorridorEastX
+        let srcInCornerCol = srcInWestCol || srcInEastCol
+        let srcAboveMall = cur.y < upperAccessTopY
+        let srcBelowMall = cur.y > lowerAccessBottomY
+
+        let tgtInWestCol = to.x < mainCorridorWestX
+        let tgtInEastCol = to.x > mainCorridorEastX
+        let tgtInCornerCol = tgtInWestCol || tgtInEastCol
+
+        // 1. Escape source corner block to the nearest access corridor.
+        if srcInCornerCol && srcAboveMall {
+            push(CGPoint(x: cur.x, y: upperAccessLaneY))
+        } else if srcInCornerCol && srcBelowMall {
+            push(CGPoint(x: cur.x, y: lowerAccessLaneY))
+        }
+
+        // 2. If source is in corner column AND target is on the other side
+        //    (or in main column), slide along the access corridor to the
+        //    main-corridor gate before any vertical motion.
+        let needsSourceGate: Bool = {
+            guard srcInCornerCol else { return false }
+            if srcInWestCol && tgtInWestCol { return false }
+            if srcInEastCol && tgtInEastCol { return false }
+            return true
+        }()
+        if needsSourceGate {
+            let gateX = srcInWestCol ? westGateX : eastGateX
+            push(CGPoint(x: gateX, y: cur.y))
+        }
+
+        // 3. If target is in a corner column (and source isn't on the same
+        //    side), route via the target's access corridor.
+        if tgtInCornerCol {
+            let sameWestSide = srcInWestCol && tgtInWestCol
+            let sameEastSide = srcInEastCol && tgtInEastCol
+            if !sameWestSide && !sameEastSide {
+                let tgtAccessY: Double? = {
+                    if to.y < mainCorridorNorthY { return upperAccessLaneY }
+                    if to.y > mainCorridorSouthY { return lowerAccessLaneY }
+                    return nil   // target at main-corridor y, in a corner col → inside an anchor; unreachable
+                }()
+                if let accessY = tgtAccessY {
+                    if abs(cur.y - accessY) > 1 {
+                        push(CGPoint(x: cur.x, y: accessY))
+                    }
+                    let tgtGateX = tgtInWestCol ? westGateX : eastGateX
+                    push(CGPoint(x: tgtGateX, y: accessY))
+                }
+            }
+        }
+
+        // 4. Final dogleg. If current and target differ in BOTH dimensions,
+        //    insert an L-corner so motion is rectilinear (avoids diagonals
+        //    that could clip store rects at the corridor seam).
+        if abs(cur.x - to.x) > 1 && abs(cur.y - to.y) > 1 {
+            push(CGPoint(x: to.x, y: cur.y))
+        }
+
+        return waypoints
+    }
+
+    // MARK: Local artifact avoidance
+
+    // v9 Prompt 6.5 fix — push the visitor's intended position out of any
+    // .obstacle artifact's avoidance circle. Reads ArtifactPathingClass from
+    // the catalog so new artifact types automatically participate (or don't,
+    // for .floor / .ceiling) without touching this code.
+    //
+    // Avoidance radius = max(width, height) / 2 + clearance. Visitors only
+    // get a single sidestep per frame (one closest obstacle); on the next
+    // frame, movement re-aims toward the waypoint and another sidestep can
+    // fire if needed. Cumulatively reads as "bump and step around."
+    private func applyArtifactSidestep(intended: CGPoint, current: CGPoint, in state: GameState) -> CGPoint {
+        let visitorClearance: Double = 6
+        for a in state.artifacts {
+            guard let ax = a.x, let ay = a.y else { continue }
+            guard ArtifactCatalog.pathingClass(for: a.type) == .obstacle else { continue }
+            let info = ArtifactCatalog.info(a.type)
+            let radius = max(info.size.width, info.size.height) / 2 + visitorClearance
+            let dx = intended.x - ax
+            let dy = intended.y - ay
+            let dist = (dx * dx + dy * dy).squareRoot()
+            if dist < radius {
+                // Project the visitor onto the avoidance circle's edge.
+                // If the visitor is exactly on the artifact (dist == 0), nudge
+                // perpendicular to current heading so they don't get stuck.
+                if dist < 0.01 {
+                    let hx = intended.x - current.x
+                    let hy = intended.y - current.y
+                    let hLen = (hx * hx + hy * hy).squareRoot()
+                    if hLen > 0.01 {
+                        return CGPoint(x: ax + (-hy / hLen) * radius,
+                                       y: ay + (hx / hLen) * radius)
+                    }
+                    return CGPoint(x: ax + radius, y: ay)
+                }
+                return CGPoint(x: ax + (dx / dist) * radius,
+                               y: ay + (dy / dist) * radius)
+            }
+        }
+        return intended
     }
 
     // MARK: Entrance routing

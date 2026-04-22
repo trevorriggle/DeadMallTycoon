@@ -5,6 +5,25 @@ import CoreGraphics
 // v9 Prompt 3 — the old DecorationType struct lived in Decoration.swift
 // (now deleted). The Artifact catalog lives here, colocated with promo /
 // ad / staff / tenant data tables for symmetry.
+
+// v9 Prompt 6.5 fix — pathing classification per artifact type.
+//
+// Drives visitor obstacle avoidance. Adding a new ArtifactType requires
+// also picking a pathingClass in that type's ArtifactTypeInfo — the
+// compiler's exhaustive-init check makes this self-documenting.
+//
+//   .obstacle — physical object at pedestrian height; visitors must route
+//               around it. Also used for architectural objects like railings
+//               and sunken seating pits.
+//   .floor    — flush with the ground (terrazzo, crackedTile); visitors
+//               walk straight over without avoidance.
+//   .ceiling  — overhead or wall-mounted above head height (skylights,
+//               signage, hanging fluorescents, long-expired holiday decor);
+//               never interacts with corridor pathing.
+enum ArtifactPathingClass: String, Codable, CaseIterable {
+    case obstacle, floor, ceiling
+}
+
 struct ArtifactTypeInfo: Equatable {
     let type: ArtifactType
     let name: String
@@ -15,6 +34,9 @@ struct ArtifactTypeInfo: Equatable {
     let repair: Int
     let description: String
     let defaultTriggers: [String]   // placeholder thought pool per type
+    // v9 Prompt 6.5 fix — consumed by MallScene's local-artifact avoidance.
+    // See ArtifactPathingClass for the three-class taxonomy.
+    let pathingClass: ArtifactPathingClass
 }
 
 // v8: DECORATION_TYPES (kugel / fountain / plant / neon / bench / directory).
@@ -28,6 +50,13 @@ struct ArtifactTypeInfo: Equatable {
 // Real prose authoring is deferred (highest-leverage creative work; should
 // happen intentionally, not by Claude Code defaults).
 enum ArtifactCatalog {
+
+    // v9 Prompt 6.5 fix — convenience accessor for the avoidance/pathing system
+    // so consumers don't have to construct the full ArtifactTypeInfo just to
+    // ask about pathing class.
+    static func pathingClass(for type: ArtifactType) -> ArtifactPathingClass {
+        info(type).pathingClass
+    }
 
     static func info(_ type: ArtifactType) -> ArtifactTypeInfo {
         switch type {
@@ -46,7 +75,8 @@ enum ArtifactCatalog {
                     "[placeholder: kugel ball thought 1]",
                     "[placeholder: kugel ball thought 2]",
                     "[placeholder: kugel ball thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .fountain:
             // v8: DECORATION_TYPES.fountain
             return ArtifactTypeInfo(
@@ -59,7 +89,8 @@ enum ArtifactCatalog {
                     "[placeholder: fountain thought 1]",
                     "[placeholder: fountain thought 2]",
                     "[placeholder: fountain thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .planter:
             // v8: DECORATION_TYPES.plant
             return ArtifactTypeInfo(
@@ -72,7 +103,8 @@ enum ArtifactCatalog {
                     "[placeholder: planter thought 1]",
                     "[placeholder: planter thought 2]",
                     "[placeholder: planter thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .neonSign:
             // v8: DECORATION_TYPES.neon
             return ArtifactTypeInfo(
@@ -85,7 +117,8 @@ enum ArtifactCatalog {
                     "[placeholder: neon sign thought 1]",
                     "[placeholder: neon sign thought 2]",
                     "[placeholder: neon sign thought 3]",
-                ])
+                ],
+                pathingClass: .ceiling)
         case .bench:
             // v8: DECORATION_TYPES.bench
             return ArtifactTypeInfo(
@@ -98,7 +131,8 @@ enum ArtifactCatalog {
                     "[placeholder: bench thought 1]",
                     "[placeholder: bench thought 2]",
                     "[placeholder: bench thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .directoryBoard:
             // v8: DECORATION_TYPES.directory
             return ArtifactTypeInfo(
@@ -111,7 +145,8 @@ enum ArtifactCatalog {
                     "[placeholder: directory board thought 1]",
                     "[placeholder: directory board thought 2]",
                     "[placeholder: directory board thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
 
         // MARK: - Seed-set new types (Prompt 3)
 
@@ -127,7 +162,8 @@ enum ArtifactCatalog {
                     "[placeholder: skylight thought 1]",
                     "[placeholder: skylight thought 2]",
                     "[placeholder: skylight thought 3]",
-                ])
+                ],
+                pathingClass: .ceiling)
         case .terrazzoFlooring:
             // v9 Prompt 3 — new
             return ArtifactTypeInfo(
@@ -140,7 +176,8 @@ enum ArtifactCatalog {
                     "[placeholder: terrazzo flooring thought 1]",
                     "[placeholder: terrazzo flooring thought 2]",
                     "[placeholder: terrazzo flooring thought 3]",
-                ])
+                ],
+                pathingClass: .floor)
 
         // MARK: - Prompt 3 roster expansion
 
@@ -155,7 +192,8 @@ enum ArtifactCatalog {
                     "[placeholder: pay phone bank thought 1]",
                     "[placeholder: pay phone bank thought 2]",
                     "[placeholder: pay phone bank thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .cigaretteVendingMachine:
             return ArtifactTypeInfo(
                 type: .cigaretteVendingMachine, name: "Cigarette Machine",
@@ -167,7 +205,8 @@ enum ArtifactCatalog {
                     "[placeholder: cigarette vending thought 1]",
                     "[placeholder: cigarette vending thought 2]",
                     "[placeholder: cigarette vending thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .coinOperatedHorseRide:
             return ArtifactTypeInfo(
                 type: .coinOperatedHorseRide, name: "Coin Horse",
@@ -179,7 +218,8 @@ enum ArtifactCatalog {
                     "[placeholder: coin horse thought 1]",
                     "[placeholder: coin horse thought 2]",
                     "[placeholder: coin horse thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .photoBooth:
             return ArtifactTypeInfo(
                 type: .photoBooth, name: "Photo Booth",
@@ -191,7 +231,8 @@ enum ArtifactCatalog {
                     "[placeholder: photo booth thought 1]",
                     "[placeholder: photo booth thought 2]",
                     "[placeholder: photo booth thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .massageChair:
             return ArtifactTypeInfo(
                 type: .massageChair, name: "Massage Chair",
@@ -203,7 +244,8 @@ enum ArtifactCatalog {
                     "[placeholder: massage chair thought 1]",
                     "[placeholder: massage chair thought 2]",
                     "[placeholder: massage chair thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .brassRailing:
             return ArtifactTypeInfo(
                 type: .brassRailing, name: "Brass Railing",
@@ -215,7 +257,8 @@ enum ArtifactCatalog {
                     "[placeholder: brass railing thought 1]",
                     "[placeholder: brass railing thought 2]",
                     "[placeholder: brass railing thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .terrazzoInlay:
             return ArtifactTypeInfo(
                 type: .terrazzoInlay, name: "Terrazzo Inlay",
@@ -227,7 +270,8 @@ enum ArtifactCatalog {
                     "[placeholder: terrazzo inlay thought 1]",
                     "[placeholder: terrazzo inlay thought 2]",
                     "[placeholder: terrazzo inlay thought 3]",
-                ])
+                ],
+                pathingClass: .floor)
         case .sunkenSeatingPit:
             return ArtifactTypeInfo(
                 type: .sunkenSeatingPit, name: "Conversation Pit",
@@ -239,7 +283,8 @@ enum ArtifactCatalog {
                     "[placeholder: sunken seating thought 1]",
                     "[placeholder: sunken seating thought 2]",
                     "[placeholder: sunken seating thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .deadFicus:
             return ArtifactTypeInfo(
                 type: .deadFicus, name: "Dead Ficus",
@@ -251,7 +296,8 @@ enum ArtifactCatalog {
                     "[placeholder: dead ficus thought 1]",
                     "[placeholder: dead ficus thought 2]",
                     "[placeholder: dead ficus thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .waterStainedCeiling:
             return ArtifactTypeInfo(
                 type: .waterStainedCeiling, name: "Stained Ceiling Tile",
@@ -263,7 +309,8 @@ enum ArtifactCatalog {
                     "[placeholder: water-stained ceiling thought 1]",
                     "[placeholder: water-stained ceiling thought 2]",
                     "[placeholder: water-stained ceiling thought 3]",
-                ])
+                ],
+                pathingClass: .ceiling)
         case .flickeringFluorescent:
             return ArtifactTypeInfo(
                 type: .flickeringFluorescent, name: "Flickering Fluorescent",
@@ -275,7 +322,8 @@ enum ArtifactCatalog {
                     "[placeholder: flickering fluorescent thought 1]",
                     "[placeholder: flickering fluorescent thought 2]",
                     "[placeholder: flickering fluorescent thought 3]",
-                ])
+                ],
+                pathingClass: .ceiling)
         case .emergencyExitSign:
             return ArtifactTypeInfo(
                 type: .emergencyExitSign, name: "Emergency Exit Sign",
@@ -287,7 +335,8 @@ enum ArtifactCatalog {
                     "[placeholder: emergency exit sign thought 1]",
                     "[placeholder: emergency exit sign thought 2]",
                     "[placeholder: emergency exit sign thought 3]",
-                ])
+                ],
+                pathingClass: .ceiling)
         case .arcadeCabinet:
             return ArtifactTypeInfo(
                 type: .arcadeCabinet, name: "Arcade Cabinet",
@@ -299,7 +348,8 @@ enum ArtifactCatalog {
                     "[placeholder: arcade cabinet thought 1]",
                     "[placeholder: arcade cabinet thought 2]",
                     "[placeholder: arcade cabinet thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .christmasLeftUp:
             return ArtifactTypeInfo(
                 type: .christmasLeftUp, name: "Stale Christmas Decor",
@@ -311,7 +361,8 @@ enum ArtifactCatalog {
                     "[placeholder: stale christmas thought 1]",
                     "[placeholder: stale christmas thought 2]",
                     "[placeholder: stale christmas thought 3]",
-                ])
+                ],
+                pathingClass: .ceiling)
         case .lostAndFoundCabinet:
             return ArtifactTypeInfo(
                 type: .lostAndFoundCabinet, name: "Lost & Found",
@@ -323,7 +374,8 @@ enum ArtifactCatalog {
                     "[placeholder: lost and found thought 1]",
                     "[placeholder: lost and found thought 2]",
                     "[placeholder: lost and found thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .pretzelRemnant:
             return ArtifactTypeInfo(
                 type: .pretzelRemnant, name: "Pretzel Kiosk Remnant",
@@ -335,7 +387,8 @@ enum ArtifactCatalog {
                     "[placeholder: pretzel remnant thought 1]",
                     "[placeholder: pretzel remnant thought 2]",
                     "[placeholder: pretzel remnant thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .crackedTile:
             return ArtifactTypeInfo(
                 type: .crackedTile, name: "Cracked Tile",
@@ -347,7 +400,8 @@ enum ArtifactCatalog {
                     "[placeholder: cracked tile thought 1]",
                     "[placeholder: cracked tile thought 2]",
                     "[placeholder: cracked tile thought 3]",
-                ])
+                ],
+                pathingClass: .floor)
         case .memorialBench:
             return ArtifactTypeInfo(
                 type: .memorialBench, name: "Memorial Bench",
@@ -359,7 +413,8 @@ enum ArtifactCatalog {
                     "[placeholder: memorial bench thought 1]",
                     "[placeholder: memorial bench thought 2]",
                     "[placeholder: memorial bench thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
 
         // MARK: - Ambient / event-spawned (cost == 0)
 
@@ -376,7 +431,8 @@ enum ArtifactCatalog {
                     "[placeholder: boarded storefront thought 1]",
                     "[placeholder: boarded storefront thought 2]",
                     "[placeholder: boarded storefront thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .sealedEntrance:
             return ArtifactTypeInfo(
                 type: .sealedEntrance, name: "Sealed Entrance",
@@ -388,7 +444,8 @@ enum ArtifactCatalog {
                     "[placeholder: sealed entrance thought 1]",
                     "[placeholder: sealed entrance thought 2]",
                     "[placeholder: sealed entrance thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         case .emptyFoodCourt:
             return ArtifactTypeInfo(
                 type: .emptyFoodCourt, name: "Empty Food Court",
@@ -400,7 +457,8 @@ enum ArtifactCatalog {
                     "[placeholder: empty food court thought 1]",
                     "[placeholder: empty food court thought 2]",
                     "[placeholder: empty food court thought 3]",
-                ])
+                ],
+                pathingClass: .floor)
         case .custom:
             return ArtifactTypeInfo(
                 type: .custom, name: "Artifact",
@@ -412,7 +470,8 @@ enum ArtifactCatalog {
                     "[placeholder: custom artifact thought 1]",
                     "[placeholder: custom artifact thought 2]",
                     "[placeholder: custom artifact thought 3]",
-                ])
+                ],
+                pathingClass: .obstacle)
         }
     }
 

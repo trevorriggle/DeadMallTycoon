@@ -12,13 +12,21 @@ enum StartingMall {
     //
     // v9 Prompt 6.5 — anchors relocated. Previously full-scene-height (y 10..510)
     // bookends that occupied the corner real estate. Now corridor-height
-    // flanks (y 110..410, h:300) so the four corner blocks are free for
+    // flanks (y 140..380, h:240) so the four corner blocks are free for
     // the new NW/NE/SW/SE entrance doors. Width and wing assignments
     // preserved; anchor-tier detection by position.w >= 180 survives.
+    //
+    // v9 Prompt 6.5 fix — anchors shrunk from h:300 (y 110..410) to h:240
+    // (y 140..380) to carve out 30pt-tall access corridors above and below
+    // each anchor. Without these, corner-door spawns at x<200 / x>1000 have
+    // no walkable path into the main corridor without clipping through an
+    // anchor. The access corridors connect the corner blocks (y<110, y>410)
+    // to the main corridor (y 140..380) along the full mall width.
     static let positions: [StorePosition] = [
         // North anchor (Sears) — west corridor flank, between the corner doors.
         // v9 Prompt 6.5 — was `y:10, h:500` full-height bookend.
-        StorePosition(x:    0, y: 110, w: 200, h: 300, wing: .north),
+        // v9 Prompt 6.5 fix — was `y:110, h:300`; shrunk for access corridors.
+        StorePosition(x:    0, y: 140, w: 200, h: 240, wing: .north),
         // North standards — 8 storefronts butted up across x 200..1000.
         StorePosition(x:  200, y:  20, w: 100, h: 90, wing: .north),
         StorePosition(x:  300, y:  20, w: 100, h: 90, wing: .north),
@@ -39,7 +47,8 @@ enum StartingMall {
         StorePosition(x:  900, y: 410, w: 100, h: 90, wing: .south),
         // South anchor (JCPenney) — east corridor flank, between the corner doors.
         // v9 Prompt 6.5 — was `y:10, h:500` full-height bookend.
-        StorePosition(x: 1000, y: 110, w: 200, h: 300, wing: .south),
+        // v9 Prompt 6.5 fix — was `y:110, h:300`; shrunk for access corridors.
+        StorePosition(x: 1000, y: 140, w: 200, h: 240, wing: .south),
     ]
 
     // v8: STARTING_STORES
