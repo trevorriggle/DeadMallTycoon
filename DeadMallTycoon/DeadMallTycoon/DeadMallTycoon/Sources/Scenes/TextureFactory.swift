@@ -431,13 +431,17 @@ extension TextureFactory {
 
             // Walkable regions in CSS coords (y-down). Convert to image
             // coords (which are also y-down in UIGraphicsImageRenderer).
-            let upperAccess = CGRect(x: 0, y: 110, width: size.width, height: 30)
-            let lowerAccess = CGRect(x: 0, y: 380, width: size.width, height: 30)
-            let mainCorridor = CGRect(x: 200, y: 140, width: size.width - 400, height: 240)
+            // v9 patch — coords updated for stretched world (worldHeight 1400).
+            let upperAccess = CGRect(x: 0, y: 90, width: size.width, height: 110)
+            let lowerAccess = CGRect(x: 0, y: 1200, width: size.width, height: 110)
+            let mainCorridor = CGRect(x: 200, y: 200, width: size.width - 400, height: 1000)
             let regions = [upperAccess, lowerAccess, mainCorridor]
 
+            // v9 patch — counts scaled ~4x because walkable area grew from
+            // ~285k px² to ~1.06M px². Same wear-density per unit area as
+            // pre-stretch tuning.
             // Layer 1: mottling — small random dots across walkable.
-            let dotCount = Int(600.0 * intensity)
+            let dotCount = Int(2400.0 * intensity)
             for _ in 0..<dotCount {
                 guard let region = regions.randomElement(using: &rng) else { continue }
                 let x = CGFloat.random(in: region.minX..<region.maxX, using: &rng)
@@ -449,7 +453,7 @@ extension TextureFactory {
             }
 
             // Layer 2: scuff lines — short dark strokes.
-            let scuffCount = Int(60.0 * intensity)
+            let scuffCount = Int(240.0 * intensity)
             for _ in 0..<scuffCount {
                 guard let region = regions.randomElement(using: &rng) else { continue }
                 let x = CGFloat.random(in: region.minX..<region.maxX, using: &rng)
@@ -468,7 +472,7 @@ extension TextureFactory {
 
             // Layer 3: water stains (dying+). Irregular translucent brown blobs.
             if intensity >= 0.30 {
-                let stainCount = Int(14.0 * intensity)
+                let stainCount = Int(56.0 * intensity)
                 for _ in 0..<stainCount {
                     guard let region = regions.randomElement(using: &rng) else { continue }
                     let cx = CGFloat.random(in: region.minX..<region.maxX, using: &rng)
@@ -491,7 +495,7 @@ extension TextureFactory {
 
             // Layer 4: cracked tile patches (dying+). Jagged polylines.
             if intensity >= 0.30 {
-                let crackCount = Int(9.0 * intensity)
+                let crackCount = Int(36.0 * intensity)
                 for _ in 0..<crackCount {
                     guard let region = regions.randomElement(using: &rng) else { continue }
                     var x = CGFloat.random(in: region.minX..<region.maxX, using: &rng)

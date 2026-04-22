@@ -135,7 +135,16 @@ enum GameConstants {
     static let startingCash = 3_500
     static let startingYear = 1982
     static let worldWidth: Double = 1200              // v8: stage width
-    static let worldHeight: Double = 520
-    static let corridorTop: Double = 130
-    static let corridorBottom: Double = 390
+    // v9 patch — was 520. Grown to 1400 so the world's aspect (1200/1400 ≈
+    // 0.86) matches an iPad portrait's available scene area (~834/980 ≈
+    // 0.85). Storefronts repositioned to y:0..90 (north) and y:1310..1400
+    // (south) sit flush against the HUD borders with no letterbox bands.
+    // Anchors stretched to fill the new corridor proportionally so the
+    // H-shape walkable geometry is preserved.
+    static let worldHeight: Double = 1400
+    // v9 patch — corridor band (between the two storefront rows) stretches
+    // with the world. Anchors flank this corridor; access corridors live
+    // just inside (110pt strips above/below the anchor band).
+    static let corridorTop: Double = 90
+    static let corridorBottom: Double = 1310
 }

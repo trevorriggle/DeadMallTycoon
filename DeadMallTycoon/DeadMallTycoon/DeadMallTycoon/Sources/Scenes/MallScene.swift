@@ -72,25 +72,24 @@ final class MallScene: SKScene {
     // Replaces the two wing-centered doors. Lazy-created in reconcileEntrances.
     private var entranceNodes: [EntranceCorner: EntranceNode] = [:]
 
-    // v9 Prompt 6.5 — corner entrance positions in CSS coords. Each corner
-    // door sits centered in its 200×110pt corner block, on the wall line
-    // between the corner block and the access corridor.
+    // v9 Prompt 6.5 — corner entrance positions in CSS coords.
     //
-    // v9 Prompt 6.5 fix — spawn positions moved INTO the access corridor
-    // (y:125 / y:395) so visitors land in walkable space immediately,
-    // not inside the (now smaller) anchor footprint. Door CSS coords
-    // unchanged — they sit on the corner-block / access-corridor seam.
+    // v9 patch (worldHeight 1400) — corner blocks are now x:0..200, y:0..90
+    // (NW/NE) and x:0..200, y:1310..1400 (SW/SE). Doors sit near the world's
+    // top/bottom edges so they read as "exiting OUT of the mall." Spawns
+    // place visitors inside the upper or lower access corridor (y:90..200
+    // and y:1200..1310), just past the door threshold.
     private static let entranceCSS: [EntranceCorner: CGPoint] = [
-        .nw: CGPoint(x: 100, y: 105),
-        .ne: CGPoint(x: 1100, y: 105),
-        .sw: CGPoint(x: 100, y: 415),
-        .se: CGPoint(x: 1100, y: 415),
+        .nw: CGPoint(x: 100, y: 30),
+        .ne: CGPoint(x: 1100, y: 30),
+        .sw: CGPoint(x: 100, y: 1370),
+        .se: CGPoint(x: 1100, y: 1370),
     ]
     private static let spawnCSS: [EntranceCorner: CGPoint] = [
-        .nw: CGPoint(x: 100, y: 125),
-        .ne: CGPoint(x: 1100, y: 125),
-        .sw: CGPoint(x: 100, y: 395),
-        .se: CGPoint(x: 1100, y: 395),
+        .nw: CGPoint(x: 100, y: 145),
+        .ne: CGPoint(x: 1100, y: 145),
+        .sw: CGPoint(x: 100, y: 1255),
+        .se: CGPoint(x: 1100, y: 1255),
     ]
 
     // Scene-local visitor presentation state — not in GameState, not observed.
@@ -157,12 +156,13 @@ final class MallScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = Palette.backgroundNight
         anchorPoint = CGPoint(x: 0, y: 0)
-        // MUST stay aspectFit — the scene is authored at 1200×520 (CSS world coords)
-        // and csToScene() flips y relative to size.height. `.resizeFill` would stretch
-        // size to the SKView bounds, making csToScene map the south wing off-screen
-        // whenever the SKView ends up shorter than 520pt (which is the common case
-        // now that MallView fits to world aspect). MallSceneView already sets this on
-        // present; repeating here so a future refactor can't silently regress.
+        // MUST stay aspectFit — the scene is authored at GameConstants
+        // worldWidth × worldHeight (1200 × 1400 post-stretch) and csToScene()
+        // flips y relative to size.height. `.resizeFill` would stretch size
+        // to the SKView bounds, making csToScene map positions incorrectly
+        // whenever the SKView's aspect doesn't match the world's. MallSceneView
+        // already sets this on present; repeating here so a future refactor
+        // can't silently regress.
         scaleMode = .aspectFit
 
         buildStaticBackground()
@@ -227,8 +227,10 @@ final class MallScene: SKScene {
         let s = vm.state
         for _ in 0..<12 {
             var v = VisitorFactory.spawn(state: s, rng: &visitorRNG)
-            v.x = 50 + Double.random(in: 0..<1100, using: &visitorRNG)
-            v.y = 220 + Double.random(in: 0..<60, using: &visitorRNG)
+            // v9 patch — seed inside the new main corridor band (y:200..1200).
+            // x range stays full mall width; planner routes around anchors.
+            v.x = 250 + Double.random(in: 0..<700, using: &visitorRNG)
+            v.y = 400 + Double.random(in: 0..<600, using: &visitorRNG)
             v.state = .wandering
             var behavior = VisitorBehaviorState()
             assignFreshDestination(&v, &behavior, in: s)
@@ -291,27 +293,30 @@ final class MallScene: SKScene {
         let floorTile = TextureFactory.floorTile()
         let tileSize = CGSize(width: 64, height: 64)
 
-        // ceiling-bg: top 0..130
+        // ceiling-bg: top strip (above corridor — contains north row).
         addTiled(texture: floorTile, tileSize: tileSize,
                  rectCSS: CGRect(x: 0, y: 0,
                                   width: GameConstants.worldWidth,
                                   height: GameConstants.corridorTop))
 
-        // floor-bg (below corridor): y 390..520
+        // floor-bg: bottom strip (below corridor — contains south row).
         addTiled(texture: floorTile, tileSize: tileSize,
                  rectCSS: CGRect(x: 0, y: GameConstants.corridorBottom,
                                   width: GameConstants.worldWidth,
                                   height: GameConstants.worldHeight - GameConstants.corridorBottom))
 
-        // corridor: y 130..390
+        // corridor: the central walkable band between the storefront rows.
         addTiled(texture: floorTile, tileSize: tileSize,
                  rectCSS: CGRect(x: 0, y: GameConstants.corridorTop,
                                   width: GameConstants.worldWidth,
                                   height: GameConstants.corridorBottom - GameConstants.corridorTop))
 
         // walls: thin horizontal strips at y=128 and y=388
-        addWall(atCSSy: 128)
-        addWall(atCSSy: 388)
+        // v9 patch — walls at the seams between storefront row and access
+        // corridor. North row ends at y:90 → wall just below at y:88.
+        // South row starts at y:1310 → wall just above at y:1312.
+        addWall(atCSSy: 88)
+        addWall(atCSSy: 1312)
     }
 
     // v9 — `tileSize` lets callers render a texture at a non-natural size
@@ -973,9 +978,12 @@ final class MallScene: SKScene {
             return (storeApproachTarget(for: store), store.id)
         }
 
+        // v9 patch — wander destinations land inside the main corridor band
+        // (y:200..1200 in the stretched world). x kept loose; planner routes
+        // around anchor rects when needed.
         return (VisitorTarget(
             x: 50 + visitorRNG.double(in: 0..<1100),
-            y: 210 + visitorRNG.double(in: 0..<70),
+            y: 300 + visitorRNG.double(in: 0..<800),
             storeId: nil
         ), nil)
     }
@@ -991,7 +999,9 @@ final class MallScene: SKScene {
             let cx = leftSide
                 ? store.position.x + store.position.w + 15
                 : store.position.x - 15
-            return VisitorTarget(x: cx, y: 260, storeId: store.id)
+            // v9 patch — anchor approach y lands in the center of the stretched
+            // main corridor (y:200..1200 midpoint = 700).
+            return VisitorTarget(x: cx, y: 700, storeId: store.id)
         }
         let ty = store.wing == .north
             ? store.position.y + store.position.h + 15
@@ -1064,20 +1074,20 @@ final class MallScene: SKScene {
 
     // MARK: Path planning
 
-    // v9 Prompt 6.5 fix — H-shape walkable geometry constants. The mall has a
-    // central main corridor (y:140..380, x:200..1000) bounded north and south
-    // by storefront rows, with anchors flanking the main corridor at x<200
-    // (Sears) and x>1000 (JCPenney). Access corridors at y:110..140 (upper)
-    // and y:380..410 (lower) span the full mall width and are the ONLY way
-    // for visitors to traverse between corner blocks and the main corridor.
+    // v9 Prompt 6.5 fix — H-shape walkable geometry constants.
+    // v9 patch — values updated for worldHeight 1400. Main corridor band
+    // is y:200..1200 (h:1000) flanked by Sears (x<200) / JCPenney (x>1000).
+    // Access corridors at y:90..200 (upper, 110pt) and y:1200..1310 (lower,
+    // 110pt) span full mall width and are the only path between corner
+    // blocks and the main corridor.
     private static let mainCorridorWestX: Double  = 200    // east edge of west anchor
     private static let mainCorridorEastX: Double  = 1000   // west edge of east anchor
-    private static let mainCorridorNorthY: Double = 140    // top of anchors / bottom of upper access
-    private static let mainCorridorSouthY: Double = 380    // bottom of anchors / top of lower access
-    private static let upperAccessTopY: Double    = 110    // bottom of north row
-    private static let lowerAccessBottomY: Double = 410    // top of south row
-    private static let upperAccessLaneY: Double   = 125    // preferred lane (mid of upper access)
-    private static let lowerAccessLaneY: Double   = 395    // preferred lane (mid of lower access)
+    private static let mainCorridorNorthY: Double = 200    // top of anchors / bottom of upper access
+    private static let mainCorridorSouthY: Double = 1200   // bottom of anchors / top of lower access
+    private static let upperAccessTopY: Double    = 90     // bottom of north row
+    private static let lowerAccessBottomY: Double = 1310   // top of south row
+    private static let upperAccessLaneY: Double   = 145    // preferred lane (mid of upper access)
+    private static let lowerAccessLaneY: Double   = 1255   // preferred lane (mid of lower access)
     // Gate x: where corner-column traffic enters the main corridor. 10pt
     // inside the main corridor so visitors don't skim Sears/JCPenney walls.
     private static let westGateX: Double = 210
@@ -1251,37 +1261,77 @@ final class MallScene: SKScene {
     // corner parameter is retained for future asymmetric visuals (e.g.,
     // directional cues toward the corridor) but the current draw is
     // symmetric and orientation-agnostic.
+    // v9 patch — 80×48 mall double-door glyph (was 40×24, read as a small
+    // dark square). Frame, two glass panes with warm glow, vertical
+    // mullion, transom header, two horizontal handles. Sealed state
+    // overlays plywood with horizontal plank lines, scaled to new size.
     private final class EntranceNode: SKNode {
         // swiftlint:disable:next unused_declaration
         private let corner: EntranceCorner
         private var sealedOverlay: SKNode?
 
+        // Door geometry — single source of truth; sealed overlay reads these.
+        private static let doorWidth:     CGFloat = 80
+        private static let doorHeight:    CGFloat = 48
+        private static let transomHeight: CGFloat = 8
+
         init(corner: EntranceCorner) {
             self.corner = corner
             super.init()
 
-            let doorRect = CGRect(x: -20, y: -12, width: 40, height: 24)
+            let halfW = Self.doorWidth / 2
+            let bodyHeight = Self.doorHeight - Self.transomHeight
+            let bodyRect = CGRect(x: -halfW,
+                                   y: -Self.doorHeight / 2,
+                                   width: Self.doorWidth,
+                                   height: bodyHeight)
+            let transomRect = CGRect(x: -halfW,
+                                      y: bodyRect.maxY,
+                                      width: Self.doorWidth,
+                                      height: Self.transomHeight)
 
-            let glow = SKShapeNode(rect: doorRect.insetBy(dx: 2, dy: 2), cornerRadius: 2)
+            // Warm glow behind glass panes — "lit from within."
+            let glow = SKShapeNode(rect: bodyRect.insetBy(dx: 3, dy: 3), cornerRadius: 2)
             glow.fillColor = Palette.windowLit
             glow.strokeColor = .clear
-            glow.alpha = 0.55
+            glow.alpha = 0.6
             glow.zPosition = 0
             addChild(glow)
 
-            let door = SKShapeNode(rect: doorRect, cornerRadius: 2)
-            door.fillColor = Palette.gateDark
-            door.strokeColor = Palette.signLight
-            door.lineWidth = 2
-            door.zPosition = 1
-            addChild(door)
+            // Glass-panel frame outline.
+            let frame = SKShapeNode(rect: bodyRect, cornerRadius: 2)
+            frame.fillColor = .clear
+            frame.strokeColor = Palette.signLight
+            frame.lineWidth = 2
+            frame.zPosition = 1
+            addChild(frame)
 
-            // Vertical mullion — reads as a pair of doors.
-            let mullion = SKShapeNode(rect: CGRect(x: -1, y: -12, width: 2, height: 24))
+            // Transom header strip above the doors (lintel / sign band).
+            let transom = SKShapeNode(rect: transomRect, cornerRadius: 1)
+            transom.fillColor = Palette.gateDark
+            transom.strokeColor = Palette.signLight
+            transom.lineWidth = 2
+            transom.zPosition = 1
+            addChild(transom)
+
+            // Vertical mullion — splits the two glass doors.
+            let mullion = SKShapeNode(rect: CGRect(x: -1.5, y: bodyRect.minY,
+                                                    width: 3, height: bodyHeight))
             mullion.fillColor = Palette.signLight
             mullion.strokeColor = .clear
             mullion.zPosition = 2
             addChild(mullion)
+
+            // Two horizontal handles flanking the mullion. Push/pull bars.
+            let handleY = bodyRect.midY - 1
+            for offset in [CGFloat(-12), CGFloat(4)] {
+                let handle = SKShapeNode(rect: CGRect(x: offset, y: handleY,
+                                                       width: 8, height: 3))
+                handle.fillColor = Palette.signLight
+                handle.strokeColor = .clear
+                handle.zPosition = 3
+                addChild(handle)
+            }
         }
 
         required init?(coder: NSCoder) { fatalError() }
@@ -1290,17 +1340,24 @@ final class MallScene: SKScene {
             if sealed {
                 guard sealedOverlay == nil else { return }
                 let overlay = SKNode()
-                overlay.zPosition = 3
+                overlay.zPosition = 4
 
-                let plywood = SKShapeNode(rect: CGRect(x: -20, y: -12, width: 40, height: 24))
+                let halfW = Self.doorWidth / 2
+                let halfH = Self.doorHeight / 2
+                let plywood = SKShapeNode(rect: CGRect(x: -halfW, y: -halfH,
+                                                       width: Self.doorWidth,
+                                                       height: Self.doorHeight))
                 plywood.fillColor = Palette.storeBoarded
                 plywood.strokeColor = Palette.storeBoardedBorder
                 plywood.lineWidth = 2
                 overlay.addChild(plywood)
 
-                for i in 0..<3 {
-                    let plank = SKShapeNode(rect: CGRect(x: -18, y: -10 + CGFloat(i) * 8,
-                                                         width: 36, height: 1))
+                // Five plank lines spaced across the door height.
+                let plankSpacing = Self.doorHeight / 6
+                for i in 1..<6 {
+                    let y = -halfH + CGFloat(i) * plankSpacing
+                    let plank = SKShapeNode(rect: CGRect(x: -halfW + 2, y: y,
+                                                          width: Self.doorWidth - 4, height: 1))
                     plank.strokeColor = Palette.storeAbandoned
                     plank.fillColor = Palette.storeAbandoned
                     plank.lineWidth = 1

@@ -10,45 +10,43 @@ enum StartingMall {
     // v8 parity note: v8 treated Sears/JCP as standard-sized slots with higher rent.
     // The iPad port diverges here — anchors are architecturally distinct.
     //
-    // v9 Prompt 6.5 — anchors relocated. Previously full-scene-height (y 10..510)
-    // bookends that occupied the corner real estate. Now corridor-height
-    // flanks (y 140..380, h:240) so the four corner blocks are free for
-    // the new NW/NE/SW/SE entrance doors. Width and wing assignments
-    // preserved; anchor-tier detection by position.w >= 180 survives.
+    // v9 Prompt 6.5 — anchors relocated from full-scene-height bookends to
+    // corridor-side flanks; corner blocks freed for NW/NE/SW/SE entrance doors.
     //
-    // v9 Prompt 6.5 fix — anchors shrunk from h:300 (y 110..410) to h:240
-    // (y 140..380) to carve out 30pt-tall access corridors above and below
-    // each anchor. Without these, corner-door spawns at x<200 / x>1000 have
-    // no walkable path into the main corridor without clipping through an
-    // anchor. The access corridors connect the corner blocks (y<110, y>410)
-    // to the main corridor (y 140..380) along the full mall width.
+    // v9 patch (worldHeight 520→1400) — geometry stretched so storefronts
+    // sit flush against the iPad screen's HUD borders. Storefronts moved to
+    // y:0 (north row) and y:1310 (south row). Anchors stretched to h:1000
+    // (y:200..1200) to fill the now-much-taller corridor while preserving
+    // the H-shape walkable layout (110pt access corridors above/below).
+    // Width and wing assignments unchanged; anchor-tier detection by
+    // position.w >= 180 survives.
     static let positions: [StorePosition] = [
-        // North anchor (Sears) — west corridor flank, between the corner doors.
-        // v9 Prompt 6.5 — was `y:10, h:500` full-height bookend.
-        // v9 Prompt 6.5 fix — was `y:110, h:300`; shrunk for access corridors.
-        StorePosition(x:    0, y: 140, w: 200, h: 240, wing: .north),
-        // North standards — 8 storefronts butted up across x 200..1000.
-        StorePosition(x:  200, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  300, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  400, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  500, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  600, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  700, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  800, y:  20, w: 100, h: 90, wing: .north),
-        StorePosition(x:  900, y:  20, w: 100, h: 90, wing: .north),
-        // South standards — 8 storefronts butted up across x 200..1000.
-        StorePosition(x:  200, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  300, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  400, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  500, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  600, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  700, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  800, y: 410, w: 100, h: 90, wing: .south),
-        StorePosition(x:  900, y: 410, w: 100, h: 90, wing: .south),
-        // South anchor (JCPenney) — east corridor flank, between the corner doors.
-        // v9 Prompt 6.5 — was `y:10, h:500` full-height bookend.
-        // v9 Prompt 6.5 fix — was `y:110, h:300`; shrunk for access corridors.
-        StorePosition(x: 1000, y: 140, w: 200, h: 240, wing: .south),
+        // v9 patch — geometry stretched for full-screen layout (worldHeight 1400).
+        // Storefronts moved flush to top (y:0) and bottom (y:1310). Anchors
+        // stretched to fill the corridor (y:200..1200, h:1000) so the H-shape
+        // walkable geometry stays proportional in the taller world.
+        // North anchor (Sears) — west corridor flank.
+        StorePosition(x:    0, y: 200, w: 200, h: 1000, wing: .north),
+        // North standards — 8 storefronts butted up across x 200..1000, flush top.
+        StorePosition(x:  200, y:   0, w: 100, h: 90, wing: .north),
+        StorePosition(x:  300, y:   0, w: 100, h: 90, wing: .north),
+        StorePosition(x:  400, y:   0, w: 100, h: 90, wing: .north),
+        StorePosition(x:  500, y:   0, w: 100, h: 90, wing: .north),
+        StorePosition(x:  600, y:   0, w: 100, h: 90, wing: .north),
+        StorePosition(x:  700, y:   0, w: 100, h: 90, wing: .north),
+        StorePosition(x:  800, y:   0, w: 100, h: 90, wing: .north),
+        StorePosition(x:  900, y:   0, w: 100, h: 90, wing: .north),
+        // South standards — 8 storefronts butted up across x 200..1000, flush bottom.
+        StorePosition(x:  200, y: 1310, w: 100, h: 90, wing: .south),
+        StorePosition(x:  300, y: 1310, w: 100, h: 90, wing: .south),
+        StorePosition(x:  400, y: 1310, w: 100, h: 90, wing: .south),
+        StorePosition(x:  500, y: 1310, w: 100, h: 90, wing: .south),
+        StorePosition(x:  600, y: 1310, w: 100, h: 90, wing: .south),
+        StorePosition(x:  700, y: 1310, w: 100, h: 90, wing: .south),
+        StorePosition(x:  800, y: 1310, w: 100, h: 90, wing: .south),
+        StorePosition(x:  900, y: 1310, w: 100, h: 90, wing: .south),
+        // South anchor (JCPenney) — east corridor flank.
+        StorePosition(x: 1000, y: 200, w: 200, h: 1000, wing: .south),
     ]
 
     // v8: STARTING_STORES
@@ -101,12 +99,16 @@ enum StartingMall {
         let hazard: Bool
     }
 
+    // v9 patch — y values updated for stretched world (worldHeight 1400).
+    // Corridor center is around y:700; spread artifacts across the upper-
+    // mid corridor band (y:500..900) so they read as central landmarks
+    // rather than crammed near a single edge.
     private static let artifactSeeds: [ArtifactSeed] = [
-        ArtifactSeed(type: .kugelBall,        x: 585, y: 245, condition: 2, working: true, hazard: false),
-        ArtifactSeed(type: .fountain,         x: 275, y: 235, condition: 1, working: true, hazard: false),
-        ArtifactSeed(type: .directoryBoard,   x: 650, y: 220, condition: 3, working: true, hazard: false),
-        ArtifactSeed(type: .skylight,         x: 450, y: 210, condition: 1, working: true, hazard: false),
-        ArtifactSeed(type: .terrazzoFlooring, x: 800, y: 290, condition: 2, working: true, hazard: false),
+        ArtifactSeed(type: .kugelBall,        x: 585, y: 700, condition: 2, working: true, hazard: false),
+        ArtifactSeed(type: .fountain,         x: 275, y: 660, condition: 1, working: true, hazard: false),
+        ArtifactSeed(type: .directoryBoard,   x: 650, y: 580, condition: 3, working: true, hazard: false),
+        ArtifactSeed(type: .skylight,         x: 450, y: 500, condition: 1, working: true, hazard: false),
+        ArtifactSeed(type: .terrazzoFlooring, x: 800, y: 820, condition: 2, working: true, hazard: false),
     ]
 
     // v8: initStores()

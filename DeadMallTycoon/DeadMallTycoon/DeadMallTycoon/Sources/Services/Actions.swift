@@ -246,8 +246,12 @@ enum ArtifactActions {
         let info = ArtifactCatalog.info(type)
         if info.cost <= 0 { return s }                // not player-placeable
         if s.cash < info.cost { return s }
-        // v8: corridor constraint y in [200, 320]
-        if point.y < 200 || point.y > 320 { return s }
+        // v8: corridor constraint y in [200, 320].
+        // v9 patch — worldHeight 1400. Constrain placement to the central
+        // corridor band (y:300..1100), leaving 100pt margins at top/bottom
+        // of the main corridor (y:200..1200) so artifacts don't crowd the
+        // access-corridor seams.
+        if point.y < 300 || point.y > 1100 { return s }
         s.cash -= info.cost
         let newId = (s.artifacts.map(\.id).max() ?? 0) + 1
         s.artifacts.append(ArtifactFactory.make(
