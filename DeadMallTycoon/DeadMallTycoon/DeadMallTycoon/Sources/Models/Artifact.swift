@@ -122,4 +122,18 @@ struct Artifact: Identifiable, Equatable, Codable {
     // v8: G.decorations[i].monthsAtCondition — dwell counter for pacing.
     // v9 Prompt 3 — migrated from deleted Decoration.
     var monthsAtCondition: Int = 0
+
+    // v9 Prompt 5 — decay amplifier on memorial value. The thesis is "compose a
+    // ruin": decayed artifacts carry more memorial weight than pristine ones.
+    // Scoring consumes this as memoryWeight × decayMultiplier.
+    //   pristine (0)      → 1.00×
+    //   worn (1)          → 1.25×
+    //   damaged (2)       → 1.50×
+    //   deteriorating (3) → 1.75×
+    //   ruin (4+)         → 2.00× (capped)
+    // Curve: 1.0 + condition × 0.25, clamped to [1.0, 2.0].
+    var decayMultiplier: Double {
+        let c = max(0, min(4, condition))
+        return 1.0 + Double(c) * 0.25
+    }
 }

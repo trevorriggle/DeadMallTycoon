@@ -132,10 +132,17 @@ struct PnLModal: View {
         let sealedBonus = (Mall.isWingClosed(.north, in: vm.state) ? 5 : 0)
                         + (Mall.isWingClosed(.south, in: vm.state) ? 5 : 0)
         let life = Scoring.lifeMultiplier(vm.state)
+        // v9 Prompt 5 — surface the two scoring substrates so the breakdown
+        // matches the new formula (vacancyScore + memoryScore) × yearMult × lifeMult.
+        let vacancy = Scoring.vacancyScore(vm.state)
+        let memory  = Scoring.memoryScore(vm.state)
 
         return sectionPanel(title: "Score Sources") {
             statRow("Empty stores", "\(emptyCount)", color: .yellow)
             statRow("Sealed wings", "\(sealedBonus)", color: .yellow)
+            statRow("Vacancy",      String(format: "%.1f", vacancy), color: .yellow)
+            statRow("Memory",       String(format: "%.1f", memory),
+                    color: memory > 0 ? .yellow : Color(hex: "#666"))
             statRow("Life factor",  String(format: "%.2f×", life),
                     color: life == 0 ? .red : life < 0.5 ? .yellow : .green)
             statRow("This month",

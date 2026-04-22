@@ -100,6 +100,15 @@ enum Economy {
     //   condition >= 4 ? ruinMult : baseMult * (1 + 0.2 * condition)
     // Ambient / memorial artifacts (cost == 0 in catalog) contribute 0 here
     // — their scoring role is introduced in Prompt 5 via memoryWeight.
+    //
+    // v9 Prompt 5 — aestheticMult is NO LONGER consumed by scoring.
+    // Scoring.monthlyScore dropped the `× aesthetic` term in favor of the
+    // split-substrate formula (vacancyScore + memoryScore). This function is
+    // currently unused but intentionally retained: Prompt 13 (music state
+    // machine / ambient signals) may repurpose it as an environmental read.
+    // If Prompt 13 ships without consuming it, this function should be
+    // deleted at that time. DO NOT re-wire into scoring without a design
+    // discussion — the memoryWeight substrate is the intended replacement.
     static func aestheticMult(_ state: GameState) -> Double {
         let totalSlots = max(1, state.stores.count)
         let vacantOpenCount = state.stores
