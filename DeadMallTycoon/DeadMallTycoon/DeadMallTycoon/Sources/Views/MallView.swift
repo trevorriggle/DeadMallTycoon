@@ -20,14 +20,13 @@ struct MallView: View {
 
     var body: some View {
         ZStack {
-            // v9 — tile the authored floor behind the entire MallView so
-            // the iPad screen reads as one continuous mall floor instead of
-            // black void above and below the aspect-fit scene. Sits at the
-            // back of the ZStack; the SKView and all overlays render on top.
-            Image("FloorTile")
-                .resizable(resizingMode: .tile)
-                .interpolation(.none)
-                .ignoresSafeArea()
+            // v9 — SwiftUI letterbox above/below the aspect-fit scene stays
+            // black. Earlier patch tiled the authored floor here too, but
+            // the SwiftUI Image(_:resizingMode: .tile) renders at the
+            // asset's natural 128×128 — visibly larger than the in-scene
+            // 64×64 half-scale, which read as a separate (jarring) layer
+            // surrounding the mall. Black void is the right call.
+            Color.black.ignoresSafeArea()
 
             MallSceneView(
                 vm: vm,
