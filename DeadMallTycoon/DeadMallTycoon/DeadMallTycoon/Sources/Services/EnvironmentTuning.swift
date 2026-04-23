@@ -56,6 +56,22 @@ enum EnvironmentTuning {
         .ghostMall:  0.75,
     ]
 
+    // v9 Prompt 11 — per-state music track volume. Inverse curve of
+    // ambientHumVolume: music descends from thriving to ghostMall while
+    // hum ascends. At `dying` the two cross over (both 0.35). At
+    // `ghostMall` hum is 3.75× music — per ENDGAME.md, "the fluorescent
+    // hum is louder than the music." MusicService applies this value
+    // through AVAudioPlayer.setVolume during the 3s crossfade on state
+    // change.
+    static let musicVolume: [EnvironmentState: Float] = [
+        .thriving:   0.80,
+        .fading:     0.65,
+        .struggling: 0.50,
+        .dying:      0.35,
+        .dead:       0.25,
+        .ghostMall:  0.20,
+    ]
+
     // Visitor isolation treatment kicks in when active-in-corridor visitor
     // count is strictly less than this value. Raise for more aggressive
     // isolation; lower for less.

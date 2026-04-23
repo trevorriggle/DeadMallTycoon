@@ -1680,6 +1680,11 @@ final class MallScene: SKScene {
             AmbientHumPlayer.shared.setVolume(
                 EnvironmentTuning.ambientHumVolume[env] ?? 0.0
             )
+            // v9 Prompt 11 — music layer. MusicService is idempotent on
+            // the same env, so reconcile churn (calls with env == lastEnv)
+            // is swallowed by the gate above. This branch only fires on
+            // an actual band transition.
+            MusicService.shared.setEnvironmentState(env)
             lastEnvironmentState = env
         }
 

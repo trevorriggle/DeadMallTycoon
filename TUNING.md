@@ -52,6 +52,21 @@ Update as part of any prompt that introduces or modifies a tunable value.
 - Display maintenance cost = `$75/mo` per `displaySpace` artifact — `Economy.operatingCost`. Covers cleaning, lighting, occasional content refresh. Raise if display spaces feel too cheap to curate. (Prompt 7)
 - Sealed vacancy relief: a vacant slot with a `sealedStorefront` artifact does NOT incur the $350/mo vacancy penalty — the space is walled off, not maintained. Implemented as a filter in `Economy.operatingCost`, not a separate constant. (Prompt 7)
 
+## Music
+
+- `EnvironmentTuning.musicVolume` — per-state music track volume, applied to AVAudioPlayer on the active music track. Inverse curve of `ambientHumVolume`: music descends from thriving to ghostMall while hum ascends. At `dying` they cross over (both 0.35). At `ghostMall`, hum is 3.75× music — per ENDGAME.md: "the fluorescent hum is louder than the music." (Prompt 11)
+    | state | music | hum (cross-ref) |
+    |---|---|---|
+    | thriving | 0.80 | 0.05 |
+    | fading | 0.65 | 0.10 |
+    | struggling | 0.50 | 0.20 |
+    | dying | 0.35 | 0.35 |
+    | dead | 0.25 | 0.55 |
+    | ghostMall | 0.20 | 0.75 |
+- `MusicService.crossfadeDuration = 3.0` — seconds. Synced-start with env visual transition (`EnvironmentTuning.transitionDuration = 2.0`) but deliberately longer so audio settles slightly after visuals. (Prompt 11)
+- Track pool location: `Sources/Resources/audio/music/<state>_state/*.{wav,mp3,m4a,aiff}`. `MusicService` enumerates via `Bundle.main.urls(forResourcesWithExtension:subdirectory:)` at init. New tracks drop in; no code change, no manifest.
+- Track selection: on state change, random pick from destination pool with session memory reset ("always pick fresh on re-entry"). On track finish, random pick strictly avoiding the just-played track if any alternative exists. `setEnvironmentState` is idempotent — same-state calls are no-ops so reconcile churn can't interrupt playback.
+
 ## Camera
 
 - `MallScene.cameraMinZoom = 1.0` — fit-all zoom (shows entire authored world 1200 × 1400). Matches the pre-camera `.aspectFit` rendering exactly; no pan available at this zoom (camera pins to world center).

@@ -16,24 +16,45 @@ PBXFileSystemSynchronizedRootGroup rule — same mechanism as Sources/).
 Accepted extensions in lookup order: `.wav`, `.mp3`, `.m4a`. Whichever
 ships first wins — drop one, leave the others.
 
-### Music state machine (Prompt 12 — not yet wired)
+### Music state machine (Prompt 11 — wired via `MusicService`)
 
-One track per `EnvironmentState`. Long, loop-tolerant, no hard starts
-(fade-to-black endings will produce audible cuts during state transitions).
-Register: vaporwave / chopped muzak / slowed-down mall Muzak.
+Per-state track POOLS, not single files. Each env state has its own
+subfolder under `audio/music/`; any `.wav`, `.mp3`, `.m4a`, or `.aiff`
+in that folder joins the pool. `MusicService` at startup enumerates
+the pools via `Bundle.main.urls(forResourcesWithExtension:subdirectory:)`.
+Adding a new track is drop-the-file; no code, no manifest, no
+pbxproj edit (PBXFileSystemSynchronizedRootGroup handles the bundle
+inclusion automatically on next build).
 
-| filename | state | notes |
-|---|---|---|
-| `music_thriving.wav` | thriving | Cheerful 1982 mall Muzak, full fidelity. |
-| `music_fading.wav` | fading | Same-ish, slightly slower, first hint of reverb. |
-| `music_struggling.wav` | struggling | Pitched down a half-step, heavier reverb. |
-| `music_dying.wav` | dying | Vaporwave in earnest — chopped, slowed. |
-| `music_dead.wav` | dead | Ambient, drone-heavy. Music as texture, not tune. |
-| `music_ghostMall.wav` | ghostMall | Barely there. Per ENDGAME.md, quieter than the hum. |
+```
+audio/music/
+    thriving_state/      — bright muzak, 1982 elevator music, major-key
+    fading_state/        — softer muzak, slower, faint reverb
+    struggling_state/    — ambient lounge, muted, minor-key undertones
+    dying_state/         — vaporwave-adjacent, chopped + reverbed
+    dead_state/          — full vaporwave, pitched down, heavy reverb
+    ghost_state/         — ambient drone with distant echoes of music
+```
 
-Prompt 12 will add a `MusicPlayer` actor that cross-fades between tracks
-on EnvironmentState transitions (2-second tween, matching the visual
-transition). The loader convention follows `AmbientHumPlayer`'s pattern.
+Per-state volume lives in `EnvironmentTuning.musicVolume` — inverse
+curve of `ambientHumVolume` so music descends as hum ascends, crossing
+over at `dying` (both 0.35) and reaching 0.20 music vs 0.75 hum at
+`ghostMall` (per ENDGAME.md: "the fluorescent hum is louder than the
+music").
+
+Behavior contract (see `Services/MusicService.swift`):
+- On state change: pick a fresh random track from the destination pool,
+  crossfade 3s (new fades in, old fades out). Session memory resets
+  so re-entry always picks fresh.
+- On track finish: auto-advance to another track from the same pool,
+  strictly avoiding the just-played track if any alternative exists.
+- On same-state call (reconcile churn): idempotent no-op. Doesn't
+  restart tracks or interrupt in-progress crossfades.
+- On empty pool: silent, no crash. Drop files in later — they auto-
+  join on next build.
+
+Placeholder / royalty-free tracks go in these folders freely. System
+is structured so replacing any track is a drop-in swap.
 
 ## Format guidance
 
