@@ -59,21 +59,56 @@ final class MusicService: NSObject {
     // longer so audio settles slightly after visuals.
     static let crossfadeDuration: TimeInterval = 3.0
 
-    // Folder-name convention. Each env state maps to a
-    // `<raw>_state` subfolder under `audio/music/`, mirroring the
-    // directory layout the tracks were uploaded in.
-    private static let folderByState: [(EnvironmentState, String)] = [
-        (.thriving,   "thriving_state"),
-        (.fading,     "fading_state"),
-        (.struggling, "struggling_state"),
-        (.dying,      "dying_state"),
-        (.dead,       "dead_state"),
-        (.ghostMall,  "ghost_state"),
+    // Manifest of tracks per state.
+    //
+    // Xcode's PBXFileSystemSynchronizedRootGroup flattens all resources
+    // to the bundle root — the on-disk folder structure
+    // (audio/music/<state>_state/) is organizational only, not
+    // preserved at runtime. So we can't enumerate by subdirectory;
+    // we have to know the filenames and resolve each via
+    // Bundle.main.url(forResource:withExtension:) against the flat
+    // bundle.
+    //
+    // When a new track is added to a `<state>_state/` folder on disk,
+    // its filename also needs a line here. Not as elegant as auto-
+    // discovery, but reliable against the flat bundle layout.
+    private static let tracksByState: [EnvironmentState: [String]] = [
+        .thriving: [
+            "Muzak.mp3",
+            "elevator music.mp3",
+            "bouncing-with-bessie_main-full.wav",
+            "Elevator-music 150 MIX.wav",
+        ],
+        .fading: [
+            "Soft Elevator Music.wav",
+            "ElephantStock_The-Luxury-Music_main-01_full.wav",
+            "Elite.wav",
+            "Elite Property.wav",
+        ],
+        .struggling: [
+            "Luxury Ambient.wav",
+            "Smooth Jazz Full.mp3",
+            "Calm Elevator Music.wav",
+        ],
+        .dying: [
+            "Watermello_Shopping-Lofi_main-01_full.wav",
+            "NewZhilla_Calm-Luxury-Chill_main-01_full.wav",
+            "alexshulgin_Mallsoft-Vaporwave_main.wav",
+            "Main.wav",
+        ],
+        .dead: [
+            "Vaporwave.wav",
+            "Vaporwave LoFi.mp3",
+            "Main Version (3 min 36 sec).wav",
+        ],
+        .ghostMall: [
+            "JL297_01 - Echoes From Arcade .wav",
+            "Dark Tombs Of The Evil Dead.mp3",
+            "Dead Bunker Ambience.wav",
+            "Sinister (main version).mp3",
+            "World Funeral.wav",
+        ],
     ]
-
-    // File extensions to accept when enumerating pool folders. Order is
-    // tried sequentially; all matches per extension join the pool.
-    private static let acceptedExtensions = ["wav", "mp3", "m4a", "aiff"]
 
     private override init() {
         super.init()
@@ -130,62 +165,42 @@ final class MusicService: NSObject {
     // MARK: Internals
 
     private func loadTrackPool() {
-        for (env, folder) in Self.folderByState {
+        for (env, filenames) in Self.tracksByState {
             var urls: [URL] = []
-            // Try several subdirectory layouts. Xcode's
-            // PBXFileSystemSynchronizedRootGroup may preserve the full
-            // path, only the leaf folder, or flatten entirely — which
-            // of those wins depends on the sync configuration and isn't
-            // documented clearly. Try each in turn; first non-empty wins.
-            let subdirs = [
-                "audio/music/\(folder)",   // full disk path
-                "music/\(folder)",          // audio/ stripped
-                folder,                      // only the leaf folder
-            ]
-            for subdir in subdirs {
-                for ext in Self.acceptedExtensions {
-                    if let found = Bundle.main.urls(
-                        forResourcesWithExtension: ext,
-                        subdirectory: subdir
-                    ), !found.isEmpty {
-                        urls.append(contentsOf: found)
-                    }
+            for filename in filenames {
+                if let url = Self.resolveBundleURL(for: filename) {
+                    urls.append(url)
+                } else {
+                    print("MusicService: missing track '\(filename)' for \(env.rawValue)")
                 }
-                if !urls.isEmpty { break }
             }
             trackPool[env] = urls
         }
     }
 
-    // One-time startup log so we can tell from the console whether tracks
-    // are actually being picked up by Bundle.main. If a state shows `0`,
-    // Xcode didn't bundle the subdirectory (or the files aren't in the
-    // bundle at all) and the pool is empty — service will stay silent.
-    //
-    // Also enumerates ALL audio files in the bundle (no subdirectory
-    // filter) so we can see WHERE Xcode actually put them if our
-    // subdirectory probes missed. Once this ships one good reading,
-    // the enumeration block can be removed.
+    // Splits a "Foo Bar.mp3"-style filename into base + extension and
+    // looks up against the flat bundle root via
+    // Bundle.main.url(forResource:withExtension:). Returns nil if the
+    // file isn't bundled at all (user added a line to tracksByState
+    // but hasn't committed the file).
+    private static func resolveBundleURL(for filename: String) -> URL? {
+        let ns = filename as NSString
+        let ext = ns.pathExtension
+        let base = ns.deletingPathExtension
+        guard !ext.isEmpty else { return nil }
+        return Bundle.main.url(forResource: base, withExtension: ext)
+    }
+
+    // One-time startup log. Per-state pool counts should match the
+    // tracksByState manifest lengths once bundling works.
     private func logPoolDiagnostic() {
-        let counts = Self.folderByState.map { (env, _) in
+        let order: [EnvironmentState] = [
+            .thriving, .fading, .struggling, .dying, .dead, .ghostMall
+        ]
+        let counts = order.map { env in
             "\(env.rawValue):\(trackPool[env]?.count ?? 0)"
         }.joined(separator: " ")
         print("MusicService: loaded pools — \(counts)")
-
-        print("MusicService DEBUG: bundle audio inventory:")
-        for ext in Self.acceptedExtensions {
-            if let all = Bundle.main.urls(
-                forResourcesWithExtension: ext,
-                subdirectory: nil
-            ), !all.isEmpty {
-                for url in all {
-                    let rel = url.path.replacingOccurrences(
-                        of: Bundle.main.bundlePath, with: "<bundle>"
-                    )
-                    print("  .\(ext): \(rel)")
-                }
-            }
-        }
     }
 
     private func targetVolume(for env: EnvironmentState) -> Float {
