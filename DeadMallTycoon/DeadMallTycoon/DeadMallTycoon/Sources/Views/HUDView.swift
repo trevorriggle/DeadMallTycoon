@@ -74,6 +74,12 @@ struct HUDView: View {
 
     // Cash — big bold value. Debt shown as small red subscript beside cash when > 0.
     // Tapping the cell opens the P&L modal.
+    //
+    // v9 Prompt 15 Phase 1 — cash animates upward rather than jumping.
+    // contentTransition(.numericText()) gives the iOS-17 counter-style
+    // digit transition; the .animation modifier below drives it on
+    // any state.cash mutation. 0.6s easeOut matches the economics
+    // floating labels' drift window so HUD and scene feel synced.
     private var cashCell: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(fmt(vm.state.cash))
@@ -82,6 +88,8 @@ struct HUDView: View {
                 .foregroundStyle(cashColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+                .contentTransition(.numericText())
+                .animation(.easeOut(duration: 0.6), value: vm.state.cash)
             if vm.state.debt > 0 {
                 (Text("debt ").foregroundStyle(Color(hex: "#6a6a78"))
                  + Text("-\(fmt(vm.state.debt))").foregroundStyle(debtColor))

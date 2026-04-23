@@ -151,6 +151,14 @@ final class MallScene: SKScene {
     private var lastStoreAnchor: CGPoint?
     private var lastDecorationAnchor: CGPoint?
 
+    // v9 Prompt 15 Phase 1 — economics-event dedup. lastTickEconomicsEvents
+    // is replaced each tick, but the scene reconciles on any observable
+    // state change — we only want to spawn floating labels ONCE per tick
+    // (on the economics step firing), not every time something else
+    // mutates state. (Year, month) is the tick identity; we skip if
+    // we've already processed it.
+    private var lastProcessedEconomicsTick: (year: Int, month: Int)?
+
     // MARK: Camera — pinch-zoom + pan
 
     // v9 patch — SKCameraNode enables pinch-zoom and pan scoped to the mall
@@ -440,6 +448,7 @@ final class MallScene: SKScene {
         reconcileEntrances(state)
         reconcileSealedWings(state)
         reconcileWingCascadeDarkening(state)  // v9 Prompt 10 Phase C — anchor-cascade wing dim
+        reconcileEconomicsEvents(state)       // v9 Prompt 15 Phase 1 — floating +$N / -$N
         reconcileWingTint(state)        // Phase C — red tint on wings about to fail
         reconcileThreatFlash(state)     // Phase C — vignette flash when entering critical
         reconcileDim(state)
@@ -737,6 +746,114 @@ final class MallScene: SKScene {
             overlayLayer.addChild(tint)
         }
     }
+
+    // v9 Prompt 15 Phase 1 — floating economics indicators.
+    //
+    // Consumes state.lastTickEconomicsEvents on each tick's first
+    // reconcile pass (dedup by (year, month) so mid-tick state mutations
+    // don't re-spawn). Each event becomes a small SKLabelNode that
+    // appears, drifts up ~50pt, and fades out over ~1.5s. Rent events
+    // are staggered 100ms apart so a full month's collection reads as
+    // a sequence across storefronts rather than a synchronized flash.
+    // Fines and the single operating-cost event fire without stagger.
+    private func reconcileEconomicsEvents(_ state: GameState) {
+        let current = (state.year, state.month)
+        if let last = lastProcessedEconomicsTick,
+           last == current {
+            return   // already spawned labels for this tick
+        }
+        lastProcessedEconomicsTick = current
+
+        guard !state.lastTickEconomicsEvents.isEmpty else { return }
+
+        var rentIndex = 0
+        for event in state.lastTickEconomicsEvents {
+            switch event {
+            case .rentCollected(let storeId, let amount):
+                guard let node = storeNodes[storeId] else { continue }
+                let delay = Double(rentIndex) * Self.economicsStaggerSeconds
+                spawnEconomicsLabel(
+                    text: "+$\(amount)",
+                    color: Self.economicsPositiveColor,
+                    at: topOf(node: node),
+                    delay: delay
+                )
+                rentIndex += 1
+            case .hazardFine(let artifactId, let amount):
+                guard let node = artifactNodes[artifactId] else { continue }
+                spawnEconomicsLabel(
+                    text: "−$\(amount)",
+                    color: Self.economicsNegativeColor,
+                    at: topOf(node: node),
+                    delay: 0
+                )
+            case .operatingCost(let amount):
+                // Mall-wide aggregate — anchor near the top-center of
+                // the world so it reads as "the mall's overhead" rather
+                // than attached to any single node.
+                let pos = csToScene(
+                    x: GameConstants.worldWidth / 2,
+                    y: 60
+                )
+                spawnEconomicsLabel(
+                    text: "−$\(amount) ops",
+                    color: Self.economicsNegativeColor,
+                    at: pos,
+                    delay: 0
+                )
+            }
+        }
+    }
+
+    // Position just above a node's visual top, in scene coords.
+    private func topOf(node: SKNode) -> CGPoint {
+        var pos = node.position
+        if let sprite = node as? SKSpriteNode {
+            pos.y += sprite.size.height / 2 + 6
+        } else {
+            pos.y += 20
+        }
+        return pos
+    }
+
+    private func spawnEconomicsLabel(text: String,
+                                      color: UIColor,
+                                      at position: CGPoint,
+                                      delay: TimeInterval) {
+        let label = SKLabelNode(fontNamed: "Courier-Bold")
+        label.text = text
+        label.fontSize = 14
+        label.fontColor = color
+        label.position = position
+        label.zPosition = 200
+        label.alpha = 0
+        label.verticalAlignmentMode = .bottom
+        label.horizontalAlignmentMode = .center
+        overlayLayer.addChild(label)
+
+        // Timeline: wait → fade in → drift up + fade out (concurrent) → remove.
+        let wait = SKAction.wait(forDuration: delay)
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.18)
+        let drift = SKAction.moveBy(x: 0, y: 50, duration: 1.5)
+        let hold = SKAction.wait(forDuration: 0.4)
+        let fadeOut = SKAction.fadeOut(withDuration: 1.1)
+        let driftAndFade = SKAction.group([
+            drift,
+            SKAction.sequence([hold, fadeOut]),
+        ])
+        label.run(SKAction.sequence([
+            wait, fadeIn, driftAndFade, SKAction.removeFromParent(),
+        ]))
+    }
+
+    // Tuning constants — kept adjacent to the spawner. 100ms stagger
+    // between rent labels so a full month reads left-to-right across
+    // the corridor rather than as a synchronized flash.
+    private static let economicsStaggerSeconds: TimeInterval = 0.10
+    private static let economicsPositiveColor: UIColor =
+        UIColor(red: 0.55, green: 0.88, blue: 0.68, alpha: 1.0)
+    private static let economicsNegativeColor: UIColor =
+        UIColor(red: 1.00, green: 0.40, blue: 0.50, alpha: 1.0)
 
     // v8 filter: brightness+saturation per abandonment level on the corridor
     private func reconcileDim(_ state: GameState) {

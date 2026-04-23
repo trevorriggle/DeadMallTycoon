@@ -143,6 +143,13 @@ struct GameState: Equatable {
     // Nil in the common case.
     var pendingFocusArtifactId: Int? = nil
 
+    // v9 Prompt 15 Phase 1 — transient per-tick economics trace.
+    // Populated by TickEngine's economics step; consumed by MallScene's
+    // reconcileEconomicsEvents to spawn floating +$N / -$N indicators
+    // above the relevant source. Replaced (not appended) each tick, so
+    // the array always represents the current month's cash flows.
+    var lastTickEconomicsEvents: [EconomicsEvent] = []
+
     // v9 Prompt 14 — reason a run ended. Nil until `gameover` flips; then
     // either .bankruptcy (debt ceiling breached) or .forgotten (the mall
     // forgot itself — three-condition memory failure). Drives GameOverView

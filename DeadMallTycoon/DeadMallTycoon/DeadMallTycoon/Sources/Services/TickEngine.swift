@@ -214,19 +214,46 @@ enum TickEngine {
         }
 
         // 6. economics — v8: G.cash += r+ad+pr-ops-st-pc-fines
-        let r  = Economy.rent(s)
-        let ad = Economy.adRevenue(s)
-        let pr = Economy.promoRevenue(s)
-        let ops = Economy.operatingCost(s)
-        let st  = Economy.staffCost(s)
-        let pc  = Economy.promoCost(s)
-        let fines = Economy.hazardFines(s)
+        //
+        // v9 Prompt 15 Phase 1 — compute per-source breakdowns so the
+        // scene can render floating +$N / -$N indicators at each line
+        // item. rentByStore emits per storefront; hazardFinesByArtifact
+        // per artifact; ops/staff/promo-cost are aggregated into a
+        // single mall-wide operating-cost event (no single source to
+        // attach to).
+        let rentItems = Economy.rentByStore(s)
+        let fineItems = Economy.hazardFinesByArtifact(s)
+        let r     = rentItems.reduce(0) { $0 + $1.amount }
+        let fines = fineItems.reduce(0) { $0 + $1.amount }
+        let ad    = Economy.adRevenue(s)
+        let pr    = Economy.promoRevenue(s)
+        let ops   = Economy.operatingCost(s)
+        let st    = Economy.staffCost(s)
+        let pc    = Economy.promoCost(s)
         s.hazardFines = fines
         s.cash += r + ad + pr - ops - st - pc - fines
         if s.cash < 0 {
             s.debt += abs(s.cash)
             s.cash = 0
         }
+
+        // Emit economics events for scene rendering. Replaces
+        // lastTickEconomicsEvents — prior tick's events are discarded.
+        var events: [EconomicsEvent] = []
+        events.reserveCapacity(rentItems.count + fineItems.count + 1)
+        for item in rentItems {
+            events.append(.rentCollected(storeId: item.storeId,
+                                          amount: item.amount))
+        }
+        for item in fineItems {
+            events.append(.hazardFine(artifactId: item.artifactId,
+                                       amount: item.amount))
+        }
+        let opsAggregate = ops + st + pc
+        if opsAggregate > 0 {
+            events.append(.operatingCost(amount: opsAggregate))
+        }
+        s.lastTickEconomicsEvents = events
 
         // 7. score — v8: const ms=monthlyScore(); G.score+=ms
         let ms = Scoring.monthlyScore(s)

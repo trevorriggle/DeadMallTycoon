@@ -5,14 +5,28 @@ import Foundation
 enum Economy {
 
     // v8: rent()
+    // v9 Prompt 15 Phase 1 — implemented via rentByStore for per-
+    // storefront breakdown.
     static func rent(_ state: GameState) -> Int {
+        rentByStore(state).reduce(0) { $0 + $1.amount }
+    }
+
+    // v9 Prompt 15 Phase 1 — per-store rent breakdown. Returns only
+    // stores that actually pay rent this tick (non-zero amount after
+    // sale and wing-closure filters), so the caller can emit one
+    // EconomicsEvent.rentCollected per entry without noise.
+    static func rentByStore(_ state: GameState) -> [(storeId: Int, amount: Int)] {
         let saleActive = state.activePromos.contains { $0.effect == .sale }
         return state.stores
             .filter { !Mall.isWingClosed($0.wing, in: state) }
-            .reduce(0) { acc, s in
-                var r = s.rent
-                if saleActive { r = Int((Double(r) * 0.8).rounded()) }
-                return acc + r
+            .compactMap { store in
+                let base = store.rent
+                guard base > 0 else { return nil }
+                let actual = saleActive
+                    ? Int((Double(base) * 0.8).rounded())
+                    : base
+                guard actual > 0 else { return nil }
+                return (store.id, actual)
             }
     }
 
@@ -81,10 +95,18 @@ enum Economy {
     // v9 Prompt 3 — reads state.artifacts (unified from deleted state.decorations).
     // Only placeable artifacts can carry hazard in practice; ambient/memorial
     // types never set the flag, so no filter-by-type is needed.
+    // v9 Prompt 15 Phase 1 — implemented via hazardFinesByArtifact.
     static func hazardFines(_ state: GameState) -> Int {
+        hazardFinesByArtifact(state).reduce(0) { $0 + $1.amount }
+    }
+
+    // v9 Prompt 15 Phase 1 — per-artifact hazard fine breakdown. Each
+    // entry becomes one EconomicsEvent.hazardFine so the scene can
+    // float a negative indicator at the offending artifact.
+    static func hazardFinesByArtifact(_ state: GameState) -> [(artifactId: Int, amount: Int)] {
         state.artifacts
             .filter { $0.hazard }
-            .reduce(0) { $0 + 500 + $1.condition * 200 }
+            .map { ($0.id, 500 + $0.condition * 200) }
     }
 
     // v8: rawTraffic()
