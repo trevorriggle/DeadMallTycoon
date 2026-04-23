@@ -62,6 +62,17 @@ Visitor thoughts draw from artifact-specific pools when the visitor is in proxim
 - Real-time cadence events (toast durations, halo pulse, fluorescent flicker, env tween, ghost blackout, focus pulse, isolation check) stay correct: they're `per real-time`, unchanged by tick speed.
 - Tutorial override: **dropped** in v9 base-tick patch. The tutorial previously forced 8000ms during year 1 — but the new base 1x IS 8000ms, so the override had no remaining effect. `state.tickIntervalOverrideMs` still exists as a seam for future subsystems; currently always nil.
 
+## Failure modes (Prompt 14)
+
+Two coexisting failure paths. Bankruptcy is the existing economic trigger (`debt >= GameConstants.debtCeiling`); memory failure is the new memorial trigger (`FailureMode.shouldForget(_:)`). Bankruptcy takes precedence when both fire the same tick — economic collapse dominates memorial neglect.
+
+- `FailureTuning.memoryFailureThreshold = 15.0` — total `memoryWeight` across all artifacts. Below this value the mall is "not remembered enough." A handful of weighted artifacts (few dozen weight total) keeps the mall above this floor indefinitely. Instantaneous check; no duration. Strict `<` boundary.
+- `FailureTuning.trafficFloor = 15` — absolute value of `state.currentTraffic`. Below this counts as "below floor." Dead state's target visitor count is ~4 so this condition trips reliably at collapse; thriving's ~22+ keeps it dormant.
+- `FailureTuning.trafficFloorMonths = 12` — consecutive months below `trafficFloor` required to open the sustained-low-traffic gate. One in-game year. Counter (`state.consecutiveMonthsBelowTrafficFloor`) resets cleanly to 0 on any tick meeting the floor — unlike the ratio-based `consecutiveLowTrafficMonths` which slow-decrements.
+- `FailureTuning.deadOrGhostMonths = 24` — consecutive months in `.dead` (includes `.ghostMall`, which is a dead substate) required to open the sustained-collapse gate. Two in-game years. Counter is the existing `state.monthsInDeadState`, incremented in TickEngine step 9.25.
+
+**The narrative dichotomy**: aggressive vacancy-maximizing runs tend toward bankruptcy (vacant-slot penalties + low rent spirals debt past the ceiling). Neglectful runs with full occupancy but no curation tend toward forgotten (no memorials spawned, thin visitor-thought accumulation, mall eventually collapses and drifts past the sustained-collapse gates). The player's values — vacant-and-memorial versus occupied-and-lively — determine which failure approaches.
+
 ## Decision-sheet pause
 
 - `GameState.decisionSheetOwnedPause: Bool` — set when a decision sheet (MANAGE drawer or top-level Acquire sheet) claims the pause on open, cleared on close. (v9 patch)

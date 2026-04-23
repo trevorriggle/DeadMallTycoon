@@ -43,6 +43,17 @@ enum TickEngine {
             s.consecutiveLowTrafficMonths = max(0, s.consecutiveLowTrafficMonths - 1)
         }
 
+        // v9 Prompt 14 — absolute-floor traffic counter for the memory
+        // failure mode. Resets cleanly to 0 on any tick that meets the
+        // floor (unlike consecutiveLowTrafficMonths above, which
+        // slow-decrements) — "the mall forgot itself" is sustained
+        // neglect, and one busy month is a reset, not a partial credit.
+        if tr < FailureTuning.trafficFloor {
+            s.consecutiveMonthsBelowTrafficFloor += 1
+        } else {
+            s.consecutiveMonthsBelowTrafficFloor = 0
+        }
+
         // 4. store updates — v8: G.stores.forEach(s => ...)
 
         // v9 Prompt 9 Phase A — pre-scan the closure set for anchor-cascade
@@ -290,6 +301,18 @@ enum TickEngine {
         // 11. bankruptcy — v8: if(G.debt>=DEBT_CEIL) endGame('bankruptcy')
         if s.debt >= GameConstants.debtCeiling {
             s.gameover = true
+            s.gameOverReason = .bankruptcy
+            return s
+        }
+
+        // 12. memory failure — v9 Prompt 14. The mall forgot itself.
+        // Checked after bankruptcy so economic collapse takes precedence
+        // (a mall going broke IS a failure; no need to also assess
+        // memorial neglect). Three AND-ed conditions in FailureMode —
+        // see that file for the semantics.
+        if FailureMode.shouldForget(s) {
+            s.gameover = true
+            s.gameOverReason = .forgotten
             return s
         }
 

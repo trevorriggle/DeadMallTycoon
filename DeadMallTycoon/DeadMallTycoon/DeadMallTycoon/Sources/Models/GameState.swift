@@ -1,5 +1,16 @@
 import Foundation
 
+// v9 Prompt 14 — why the run ended. Two failure modes coexist:
+// economic (bankruptcy, debt ceiling) and memorial (forgotten, sustained
+// low-traffic + dead state + thin memory). Aggressive vacancy-maximizing
+// runs tend toward bankruptcy; neglectful runs with full occupancy but no
+// curation tend toward forgotten. The player's values determine which
+// failure approaches.
+enum GameOverReason: String, Codable {
+    case bankruptcy
+    case forgotten
+}
+
 // Root game state. Pure value type.
 // Ported from the v8 `G` object. TickEngine.tick(state, rng) reads and returns a GameState.
 struct GameState: Equatable {
@@ -131,6 +142,22 @@ struct GameState: Equatable {
     // runs the 2-second pulse, and calls vm.clearFocusRequest() to reset.
     // Nil in the common case.
     var pendingFocusArtifactId: Int? = nil
+
+    // v9 Prompt 14 — reason a run ended. Nil until `gameover` flips; then
+    // either .bankruptcy (debt ceiling breached) or .forgotten (the mall
+    // forgot itself — three-condition memory failure). Drives GameOverView
+    // branching so the end-screen header and subtitle reflect how the
+    // mall died.
+    var gameOverReason: GameOverReason? = nil
+
+    // v9 Prompt 14 — months in a row that currentTraffic has been below
+    // FailureTuning.trafficFloor. Incremented each tick when traffic is
+    // below floor; reset to 0 otherwise. Drives one of the three memory-
+    // failure gates. Semantics are stricter than consecutiveLowTrafficMonths
+    // (ratio-based, slow decrement) — this one resets cleanly on any tick
+    // that meets the floor, since "the mall forgot itself" is a sustained-
+    // neglect failure, not an occasionally-quiet one.
+    var consecutiveMonthsBelowTrafficFloor: Int = 0
 
     // v9 patch — decision-sheet pause ownership. Mirrors tutorialOwnedPause:
     // the MANAGE drawer and the top-level Acquire sheet are decision

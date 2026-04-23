@@ -300,18 +300,49 @@ struct GameOverView: View {
 
     private var yearsSurvived: Int { vm.state.year - GameConstants.startingYear }
 
+    // v9 Prompt 14 — reason-driven header copy.
+    private var headline: String {
+        switch vm.state.gameOverReason {
+        case .forgotten:        return "FORGOTTEN"
+        case .bankruptcy, nil:  return "FORECLOSED"
+        }
+    }
+
+    private var subtitle: String {
+        switch vm.state.gameOverReason {
+        case .forgotten:
+            return "The mall forgot itself. Below is what happened."
+        case .bankruptcy, nil:
+            return "The bank took the mall. Below is what happened."
+        }
+    }
+
+    // FORECLOSED in the old red-alert color; FORGOTTEN in a cooler,
+    // more grieving tone — the mall didn't fail, it just stopped
+    // being held in anyone's mind.
+    private var headlineColor: Color {
+        switch vm.state.gameOverReason {
+        case .forgotten:        return Color(hex: "#7a8ca0")
+        case .bankruptcy, nil:  return Color(hex: "#ff2f4a")
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
 
-            // Compact header — 24pt, not 42pt. "FORECLOSED" owns its
-            // line but doesn't dominate the screen. Subtitle is one
-            // sentence of context, not a dramatic beat.
+            // Compact header — 24pt, not 42pt. Headline owns its line
+            // but doesn't dominate the screen. Subtitle is one
+            // sentence of context, not a dramatic beat. Copy branches
+            // on gameOverReason — "FORECLOSED" for economic failure,
+            // "FORGOTTEN" for the Prompt 14 memory failure mode. Nil
+            // reason (shouldn't happen post-Prompt-14 but defensive)
+            // defaults to the FORECLOSED framing.
             VStack(spacing: 4) {
-                Text("FORECLOSED")
+                Text(headline)
                     .font(.system(size: 24, weight: .black, design: .monospaced))
                     .tracking(2)
-                    .foregroundStyle(Color(hex: "#ff2f4a"))
-                Text("The bank took the mall. Below is what happened.")
+                    .foregroundStyle(headlineColor)
+                Text(subtitle)
                     .font(.system(size: 13, design: .serif)).italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
             }
