@@ -21,6 +21,10 @@ struct ManageDrawer: View {
     // coordination needed); at .medium, SwiftUI leaves it alone.
     @State private var detent: PresentationDetent = .medium
 
+    // v9 Prompt 18 — How to Play sheet, reachable mid-run from the
+    // drawer footer. Same HowToPlayView used on the start screen.
+    @State private var showingHowToPlay = false
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -48,20 +52,43 @@ struct ManageDrawer: View {
         // v9 patch — decision-sheet pause. The drawer is a decision surface
         // (Acquire, Tenants, Wings, etc. are all player choices), so time
         // stops while it's open. Ownership hands off if something else
-        // already owns the pause (tenant offer, tutorial coachmark).
-        .onAppear    { vm.pauseForDecisionSheet() }
+        // already owns the pause (tenant offer, tutorial beat, anchor card).
+        .onAppear {
+            vm.pauseForDecisionSheet()
+            // v9 Prompt 18 — UI-triggered tutorial beat. Teaches that
+            // MANAGE is the hub for every player-choice verb.
+            vm.fireBeat(.manageDrawer)
+        }
         .onDisappear { vm.resumeFromDecisionSheet() }
+        // v9 Prompt 18 — fire firstLedgerView on first switch to History
+        // tab. onChange(of:) is the right hook because the tab state
+        // lives here; beats are idempotent per run, so re-entering
+        // History is silently ignored.
+        .onChange(of: tab) { _, new in
+            if new == .history {
+                vm.fireBeat(.firstLedgerView)
+            }
+        }
+        .sheet(isPresented: $showingHowToPlay) {
+            HowToPlayView(onClose: { showingHowToPlay = false })
+        }
     }
 
     // MARK: - Chrome
 
     private var header: some View {
-        HStack {
+        HStack(spacing: 14) {
             Text("MANAGE")
                 .font(.system(size: 16, weight: .black, design: .monospaced))
                 .tracking(2)
                 .foregroundStyle(Color(hex: "#b8e8f8"))
             Spacer()
+            // v9 Prompt 18 — mid-run How to Play access. Opens the same
+            // HowToPlayView as the start screen, over the drawer.
+            Button("How to Play") { showingHowToPlay = true }
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .tracking(0.6)
+                .foregroundStyle(Color(hex: "#7fd3f0"))
             Button("Close") { dismiss() }
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .foregroundStyle(Color(hex: "#6a6a78"))

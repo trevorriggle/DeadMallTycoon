@@ -60,7 +60,7 @@ Visitor thoughts draw from artifact-specific pools when the visitor is in proxim
     | `x8` | 1000 |
 - Per-tick probabilities (decay, entrance sealing, hardship, lease decay) stay correct: they're `per game-month`, unchanged by the real-time duration of a month.
 - Real-time cadence events (toast durations, halo pulse, fluorescent flicker, env tween, ghost blackout, focus pulse, isolation check) stay correct: they're `per real-time`, unchanged by tick speed.
-- Tutorial override: **dropped** in v9 base-tick patch. The tutorial previously forced 8000ms during year 1 — but the new base 1x IS 8000ms, so the override had no remaining effect. `state.tickIntervalOverrideMs` still exists as a seam for future subsystems; currently always nil.
+- Tutorial override: **dropped** in v9 base-tick patch, then removed entirely in Prompt 18. The old `tickIntervalOverrideMs` seam is gone; the Prompt-18 beat system pauses on trigger rather than slowing the clock.
 
 ## Failure modes (Prompt 14)
 
@@ -76,7 +76,7 @@ Two coexisting failure paths. Bankruptcy is the existing economic trigger (`debt
 ## Decision-sheet pause
 
 - `GameState.decisionSheetOwnedPause: Bool` — set when a decision sheet (MANAGE drawer or top-level Acquire sheet) claims the pause on open, cleared on close. (v9 patch)
-- Pattern mirrors `tutorialOwnedPause`: a sheet opens → if nothing else has paused the game, claim the pause and set the flag. On close → if we owned it, release. If a tenant-offer decision or tutorial coachmark already owns the pause, the sheet hands off (flag stays false; closing the sheet does not resume).
+- Pattern mirrors `tutorialBeatOwnedPause`: a sheet opens → if nothing else has paused the game, claim the pause and set the flag. On close → if we owned it, release. If a tenant-offer decision, tutorial beat card, or anchor card already owns the pause, the sheet hands off (flag stays false; closing the sheet does not resume).
 - Ambient surfaces (visitor profile panel, artifact info card) do NOT pause. Only decision surfaces pause.
 
 ## Artifact conversions
@@ -240,3 +240,15 @@ Six-state visual + audio state machine keyed to mall occupancy (plus a 60-month 
 ## Visual
 
 - Halo pulse: ±8% alpha, ±3% scale, 3.5s period. (Prompt 4)
+
+## Tutorial beats (Prompt 18)
+
+Optional in-run tutorial that surfaces teaching moments as modal cards. Opt-in from the NewMallSheet; `GameState.tutorialEnabled` gates every trigger and is checked by `TutorialBeatDetector.scan` AND `GameViewModel.fireBeat`.
+
+- **Beat count — 19.** Enumerated in `TutorialBeat` (CaseIterable). Split: 3 UI-triggered (`manageDrawer`, `firstLedgerView`, `firstVisitorThought`) fired directly by the view layer; 16 detector-triggered fired from `TutorialBeatDetector.scan` after each tick. Beat order is not fixed — beats fire when their triggers fire.
+- **One-shot per run.** `GameState.tutorialBeatsSeen: Set<TutorialBeat>` records the first-firing of each beat. Subsequent triggers are silently dropped in `fireBeat`. Detector re-reports persistently-true conditions (e.g. "any sealed artifact exists") every tick; the seen-set is the only idempotency guard.
+- **Pause composition.** `GameState.tutorialBeatOwnedPause: Bool` mirrors `anchorCardOwnedPause` / `decisionSheetOwnedPause`: the beat card claims the pause on activation iff nothing else holds it; `dismissTutorialBeat` releases only if the beat owned the claim. Tenant-offer decisions and anchor-departure cards take precedence — they render over the beat card via MallView's render gate.
+- **Queue.** `GameState.tutorialBeatQueue: [TutorialBeat]` serializes beats triggered while another card is active. FIFO; popped by `dismissTutorialBeat` which promotes the next beat and re-claims the pause.
+- **`approachingForgotten` lead time.** `TutorialBeatDetector.approachingForgottenLeadMonths = 3`. Fires when both `consecutiveMonthsBelowTrafficFloor >= (FailureTuning.trafficFloorMonths - 3)` AND `monthsInDeadState >= (FailureTuning.deadOrGhostMonths - 3)` AND `totalMemoryWeight < FailureTuning.memoryFailureThreshold`. Three months is enough lead time for the player to react (curate an artifact, approach a specialty tenant) without the run immediately ending.
+- **SC4 parity (non-negotiable).** A run with `tutorialEnabled = false` must produce state identical to a pre-Prompt-18 equivalent run. Enforced by `TutorialBeatDetector.scan` returning `[]` on the first line when disabled, and `GameViewModel.fireBeat` guarding the same way. Covered by `TutorialBeatSystemTests.testDisabledRunNeverMutatesBeatState`.
+- **How to Play content.** 13 sections enumerated in `HowToPlayContent.sections`. Section 10 (Scoring in detail) is the reference the player consults for optimization — must contain the full formula breakdown (monthlyScore, emptyScore, memoryContribution, actionBurst, yearCurve, lifeMultiplier, stateMemoryMultiplier table). `HowToPlayContentTests.testScoringSectionHasRoomForFullFormula` enforces a 400-character floor on that section's body.

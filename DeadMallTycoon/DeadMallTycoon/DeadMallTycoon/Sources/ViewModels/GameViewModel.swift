@@ -19,44 +19,73 @@ final class GameViewModel {
     }
 
     // v8: startGame()
-    // withTutorial=true enables the guided first-year tutorial: game starts
-    // paused on the welcome coachmark, director (Phase 3) handles beat
-    // scheduling from there. The old tick-interval override (8000ms "half
-    // speed" during year 1) was dropped with the v9 base-tick patch —
-    // new 1x is already 8000ms, so the override had no remaining effect.
-    func startGame(withTutorial: Bool = false) {
+    // v9 Prompt 18 — tutorialEnabled is the player's opt-in from the
+    // NewMallSheet. When true, the run starts with .welcome queued as
+    // the first beat; the card pauses play until dismissed. When false,
+    // the game enters live immediately — no welcome card, no detector
+    // triggers. SC4 parity: a tutorialEnabled=false run must match a
+    // pre-Prompt-18 run's state trajectory exactly.
+    func startGame(tutorialEnabled: Bool) {
         state = StartingMall.initialState()
-        if withTutorial {
-            state.tutorialActive = true
-            state.activeTutorialStep = .welcomeIntro
-            state.paused = true
-            state.tutorialOwnedPause = true
+        state.tutorialEnabled = tutorialEnabled
+        if tutorialEnabled {
+            fireBeat(.welcome)
         }
         applySpeed()
     }
 
-    // Called by the CoachmarkOverlay's Got-It button. Marks the active step as
-    // seen, clears it, and — if the tutorial owned the pause — resumes play.
-    func dismissCoachmark() {
-        guard let step = state.activeTutorialStep else { return }
-        state.tutorialSeenSteps.insert(step)
-        state.activeTutorialStep = nil
-        if state.tutorialOwnedPause {
+    // v9 Prompt 18 — beat trigger entry point. Idempotent per beat per
+    // run (tutorialBeatsSeen gates). Called by:
+    //   - TutorialBeatDetector.scan after each tick (detector-triggered
+    //     beats: firstPlacement, firstTenantOffer, firstClosure, etc.)
+    //   - View-layer hooks for UI-triggered beats (manageDrawer,
+    //     firstLedgerView, firstVisitorThought)
+    //
+    // If nothing is currently on-screen the beat activates immediately
+    // and claims the pause. If another beat card or a blocking decision
+    // is active, the beat enqueues. Dismissal (see dismissTutorialBeat)
+    // advances the queue.
+    func fireBeat(_ beat: TutorialBeat) {
+        guard state.tutorialEnabled else { return }
+        guard !state.tutorialBeatsSeen.contains(beat) else { return }
+        // Record immediately — the beat has "fired" the moment we
+        // observe its trigger. Queue-vs-show is a presentation concern.
+        state.tutorialBeatsSeen.insert(beat)
+        if state.activeTutorialBeat == nil {
+            state.activeTutorialBeat = beat
+            claimTutorialBeatPause()
+        } else {
+            state.tutorialBeatQueue.append(beat)
+        }
+    }
+
+    // Called by TutorialBeatCard.onAppear after the view mounts. The
+    // view-side mount is what commits the pause; state.activeTutorialBeat
+    // is set by fireBeat (or promoted here if a queued beat is being
+    // displayed). Mirrors claimAnchorCardPause: only pause if nothing
+    // else owns the paused state.
+    private func claimTutorialBeatPause() {
+        guard !state.paused else { return }
+        state.paused = true
+        state.tutorialBeatOwnedPause = true
+    }
+
+    // Called by the beat card's Continue button. Clears the active beat,
+    // releases the pause IF we owned it, and promotes the next queued
+    // beat (if any) — which re-claims the pause on its own .onAppear via
+    // claimTutorialBeatPause.
+    func dismissTutorialBeat() {
+        guard state.activeTutorialBeat != nil else { return }
+        state.activeTutorialBeat = nil
+        if state.tutorialBeatOwnedPause {
             state.paused = false
-            state.tutorialOwnedPause = false
+            state.tutorialBeatOwnedPause = false
         }
-        // Graduation: tutorial is over. The tickIntervalOverrideMs field is
-        // no longer set by the tutorial (v9 patch dropped the override), but
-        // we still clear it + re-apply speed as a defensive no-op in case
-        // some future path sets an override.
-        if step == .graduation {
-            state.tutorialActive = false
-            state.tickIntervalOverrideMs = nil
-            applySpeed()
+        if !state.tutorialBeatQueue.isEmpty {
+            let next = state.tutorialBeatQueue.removeFirst()
+            state.activeTutorialBeat = next
+            claimTutorialBeatPause()
         }
-        // Director may fire another beat immediately — e.g. .hud right after
-        // .welcomeIntro is dismissed, while still in Jan (month 0).
-        state = TutorialDirector.maybeFireNextBeat(state)
     }
 
     // v8: restart()
@@ -77,36 +106,21 @@ final class GameViewModel {
         ticker?.invalidate(); ticker = nil
         guard !state.gameover, state.started,
               let baseMs = state.speed.tickIntervalMs else { return }
-        // tickIntervalOverrideMs is a kept seam for any future subsystem
-        // that wants to slow the clock. v9 dropped the tutorial's use of
-        // it (new 1x is already the slower pace); the override is currently
-        // always nil in practice. Pause still wins over everything —
-        // speed.tickIntervalMs is nil when paused, so we've already
-        // returned above in that case.
-        let ms = state.tickIntervalOverrideMs ?? baseMs
-        let interval = TimeInterval(ms) / 1000.0
+        let interval = TimeInterval(baseMs) / 1000.0
         ticker = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.tickOnce()
         }
     }
 
-    // Called by the TutorialDirector (Phase 3). Pass an ms value to slow the
-    // tick rate regardless of the player's selected Speed; pass nil to release
-    // the override and return to the player's speed.
-    func setTutorialSpeedOverride(_ ms: Int?) {
-        state.tickIntervalOverrideMs = ms
-        applySpeed()
-    }
-
     // v8: tick()
+    // v9 Prompt 18 — after each engine tick, run TutorialBeatDetector to
+    // queue any beats whose triggers fired. Detector is a no-op when
+    // tutorialEnabled is false (SC4 parity).
     func tickOnce() {
-        let prevOverrideMs = state.tickIntervalOverrideMs
         state = TickEngine.tick(state, rng: &rng)
-        state = TutorialDirector.maybeFireNextBeat(state)
-        // Director may have ended the tutorial on rollover to 1983, which
-        // nils the override; reschedule the timer at the player's speed.
-        if state.tickIntervalOverrideMs != prevOverrideMs {
-            applySpeed()
+        let triggered = TutorialBeatDetector.scan(state)
+        for beat in triggered {
+            fireBeat(beat)
         }
         if state.gameover {
             ticker?.invalidate(); ticker = nil
@@ -179,6 +193,12 @@ final class GameViewModel {
         // non-goal: "panel shows state but does not modify it from player
         // actions").
         state.selectedVisitorIdentity = VisitorIdentity(from: visitor, memory: thought.text)
+
+        // v9 Prompt 18 — UI-triggered tutorial beat. Firing from inside
+        // the selection path is the right coupling: the beat teaches
+        // "visitor thoughts are a verb the game supports," and the
+        // player has just done it.
+        fireBeat(.firstVisitorThought)
     }
 
     // v9 Prompt 4 Phase 2 — passive-thought path.
@@ -288,10 +308,11 @@ final class GameViewModel {
     // they're open. Ambient surfaces (visitor profile panel, artifact info
     // card) do NOT call this.
     //
-    // Ownership semantics mirror tutorialOwnedPause: claim the pause only
-    // if nothing else owns it. If a tenant-offer decision or a tutorial
-    // coachmark is already paused when the sheet opens, we hand off — the
-    // sheet closing will not clobber the decision / tutorial's pause.
+    // Ownership semantics mirror tutorialBeatOwnedPause: claim the pause
+    // only if nothing else owns it. If a tenant-offer decision, anchor
+    // card, or tutorial beat is already paused when the sheet opens, we
+    // hand off — the sheet closing will not clobber the other owner's
+    // pause.
     func pauseForDecisionSheet() {
         guard !state.paused else { return }
         state.paused = true

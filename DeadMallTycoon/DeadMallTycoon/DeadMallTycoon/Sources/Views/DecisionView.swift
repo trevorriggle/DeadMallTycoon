@@ -152,11 +152,19 @@ struct DecisionBanner: View {
 
 // MARK: - Start screen
 
+// v9 Prompt 18 — rebuilt. The start screen now presents the title and
+// two top-level actions: "New Mall" (opens NewMallSheet, where the
+// player chooses tutorial on/off) and "How to Play" (opens
+// HowToPlayView directly, no run started). The old inline
+// "Begin / Skip Tutorial" pair moved into NewMallSheet so the
+// tutorial choice is an explicit decision, not a hidden toggle.
 struct StartScreenView: View {
-    // withTutorial=true → guided first-year tutorial (half-speed, welcome coachmark).
-    // withTutorial=false → skip straight into a normal run at x1.
-    let onStart: (_ withTutorial: Bool) -> Void
-    @State private var showingTutorial = false
+    // tutorialEnabled=true → run starts paused on the .welcome beat
+    // and subsequent beats fire as their triggers occur.
+    // tutorialEnabled=false → no beats fire for this run (SC4 parity).
+    let onStart: (_ tutorialEnabled: Bool) -> Void
+    @State private var showingNewMall = false
+    @State private var showingHowToPlay = false
 
     var body: some View {
         ZStack {
@@ -187,95 +195,42 @@ struct StartScreenView: View {
                     .lineSpacing(4)
                     .frame(maxWidth: 520)
                     .padding(.top, 8)
-                Button("Begin Run · Jan 1982") {
-                    onStart(true)
-                }
-                .font(.system(size: 20, weight: .bold, design: .monospaced))
-                .tracking(1.2)
-                .foregroundStyle(Color(hex: "#2a0a2a"))
-                .padding(.horizontal, 36).padding(.vertical, 14)
-                .background(Color(hex: "#ff4dbd"))
-                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .buttonStyle(.plain)
-                .padding(.top, 20)
-                Button("Skip Tutorial") { onStart(false) }
+                Button("New Mall") { showingNewMall = true }
+                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(Color(hex: "#2a0a2a"))
+                    .padding(.horizontal, 36).padding(.vertical, 14)
+                    .background(Color(hex: "#ff4dbd"))
+                    .overlay(RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .buttonStyle(.plain)
+                    .padding(.top, 20)
+                Button("How to Play") { showingHowToPlay = true }
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .tracking(0.8)
-                    .foregroundStyle(Color(hex: "#6a6a78"))
+                    .foregroundStyle(Color(hex: "#7fd3f0"))
                     .padding(.horizontal, 10).padding(.vertical, 3)
-                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#3a3a48")))
+                    .overlay(RoundedRectangle(cornerRadius: 3)
+                        .strokeBorder(Color(hex: "#2a6a8a")))
                     .padding(.top, 2)
-                Button("How to Play") { showingTutorial = true }
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .tracking(0.8)
-                    .foregroundStyle(Color(hex: "#ff4dbd"))
-                    .padding(.horizontal, 10).padding(.vertical, 3)
-                    .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: "#8a2a6a")))
             }
         }
-        .sheet(isPresented: $showingTutorial) {
-            TutorialView(onClose: { showingTutorial = false })
+        .sheet(isPresented: $showingNewMall) {
+            NewMallSheet(
+                onStart: { tutorialEnabled in
+                    showingNewMall = false
+                    onStart(tutorialEnabled)
+                },
+                onOpenHowToPlay: {
+                    showingNewMall = false
+                    showingHowToPlay = true
+                },
+                onCancel: { showingNewMall = false }
+            )
         }
-    }
-}
-
-// MARK: - Tutorial
-
-struct TutorialView: View {
-    let onClose: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("HOW TO PLAY")
-                    .font(.system(size: 28, weight: .black, design: .monospaced))
-                    .tracking(1.6)
-                    .foregroundStyle(Color(hex: "#ff4dbd"))
-                Text("THE CONTROLLED DECLINE")
-                    .font(.system(size: 14, design: .monospaced))
-                    .tracking(2.4)
-                    .foregroundStyle(Color(hex: "#6a6a78"))
-            }
-
-            section("The Core Loop",
-                "You run a dying mall. Score comes from empty stores, sealed wings, and visible decay — the mall looking abandoned is what the game rewards. Cash comes only from tenants paying rent. Operating costs always exceed the rent a small mall generates, so you're always bleeding something.")
-            section("Why \"Barely Open\" Wins",
-                "A fully occupied mall produces zero score — nothing empty to count. A fully abandoned mall also produces zero score — no one to witness it. The sweet spot is somewhere in the middle: enough tenants to keep the lights on and traffic walking through, enough vacancy and decay to feel like a tomb.")
-            section("Score = Empty × Time × Decay × Life",
-                "Each month you earn points for every empty storefront and sealed wing, multiplied by how long you've survived, multiplied by the aesthetic decay of your decorations, multiplied by how \"alive\" the mall still is (traffic-based). Survive longer = more score. Let things rot = more score. But you must stay open.")
-            section("Threat & Warnings",
-                "The Threat meter fills based on your decisions: unrepaired hazards, sealed wings without security, prolonged low traffic. The Watch List tells you what's building. Warnings appear before disasters — read them. High threat = consequences incoming.")
-            section("Ending The Run",
-                "The bank takes the mall when your debt exceeds $25,000. That's the only failure state. Until then, every month alive adds to your score. The best runs are the ones that should have ended a decade ago but didn't.")
-
-            Button("Got It") { onClose() }
-                .font(.system(size: 17, weight: .bold, design: .monospaced))
-                .tracking(1)
-                .foregroundStyle(Color(hex: "#2a0a2a"))
-                .padding(.horizontal, 24).padding(.vertical, 10)
-                .background(Color(hex: "#ff4dbd"))
-                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .buttonStyle(.plain)
-        }
-        .padding(30)
-        .frame(maxWidth: 680)
-        .background(Color(hex: "#14141a"))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(hex: "#8a2a6a"), lineWidth: 2))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func section(_ title: String, _ body: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title.uppercased())
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .tracking(0.8)
-                .foregroundStyle(Color(hex: "#7fd3f0"))
-            Text(body)
-                .font(.system(size: 18, design: .serif))
-                .foregroundStyle(Color(hex: "#d8d8e0"))
-                .lineSpacing(2)
+        .sheet(isPresented: $showingHowToPlay) {
+            HowToPlayView(onClose: { showingHowToPlay = false })
         }
     }
 }

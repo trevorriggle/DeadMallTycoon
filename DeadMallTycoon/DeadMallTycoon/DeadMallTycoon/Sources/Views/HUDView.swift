@@ -18,17 +18,10 @@ struct HUDView: View {
             Spacer(minLength: 8)
             cashCell
                 .onTapGesture { onTapCash() }
-                .coachmarkAnchor(.cash)
-                .coachmarkAnchor(.score)         // re-anchored — score lives in the P&L modal now
-                .coachmarkAnchor(.pnlPanel)      // re-anchored — tapping cash opens the modal
-                .coachmarkAnchor(.scoreSources)  // re-anchored — score breakdown is in the modal
             Spacer(minLength: 8)
             memoryCell   // v9 Prompt 4 Phase 5 — ambient memory-weight readout
             Spacer(minLength: 8)
             threatMeter
-                .coachmarkAnchor(.threatMeter)
-                // .watchList anchor lives on MallView now (Phase C) — warnings are ambient
-                // on the scene via hazard/closing dots + wing tints.
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)

@@ -92,18 +92,44 @@ struct GameState: Equatable {
     // v9 addition — populated by TickEngine each month, rendered as sparkline in Phase 5
     var scoreHistory: RingBuffer<Int> = RingBuffer(capacity: 12)
 
-    // tutorial — new in iOS port, no v8 equivalent.
-    // activeTutorialStep drives the CoachmarkOverlay (Phase 2). tutorialSeenSteps
-    // prevents a beat from firing twice. tutorialOwnedPause lets the director
-    // distinguish a player-initiated pause (which it must not override) from
-    // one it set itself during a coachmark. tickIntervalOverrideMs is read by
-    // GameViewModel.applySpeed() to slow the tick rate during tutorial without
-    // adding a player-visible speed button.
-    var tutorialActive: Bool = false
-    var activeTutorialStep: TutorialStep? = nil
-    var tutorialSeenSteps: Set<TutorialStep> = []
-    var tutorialOwnedPause: Bool = false
-    var tickIntervalOverrideMs: Int? = nil
+    // v9 Prompt 18 — optional in-run tutorial beats.
+    //
+    // tutorialEnabled: player-selected at New Mall time. Gates every beat
+    // trigger — if false, no detector path fires and no UI-triggered beat
+    // is captured. This is the disabled-tutorial parity SC4 seam: a run
+    // with tutorialEnabled=false must produce identical state trajectories
+    // to pre-Prompt-18 runs, which is enforced by a test.
+    //
+    // activeTutorialBeat: the beat whose card is currently on screen. Only
+    // one at a time — a second beat that fires while one is visible queues
+    // behind it.
+    //
+    // tutorialBeatQueue: pending beats that triggered while another card
+    // was up, or while state.decision held the card off. Popped FIFO as
+    // each card is dismissed. If both tenant-offer and anchor-departure
+    // surfaces are active, beats wait behind them (see MallView's render
+    // gate and TutorialBeatCard.onAppear pause composition).
+    //
+    // tutorialBeatsSeen: one-shot-per-run ledger. A beat's id is inserted
+    // the FIRST time it fires; subsequent triggers are silently ignored.
+    //
+    // tutorialBeatOwnedPause: mirror of anchorCardOwnedPause /
+    // decisionSheetOwnedPause / (now-removed) tutorialOwnedPause. The
+    // card claims the pause on .onAppear iff nothing else holds it, and
+    // releases only if it owned the claim. Hand-off semantics mean an
+    // already-paused state (tenant offer, anchor card, etc.) is
+    // respected — dismissing the beat card won't unpause what the
+    // decision owns.
+    //
+    // Earlier tickIntervalOverrideMs field (half-speed year 1) was
+    // dropped entirely — the v9 base 1x is already the old override
+    // value, and the new beat-card model pauses on trigger rather than
+    // slowing the clock.
+    var tutorialEnabled: Bool = false
+    var activeTutorialBeat: TutorialBeat? = nil
+    var tutorialBeatQueue: [TutorialBeat] = []
+    var tutorialBeatsSeen: Set<TutorialBeat> = []
+    var tutorialBeatOwnedPause: Bool = false
 
     // v9 Prompt 4 Phase 5 — total memory weight across all artifacts.
     // Rendered in the HUD top strip. Computed, not stored, so no extra
@@ -166,13 +192,14 @@ struct GameState: Equatable {
     // neglect failure, not an occasionally-quiet one.
     var consecutiveMonthsBelowTrafficFloor: Int = 0
 
-    // v9 patch — decision-sheet pause ownership. Mirrors tutorialOwnedPause:
-    // the MANAGE drawer and the top-level Acquire sheet are decision
-    // surfaces (not ambient), so they pause the game while open. Flag is
-    // set when a sheet claims the pause (only if nothing else owns it);
-    // cleared when that same sheet closes. If a tenant offer or tutorial
-    // already owns the pause, the sheet hands off — closing it won't
-    // resume prematurely.
+    // v9 patch — decision-sheet pause ownership. Mirrors
+    // tutorialBeatOwnedPause: the MANAGE drawer and the top-level
+    // Acquire sheet are decision surfaces (not ambient), so they pause
+    // the game while open. Flag is set when a sheet claims the pause
+    // (only if nothing else owns it); cleared when that same sheet
+    // closes. If a tenant offer, tutorial beat, or anchor card already
+    // owns the pause, the sheet hands off — closing it won't resume
+    // prematurely.
     var decisionSheetOwnedPause: Bool = false
 
     // v9 Prompt 10 Phase A — anchor-departure cascade state.
@@ -228,8 +255,8 @@ struct GameState: Equatable {
     var anchorDepartureCardQueue: [AnchorDepartureCardPayload] = []
 
     // Pause ownership flag for the anchor-departure card. Mirrors
-    // tutorialOwnedPause / decisionSheetOwnedPause: the card claims the
-    // pause on .onAppear iff nothing else has paused the game, and
+    // tutorialBeatOwnedPause / decisionSheetOwnedPause: the card claims
+    // the pause on .onAppear iff nothing else has paused the game, and
     // releases it only when the queue is empty AFTER pop. If a tenant
     // offer pause was active when the cascade fired, the card hands off
     // — ownership stays with the decision, and the card doesn't

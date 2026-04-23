@@ -23,12 +23,10 @@ struct DeadMallTycoonApp: App {
 // overlays the mall scene.
 struct ContentView: View {
     @Bindable var vm: GameViewModel
-    @State private var showingTutorial = false
     @State private var showManage = false
     @State private var showPnL = false
     // v9 Prompt 3 followup — top-level Acquire shortcut.
     @State private var showAcquire = false
-    @State private var coachmarkAnchors: [CoachmarkAnchor: CGRect] = [:]
     @Environment(\.horizontalSizeClass) private var hSize
     #if DEBUG
     // v9: Artifact debug panel entry — Prompt 1. Dev-only, stripped from release.
@@ -39,8 +37,8 @@ struct ContentView: View {
         ZStack {
             Color(hex: "#0a0a0e").ignoresSafeArea()
             if !vm.state.started {
-                StartScreenView(onStart: { withTutorial in
-                    vm.startGame(withTutorial: withTutorial)
+                StartScreenView(onStart: { tutorialEnabled in
+                    vm.startGame(tutorialEnabled: tutorialEnabled)
                 })
             } else {
                 gameBody
@@ -48,13 +46,7 @@ struct ContentView: View {
                     GameOverView(vm: vm)
                         .transition(.opacity)
                 }
-                CoachmarkOverlay(vm: vm, anchors: coachmarkAnchors)
             }
-        }
-        .coordinateSpace(name: CoachmarkSpace.name)
-        .onPreferenceChange(CoachmarkAnchorKey.self) { coachmarkAnchors = $0 }
-        .sheet(isPresented: $showingTutorial) {
-            TutorialView(onClose: { showingTutorial = false })
         }
     }
 
@@ -122,7 +114,6 @@ struct ContentView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         AcquireButton(action: { showAcquire = true })
                         ManageButton(action: { showManage = true })
-                            .coachmarkAnchor(.tabBar)   // rebound — MANAGE replaces the old TabBar
                     }
                     #if DEBUG
                     // v9: Dev-only button to inspect the Artifact list. Sits next to

@@ -44,10 +44,6 @@ struct MallView: View {
                     infoCardOverlay(in: geo.size)
                 }
             }
-            .coachmarkAnchor(.sceneVisitor)
-            .coachmarkAnchor(.sceneStore)
-            .coachmarkAnchor(.watchList)   // Phase C — warnings are ambient on the scene now
-
             // Placement mode banner — v9 Prompt 3: now sourced from
             // placingArtifactType + ArtifactCatalog.info(type).name.
             if let type = vm.state.placingArtifactType {
@@ -107,12 +103,29 @@ struct MallView: View {
             // takes precedence; the anchor card waits behind it. Queue
             // supports serialized presentation if multiple anchors close
             // in rapid succession (not expected in the current 2-anchor
-            // design, but defensively correct). Rendered LAST in the
-            // ZStack so it overlays everything else when active.
+            // design, but defensively correct). Rendered above the beat
+            // card so a cascade that fires during a tutorial beat card
+            // takes precedence (the seismic narrative beat wins over a
+            // didactic one).
             if vm.state.decision == nil,
                let card = vm.state.anchorDepartureCardQueue.first {
                 AnchorDepartureCardView(vm: vm, payload: card)
                     .id(card.id)   // fresh .onAppear per queued card
+                    .transition(.opacity)
+            }
+
+            // v9 Prompt 18 — tutorial beat card.
+            // Render gate: shown ONLY when there's no tenant-offer
+            // decision active AND no anchor departure card queued. Both
+            // of those are higher-priority decision surfaces. When they
+            // clear, the beat card becomes visible again. Beats queued
+            // while a higher-priority surface was up present serially
+            // via tutorialBeatQueue as each card is dismissed.
+            if vm.state.decision == nil,
+               vm.state.anchorDepartureCardQueue.isEmpty,
+               let beat = vm.state.activeTutorialBeat {
+                TutorialBeatCard(vm: vm, beat: beat)
+                    .id(beat.rawValue)   // fresh .onAppear per queued beat
                     .transition(.opacity)
             }
         }
