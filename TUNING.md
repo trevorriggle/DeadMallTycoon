@@ -117,6 +117,41 @@ Two coexisting failure paths. Bankruptcy is the existing economic trigger (`debt
 - Per-type pixel dimensions live in `Data/Catalog.swift` via `ArtifactCatalog.info(_:).size`. Sizes are in world / CSS coords; scene renders `.aspectFit` to device.
 - Landmark items (kugel ball, fountain, pay phone bank, arcade cabinet, photo booth, coin horse, conversation pit, benches, directory board) rescaled 1.4×–1.8× post-Prompt-9 so they read as monuments against the 100×90 storefront scale. Texture items (planter, terrazzo, brass railing, cracked tile) and ceiling items (skylight, flickering fluorescent, emergency exit sign, stale christmas, stained tile) unchanged — small is correct for those.
 
+## Economy — endgame viability (Prompt 17)
+
+Rebalancing that makes "one specialty tenant, aggressively sealed, many displays" a mechanically reachable steady-state.
+
+- `Economy.sealedWingSavings = 4500` — monthly ops savings per sealed wing (HVAC shutdown, security cut, lighting, cleaning contract, insurance). Raised from the v5 2500 after dying-mall viability audit showed savings were undervalued.
+- `Economy.sealedEntranceSavings = 500` — monthly ops savings per sealed corner. Four corners sealed = $2,000/mo. Covers reduced security patrols, lighting, signage maintenance at closed entry points.
+- `Economy.displayMaintenanceByState` — per-display-space maintenance, scaled by the mall's environmental state. Declining malls spend less on active curation (cleaning glass, refreshing content, lighting); displays become fossils.
+    | state | per-display cost |
+    |---|---|
+    | thriving | 75 |
+    | fading | 60 |
+    | struggling | 45 |
+    | dying | 30 |
+    | dead | 20 |
+    | ghostMall | 15 |
+- `Economy.longTenureYearsThreshold = 10` / `Economy.longTenureRentMultiplier = 1.15` — tenants open 10+ consecutive years pay 15% more rent. Applied at rent-collection time in `Economy.rentByStore` so the Prompt 15 floating `+$N` indicator naturally shows the bumped amount; displayed `Store.rent` stays raw.
+- **Most likely retune dial**: `sealedWingSavings`. If endgame feels too easy, drop to 4000; too hard, raise to 5000.
+
+## Specialty tier + kiosk holdouts (Prompt 17)
+
+Six-way `StoreTier` enum: `anchor / standard / kiosk / sketchy / specialty / vacant`. Specialty is a new professional-services tier; kiosk tier gains "quirky holdout" members via the `immuneToTrafficClosure` flag.
+
+- `.specialty` tenants: Delaware Foot & Ankle, Beckett & Associates Tax Prep, Halvorsen Hearing Aid Center (homage), Delaware Allergy Partners, Crestwood Financial Advisors, The Delaware Business Library. Rent $2,500–$3,500, 48–60 month leases, threshold 5, traffic 10. All `immuneToTrafficClosure = true`.
+- Kiosk holdouts (kiosk-tier, `immuneToTrafficClosure = true`): Auntie Rae's Pretzel Kiosk (starting mall seed, flagged), Sylvan Pay Phone Repair, Nails by Dora, Castle Key & Lock.
+- Offer-pool mix per state: thriving 0 specialty/holdout (pure retail), fading 1, struggling 2, dying 3, dead 3 of the combined long-lived pool. Thriving is intentionally specialty-free — healthy retail pipeline leaves no room. Decline shifts the offer mix so services and quirky holdouts become the only takers.
+
+**Immunity mechanism** (`Store.immuneToTrafficClosure: Bool`):
+- TickEngine skips the traffic-based hardship bump (hardship still decays on the `else` branch so foreign accrual doesn't compound).
+- Lease expiry auto-renews at 36 months instead of rolling the pressured-non-renewal RNG.
+- Specialty & kiosk-holdout tenants don't leave due to low traffic, ever. Lease exhaustion (which shouldn't realistically happen given auto-renew) is the only exit path — matching ENDGAME.md's "one tenant, fourteen years."
+
+## Halvorsen homage — name inheritance (Prompt 17)
+
+Narrative beat without its own tuning constants. When a newly-signed tenant's name has a departed anchor name as prefix (e.g., "Halvorsen Hearing Aid Center" after the Halvorsen department store closed), `StoreActions.maybeRecordNameInheritance` emits a `.nameInheritance` ledger entry. Ledger tap focuses the anchor's memorial `boardedStorefront` (resolved by matching artifact.name against `inheritedFromAnchor`). One memoryWeight hook deliberately deferred for a later prompt — scope discipline.
+
 ## Anchor departure cascade
 
 Triggered once per wing when that wing's anchor vacates (Prompt 10). All effects are permanent — the wing doesn't heal when/if re-tenanted.

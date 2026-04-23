@@ -31,6 +31,7 @@ import Foundation
 //   [ ] .artifactDestroyed(...)               — artifact removed (non-offer path)
 //   [ ] .envTransition(from:to:)              — mall entered a new environmental era
 //   [ ] .attentionMilestone(...)              — artifact hit a thought-count threshold
+//   [ ] .nameInheritance(...)                 — new tenant takes a departed anchor's name (homage)
 //
 // When authoring, keep interpolated fields in the same positions so the
 // tests in LedgerFoundationTests can continue to assert structure without
@@ -109,6 +110,10 @@ enum LedgerTemplates {
         case .attentionMilestone(_, let name, _, let t, let y, let m):
             return "[ledger pending: \(name) thought of for the \(t)th "
                  + "time — \(monthYear(m, y))]"
+
+        case .nameInheritance(let newName, let anchorName, _, let y, let m):
+            return "[ledger pending: \(newName) signed, taking the "
+                 + "\(anchorName) name — \(monthYear(m, y))]"
         }
     }
 }

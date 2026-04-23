@@ -4,6 +4,47 @@ import Foundation
 // rent, adRevenue, promoCost, promoRevenue, operatingCost, staffCost, hazardFines, rawTraffic, aestheticMult.
 enum Economy {
 
+    // v9 Prompt 17 — tuning constants for endgame viability rebalancing.
+    // See TUNING.md "Economy" section for design rationale.
+
+    // Monthly savings per fully-sealed wing. Represents HVAC zone
+    // shutdown, security patrol reduction, lighting cut, cleaning
+    // contract reduction, insurance adjustment. Raised from the v5
+    // 2500 after a dying-mall endgame-viability audit showed savings
+    // were undervalued by roughly half.
+    static let sealedWingSavings: Int = 4500
+
+    // Monthly savings per sealed corner entrance (NW/NE/SW/SE).
+    // Represents reduced security presence, lighting, signage
+    // maintenance at a closed entry point. Four corners sealed = $2k/mo.
+    static let sealedEntranceSavings: Int = 500
+
+    // Per-display-space maintenance cost, scaled by the mall's
+    // environmental state. Represents active curation effort —
+    // cleaning, refreshing content, adjusting lighting. As the mall
+    // declines, that effort decays with it; displays become fossils
+    // rather than maintained installations. Ghost Mall's $15 is
+    // nominal — a display left alone on a run that's been dead for
+    // five years is barely a cost at all.
+    static let displayMaintenanceByState: [EnvironmentState: Int] = [
+        .thriving:   75,
+        .fading:     60,
+        .struggling: 45,
+        .dying:      30,
+        .dead:       20,
+        .ghostMall:  15,
+    ]
+
+    // Long-tenure loyalty bonus. A tenant that's been open continuously
+    // for 10+ years pays 15% more rent — a narrative "regular who
+    // believes in the place" beat that mechanically reinforces the
+    // endgame-fantasy specialty-tenant-that-stayed-for-decades
+    // trope. Applied at rent-collection time via Economy.rentByStore;
+    // the displayed rent stays raw so the Prompt 15 Phase 1 floating
+    // +$N indicator naturally shows the bumped amount.
+    static let longTenureYearsThreshold: Int = 10
+    static let longTenureRentMultiplier: Double = 1.15
+
     // v8: rent()
     // v9 Prompt 15 Phase 1 — implemented via rentByStore for per-
     // storefront breakdown.
@@ -15,16 +56,28 @@ enum Economy {
     // stores that actually pay rent this tick (non-zero amount after
     // sale and wing-closure filters), so the caller can emit one
     // EconomicsEvent.rentCollected per entry without noise.
+    //
+    // v9 Prompt 17 — long-tenure loyalty bonus: stores with
+    // monthsOccupied >= longTenureYearsThreshold × 12 get a
+    // longTenureRentMultiplier (1.15×) bump applied AFTER the sale
+    // discount. Displayed rent remains raw — the bump lives only at
+    // collection time, so the Prompt 15 Phase 1 floating +$N
+    // indicator naturally shows the bumped amount without a separate
+    // bonus label.
     static func rentByStore(_ state: GameState) -> [(storeId: Int, amount: Int)] {
         let saleActive = state.activePromos.contains { $0.effect == .sale }
+        let longTenureMonths = longTenureYearsThreshold * 12
         return state.stores
             .filter { !Mall.isWingClosed($0.wing, in: state) }
             .compactMap { store in
                 let base = store.rent
                 guard base > 0 else { return nil }
-                let actual = saleActive
+                var actual = saleActive
                     ? Int((Double(base) * 0.8).rounded())
                     : base
+                if store.monthsOccupied >= longTenureMonths {
+                    actual = Int((Double(actual) * longTenureRentMultiplier).rounded())
+                }
                 guard actual > 0 else { return nil }
                 return (store.id, actual)
             }
@@ -65,6 +118,15 @@ enum Economy {
     // incur the $350/mo vacancy penalty. The space is walled off and not
     // maintained. Each .displaySpace artifact adds $75/mo maintenance
     // (cleaning, lighting, occasional content refresh).
+    //
+    // v9 Prompt 17 — endgame-viability rebalancing:
+    //   - Sealed wing savings raised from 2500 → sealedWingSavings (4500).
+    //   - New: sealed entrance savings. Each corner in state.sealedEntrances
+    //     saves sealedEntranceSavings ($500). Four sealed = $2k/mo.
+    //   - Display maintenance scales by EnvironmentState — 75 at thriving
+    //     down to 15 at ghostMall. A display that sits in a dead mall
+    //     isn't actively curated; it becomes a fossil. Table in
+    //     displayMaintenanceByState.
     static func operatingCost(_ state: GameState) -> Int {
         let openStores = Mall.openStores(state)
         // v9 Prompt 7 — vacant slots with a sealedStorefront artifact opt out
@@ -78,16 +140,22 @@ enum Economy {
             $0.tier == .vacant && !sealedSlotIds.contains($0.id)
         }.count
         var base = 9500
-        if Mall.isWingClosed(.north, in: state) { base -= 2500 }
-        if Mall.isWingClosed(.south, in: state) { base -= 2500 }
+        if Mall.isWingClosed(.north, in: state) { base -= sealedWingSavings }
+        if Mall.isWingClosed(.south, in: state) { base -= sealedWingSavings }
+        // v9 Prompt 17 — per-corner entrance savings. state.sealedEntrances
+        // is a Set<EntranceCorner> from Prompt 6.5.
+        let entranceSavings = state.sealedEntrances.count * sealedEntranceSavings
+        base -= entranceSavings
         let perStore = openStores.count * 500
         let vacancyPenalty = vac * 350
         var downgradeSavings = 0
         if Mall.isWingDowngraded(.north, in: state) { downgradeSavings += 1500 }
         if Mall.isWingDowngraded(.south, in: state) { downgradeSavings += 1500 }
-        // v9 Prompt 7 — display-space maintenance. $75/mo per displaySpace.
+        // v9 Prompt 17 — display maintenance scaled by env state.
+        let env = EnvironmentState.from(state)
+        let perDisplayMaintenance = displayMaintenanceByState[env] ?? 75
         let displayCount = state.artifacts.filter { $0.type == .displaySpace }.count
-        let displayMaintenance = displayCount * 75
+        let displayMaintenance = displayCount * perDisplayMaintenance
         return max(2000, base + perStore + vacancyPenalty - downgradeSavings + displayMaintenance)
     }
 

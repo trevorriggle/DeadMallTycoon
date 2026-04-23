@@ -44,8 +44,14 @@ enum EntranceCorner: String, Codable, CaseIterable, Hashable {
     }
 }
 
+// v9 Prompt 17 — `.specialty` added as a sixth tier for professional-
+// service tenants that don't need mall foot traffic (podiatrists,
+// tax prep, hearing aid clinics, business libraries). Specialty
+// tenants are traffic-closure-immune by convention and pay mid-range
+// rent ($2,500-3,500/mo) on long leases (3-5 years). They become the
+// mechanical answer to "the one tenant that remains for 14 years."
 enum StoreTier: String, Codable {
-    case anchor, standard, kiosk, sketchy, vacant
+    case anchor, standard, kiosk, sketchy, specialty, vacant
 }
 
 enum VisitorType: String, Codable {

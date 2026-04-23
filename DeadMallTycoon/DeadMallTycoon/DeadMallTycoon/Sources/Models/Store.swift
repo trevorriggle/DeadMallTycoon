@@ -19,6 +19,15 @@ struct Store: Identifiable, Equatable, Codable {
     var promotionActive: Bool
     let position: StorePosition
 
+    // v9 Prompt 17 — set on signing (from TenantTarget / TenantOffer /
+    // StoreSeed). TickEngine skips traffic-based hardship bumps and
+    // auto-renews leases for flagged stores. Covers both .specialty
+    // tier (professional services, traffic-independent) and the
+    // kiosk "quirky holdout" entries (pretzel kiosk, pay phone
+    // repair, etc.) that per ENDGAME.md persist for decades.
+    // Defaults to false so existing Store constructions are unaffected.
+    var immuneToTrafficClosure: Bool = false
+
     var wing: Wing { position.wing }
     var isVacant: Bool { tier == .vacant }
     var isOpenForBusiness: Bool { !isVacant }

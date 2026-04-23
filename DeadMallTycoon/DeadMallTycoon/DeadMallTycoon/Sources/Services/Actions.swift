@@ -123,8 +123,14 @@ enum StoreActions {
             closing: false, leaving: false,
             monthsOccupied: 0, monthsVacant: 0,
             promotionActive: false,
-            position: pos
+            position: pos,
+            immuneToTrafficClosure: offer.immuneToTrafficClosure
         )
+        // v9 Prompt 17 — Halvorsen-homage detection. Fires when a new
+        // tenant's name starts with a previously-departed anchor name.
+        maybeRecordNameInheritance(tenantName: offer.name,
+                                    slotId: s.stores[vi].id,
+                                    state: &s)
         s.decision = nil
         s.paused = false
         return s
@@ -224,10 +230,50 @@ enum StoreActions {
                 closing: false, leaving: false,
                 monthsOccupied: 0, monthsVacant: 0,
                 promotionActive: false,
-                position: pos
+                position: pos,
+                immuneToTrafficClosure: target.immuneToTrafficClosure
             )
+            // v9 Prompt 17 — Halvorsen-homage detection (see acceptOffer).
+            maybeRecordNameInheritance(tenantName: target.name,
+                                        slotId: s.stores[vi].id,
+                                        state: &s)
         }
         return (s, success)
+    }
+
+    // v9 Prompt 17 — Halvorsen-homage ledger beat. Scans state.ledger
+    // for prior .anchorDeparture entries; if the newly-signed tenant's
+    // name starts with any departed anchor's name, records a
+    // .nameInheritance ledger entry. Narrative payoff: "Halvorsen
+    // Hearing Aid Center" signs decades after the Halvorsen department
+    // store closed, and the ledger notes the lineage.
+    //
+    // Gated on anchorDepartedWings indirectly via the ledger lookup —
+    // only fires if an anchor closure has actually happened. Prefix
+    // match keeps the rule simple and predictable; the catalog's
+    // Halvorsen-Hearing-Aid-Center is the only current match but a
+    // future "Pemberton Family Dentistry" would also qualify.
+    private static func maybeRecordNameInheritance(
+        tenantName: String,
+        slotId: Int,
+        state: inout GameState
+    ) {
+        for entry in state.ledger {
+            guard case .anchorDeparture(let anchorName, _, _, _, _, _, _, _) = entry else { continue }
+            // Require at least one character past the anchor prefix so
+            // "Halvorsen" alone (if re-tenanted someday) doesn't self-
+            // homage — we want a different tenant using the old name.
+            guard tenantName != anchorName,
+                  tenantName.hasPrefix(anchorName) else { continue }
+            state.ledger.append(.nameInheritance(
+                newTenantName: tenantName,
+                inheritedFromAnchor: anchorName,
+                slotId: slotId,
+                year: state.year,
+                month: state.month
+            ))
+            return   // one inheritance beat per signing
+        }
     }
 }
 

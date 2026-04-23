@@ -219,6 +219,20 @@ enum LedgerEntry: Equatable, Codable {
         month: Int
     )
 
+    // v9 Prompt 17 — name-inheritance homage. Fires when a newly-
+    // signed tenant's name begins with a previously-departed anchor's
+    // name — e.g. "Halvorsen Hearing Aid Center" signing years after
+    // the Halvorsen anchor closed. Narrative beat: the mall remembers
+    // itself even through new tenants. Tappable: focuses the anchor's
+    // memorial boardedStorefront (if still present).
+    case nameInheritance(
+        newTenantName: String,
+        inheritedFromAnchor: String,
+        slotId: Int,
+        year: Int,
+        month: Int
+    )
+
     // Convenience for UI/test filtering.
     var isClosure: Bool {
         if case .closure = self { return true }
@@ -262,6 +276,10 @@ enum LedgerEntry: Equatable, Codable {
     }
     var isAttentionMilestone: Bool {
         if case .attentionMilestone = self { return true }
+        return false
+    }
+    var isNameInheritance: Bool {
+        if case .nameInheritance = self { return true }
         return false
     }
 }
@@ -354,6 +372,16 @@ extension LedgerEntry {
                 .filter { $0.name == name }
                 .max(by: { $0.id < $1.id })?.id
 
+        case .nameInheritance(_, let anchorName, _, _, _):
+            // Focus the departed anchor's memorial (boardedStorefront
+            // named after the anchor) so tapping the homage beat
+            // surfaces the old anchor's ghost. If the memorial has
+            // been sealed or converted to a display, the name still
+            // matches (we preserve artifact.name across those mutations).
+            return state.artifacts
+                .filter { $0.name == anchorName }
+                .max(by: { $0.id < $1.id })?.id
+
         case .offerDestruction, .artifactDestroyed, .envTransition:
             return nil
         }
@@ -378,6 +406,7 @@ extension LedgerEntry {
         case .envTransition(_, _, let y, _):                         return y
         case .anchorDeparture(_, _, _, _, _, _, let y, _):           return y
         case .attentionMilestone(_, _, _, _, let y, _):              return y
+        case .nameInheritance(_, _, _, let y, _):                    return y
         }
     }
 
@@ -394,6 +423,7 @@ extension LedgerEntry {
         case .envTransition(_, _, _, let m):                         return m
         case .anchorDeparture(_, _, _, _, _, _, _, let m):           return m
         case .attentionMilestone(_, _, _, _, _, let m):              return m
+        case .nameInheritance(_, _, _, _, let m):                    return m
         }
     }
 }

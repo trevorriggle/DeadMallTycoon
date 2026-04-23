@@ -100,6 +100,14 @@ enum TickEngine {
 
             if s.stores[i].lease > 0 { s.stores[i].lease -= 1 }
 
+            // v9 Prompt 17 — immuneToTrafficClosure tenants (specialty
+            // tier + kiosk holdouts) skip the traffic-based hardship /
+            // lease-non-renewal paths entirely. They pay rent on a long
+            // lease and just... stay. Hardship still decays on reset so
+            // a specialty that somehow got hardship from another path
+            // doesn't accumulate.
+            let immune = s.stores[i].immuneToTrafficClosure
+
             // hardship based on traffic against (thresh*2.2), scaled by rent multiplier
             var threshold = Double(s.stores[i].threshold) * 2.2
             if s.stores[i].rentMultiplier > 1.2 { threshold *= 1.2 }
@@ -111,22 +119,39 @@ enum TickEngine {
             // that one wing has been gutted.
             let wingMult = s.wingTrafficMultipliers[s.stores[i].wing] ?? 1.0
             let effectiveTr = Double(tr) * wingMult
-            if effectiveTr < threshold {
-                s.stores[i].hardship += 1
-                if s.stores[i].hardship >= 4 { s.stores[i].closing = true }
+            if !immune {
+                if effectiveTr < threshold {
+                    s.stores[i].hardship += 1
+                    if s.stores[i].hardship >= 4 { s.stores[i].closing = true }
+                } else {
+                    s.stores[i].hardship = max(0, s.stores[i].hardship - 1)
+                }
             } else {
+                // Immune: hardship still decays but never accumulates.
                 s.stores[i].hardship = max(0, s.stores[i].hardship - 1)
             }
 
             // lease expiry: traffic-pressured non-renewal or spontaneous leave, else renew 12mo
+            // v9 Prompt 17 — immune tenants auto-renew their lease at
+            // their original lease length so specialty leases stay long
+            // (3-5 years per the catalog) without drifting down toward
+            // 12 months on renewal.
             if s.stores[i].lease == 0 && !s.stores[i].closing && !s.stores[i].leaving {
-                let pressured = Double(tr) < Double(s.stores[i].threshold) * 3.0
-                if pressured && rng.chance(0.6) {
-                    s.stores[i].leaving = true
-                } else if rng.chance(0.3) {
-                    s.stores[i].leaving = true
+                if immune {
+                    // Re-up at the tenant's original lease length. Lease
+                    // field is the only info we have about intended
+                    // term; use the catalog target's lease if findable,
+                    // else a conservative 36 months.
+                    s.stores[i].lease = 36
                 } else {
-                    s.stores[i].lease = 12
+                    let pressured = Double(tr) < Double(s.stores[i].threshold) * 3.0
+                    if pressured && rng.chance(0.6) {
+                        s.stores[i].leaving = true
+                    } else if rng.chance(0.3) {
+                        s.stores[i].leaving = true
+                    } else {
+                        s.stores[i].lease = 12
+                    }
                 }
             }
         }

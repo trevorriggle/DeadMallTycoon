@@ -626,6 +626,47 @@ enum Tenants {
                      approachCost:  200, requiredStates: [.dying, .dead]),
         TenantTarget(name: "Vape Shop",         tier: .sketchy,  rent:  180, traffic:  8, threshold:  0, lease: 12,
                      approachCost:  100, requiredStates: [.struggling, .dying, .dead]),
+
+        // v9 Prompt 17 — specialty-tier professional services. Traffic-
+        // independent; long leases (48 months). Rare at thriving; more
+        // common as the mall declines and retail becomes unviable.
+        // immuneToTrafficClosure = true — hardship from low traffic and
+        // pressured lease non-renewal both bypass. thoughtTriggers live
+        // per-tenant in future authoring passes; mechanics are here.
+        TenantTarget(name: "Delaware Foot & Ankle", tier: .specialty, rent: 3200, traffic: 10, threshold: 5, lease: 48,
+                     approachCost: 2500, requiredStates: [.fading, .struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+        TenantTarget(name: "Beckett & Associates Tax Prep", tier: .specialty, rent: 2800, traffic: 10, threshold: 5, lease: 48,
+                     approachCost: 2200, requiredStates: [.fading, .struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+        TenantTarget(name: "Halvorsen Hearing Aid Center", tier: .specialty, rent: 3500, traffic: 10, threshold: 5, lease: 60,
+                     approachCost: 3000, requiredStates: [.struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+        TenantTarget(name: "Delaware Allergy Partners", tier: .specialty, rent: 3000, traffic: 10, threshold: 5, lease: 48,
+                     approachCost: 2400, requiredStates: [.fading, .struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+        TenantTarget(name: "Crestwood Financial Advisors", tier: .specialty, rent: 3000, traffic: 10, threshold: 5, lease: 48,
+                     approachCost: 2400, requiredStates: [.fading, .struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+        TenantTarget(name: "The Delaware Business Library", tier: .specialty, rent: 2500, traffic: 10, threshold: 5, lease: 60,
+                     approachCost: 1800, requiredStates: [.struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+
+        // v9 Prompt 17 — quirky kiosk holdouts. Same immunity mechanism
+        // as specialty but at kiosk-tier rent/scale. ENDGAME.md names
+        // these specifically: "a pretzel kiosk, or a nail salon, or a
+        // pay phone repair shop" — persistent, character-driven, low
+        // margin, long-lived. The starting mall's Auntie Rae's is
+        // flagged in StartingMall.storeSeeds.
+        TenantTarget(name: "Sylvan Pay Phone Repair", tier: .kiosk, rent: 250, traffic: 8, threshold: 0, lease: 36,
+                     approachCost: 200, requiredStates: [.struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+        TenantTarget(name: "Nails by Dora", tier: .kiosk, rent: 400, traffic: 15, threshold: 5, lease: 36,
+                     approachCost: 350, requiredStates: [.fading, .struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
+        TenantTarget(name: "Castle Key & Lock", tier: .kiosk, rent: 300, traffic: 8, threshold: 0, lease: 36,
+                     approachCost: 250, requiredStates: [.struggling, .dying, .dead],
+                     immuneToTrafficClosure: true),
     ]
 
     // v8: offerPool()
@@ -647,13 +688,68 @@ enum Tenants {
         TenantOffer(name: "Pawn Outlet", tier: .sketchy, rent: 220, traffic: 10, threshold: 0, lease: 12, pitch: "Cash in hand."),
     ]
 
+    // v9 Prompt 17 — combined "long-lived" offer pool: specialty tier +
+    // kiosk holdouts. Both categories share the immuneToTrafficClosure
+    // flag and the same "rare in thriving, common in dying/dead"
+    // offer-rate pattern. Pitches are short single lines; authoring
+    // later can replace them.
+    private static let longLived: [TenantOffer] = [
+        TenantOffer(name: "Delaware Foot & Ankle", tier: .specialty, rent: 3200, traffic: 10, threshold: 5, lease: 48,
+                    pitch: "Podiatry clinic. Their patients come by appointment.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "Beckett & Associates Tax Prep", tier: .specialty, rent: 2800, traffic: 10, threshold: 5, lease: 48,
+                    pitch: "Seasonal spike. Quiet the rest of the year.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "Halvorsen Hearing Aid Center", tier: .specialty, rent: 3500, traffic: 10, threshold: 5, lease: 60,
+                    pitch: "Named after the old anchor. They know.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "Delaware Allergy Partners", tier: .specialty, rent: 3000, traffic: 10, threshold: 5, lease: 48,
+                    pitch: "Specialty medical. Their own clientele.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "Crestwood Financial Advisors", tier: .specialty, rent: 3000, traffic: 10, threshold: 5, lease: 48,
+                    pitch: "Wealth management. Discreet clientele.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "The Delaware Business Library", tier: .specialty, rent: 2500, traffic: 10, threshold: 5, lease: 60,
+                    pitch: "Quiet. Reliable. Rarely visited.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "Sylvan Pay Phone Repair", tier: .kiosk, rent: 250, traffic: 8, threshold: 0, lease: 36,
+                    pitch: "They still get parts somehow.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "Nails by Dora", tier: .kiosk, rent: 400, traffic: 15, threshold: 5, lease: 36,
+                    pitch: "Regulars for twenty years.",
+                    immuneToTrafficClosure: true),
+        TenantOffer(name: "Castle Key & Lock", tier: .kiosk, rent: 300, traffic: 8, threshold: 0, lease: 36,
+                    pitch: "Cuts keys. Duplicates fobs. Won't leave.",
+                    immuneToTrafficClosure: true),
+    ]
+
+    // v9 Prompt 17 — state-keyed offer pools now include specialty/
+    // holdout entries weighted appropriately. Thriving gets none (pool
+    // entirely traditional retail); fading gets a sprinkle; dying/dead
+    // get proportionally more, reflecting "the mall becomes less
+    // attractive to traditional retail, so specialty service
+    // businesses become the only takers." Exact rates shift with
+    // pool-multiplier choices; playtesting will tune.
     static func offerPool(for state: MallState) -> [TenantOffer] {
         switch state {
-        case .thriving:   return good + good + mid
-        case .fading:     return mid + mid + good + sketchy
-        case .struggling: return sketchy + sketchy + mid + desperate
-        case .dying:      return desperate + desperate + sketchy
-        case .dead:       return desperate
+        case .thriving:
+            // ~0% specialty — thriving mall has healthy retail pipeline.
+            return good + good + mid
+        case .fading:
+            // ~8% specialty — first hints that traditional retail is
+            // less interested.
+            return mid + mid + good + sketchy + longLived.prefix(1)
+        case .struggling:
+            // ~15% specialty mix — retail offers thinning, services
+            // picking up the slack.
+            return sketchy + sketchy + mid + desperate + Array(longLived.prefix(2))
+        case .dying:
+            // ~30% specialty mix — services dominate the offer flow.
+            return desperate + desperate + sketchy + Array(longLived.prefix(3))
+        case .dead:
+            // ~50% specialty mix — at dead, any new sign is specialty-
+            // or-desperate. Only takers.
+            return desperate + Array(longLived.prefix(3))
         }
     }
 }

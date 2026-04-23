@@ -60,6 +60,11 @@ enum StartingMall {
         let traffic: Int
         let threshold: Int
         let lease: Int
+        // v9 Prompt 17 — flagged seeds become Stores with
+        // immuneToTrafficClosure = true. Used for the kiosk-tier
+        // "quirky holdouts" (Auntie Rae's is the starting mall's one
+        // such entry — ENDGAME.md's "pretzel kiosk for 14 years").
+        var immune: Bool = false
     }
 
     private static let storeSeeds: [StoreSeed] = [
@@ -78,7 +83,11 @@ enum StartingMall {
         StoreSeed(name: "Shadecraft",       tier: .kiosk,    rent:  300, traffic:  20, threshold:  12, lease: 24),
         StoreSeed(name: "",                   tier: .vacant,   rent:    0, traffic:   0, threshold:   0, lease:  0),
         StoreSeed(name: "",                   tier: .vacant,   rent:    0, traffic:   0, threshold:   0, lease:  0),
-        StoreSeed(name: "Auntie Rae's",      tier: .kiosk,    rent:  400, traffic:  40, threshold:  20, lease: 18),
+        // v9 Prompt 17 — Auntie Rae's flagged as a quirky holdout:
+        // immuneToTrafficClosure=true. Mechanically, this is the
+        // "pretzel kiosk that survived 14 years" from ENDGAME.md.
+        StoreSeed(name: "Auntie Rae's",      tier: .kiosk,    rent:  400, traffic:  40, threshold:  20, lease: 36,
+                  immune: true),
         StoreSeed(name: "Vape Shop",          tier: .sketchy,  rent:  200, traffic:   8, threshold:   0, lease: 18),
         StoreSeed(name: "Pemberton",           tier: .anchor,   rent: 4000, traffic: 260, threshold: 130, lease: 96),
     ]
@@ -130,7 +139,8 @@ enum StartingMall {
                 closing: false, leaving: false,
                 monthsOccupied: 0, monthsVacant: 0,
                 promotionActive: false,
-                position: pos
+                position: pos,
+                immuneToTrafficClosure: seed.immune
             )
         }
     }
