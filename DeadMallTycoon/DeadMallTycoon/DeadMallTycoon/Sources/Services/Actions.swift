@@ -239,6 +239,9 @@ enum ArtifactActions {
 
     // v8: beginPlacement / placementClickHandler
     // v9 Prompt 3 — type is any ArtifactType with catalog cost > 0.
+    // v9 Prompt 9 Phase A — emits .artifactCreated after append so the
+    // player's Acquire-tab placements show up in the ledger with origin
+    // .playerAction("placed").
     static func place(type: ArtifactType,
                       at point: (x: Double, y: Double),
                       _ state: GameState) -> GameState {
@@ -254,14 +257,23 @@ enum ArtifactActions {
         if point.y < 300 || point.y > 1100 { return s }
         s.cash -= info.cost
         let newId = (s.artifacts.map(\.id).max() ?? 0) + 1
+        let origin: ArtifactOrigin = .playerAction("placed")
         s.artifacts.append(ArtifactFactory.make(
             id: newId,
             type: type,
             name: info.name,
-            origin: .playerAction("placed"),
+            origin: origin,
             yearCreated: s.year,
             x: point.x - info.size.width  / 2,
             y: point.y - info.size.height / 2
+        ))
+        s.ledger.append(.artifactCreated(
+            artifactId: newId,
+            name: info.name,
+            type: type,
+            origin: origin,
+            year: s.year,
+            month: s.month
         ))
         s.placingArtifactType = nil
         return s

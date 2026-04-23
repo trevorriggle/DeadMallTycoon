@@ -204,6 +204,12 @@ final class GameViewModel {
     //   everything else  → 1.0×
     // The Prompt-6 thoughtReferenceCount is NOT scaled — it stays a raw
     // count ("referenced in N thoughts" reads honestly).
+    //
+    // v9 Prompt 9 Phase A — emit .attentionMilestone when the post-
+    // increment count lands exactly on a threshold in
+    // LedgerEntry.attentionMilestoneThresholds. Each threshold fires at
+    // most once per artifact because the count is monotonic and each
+    // threshold is a single integer (count == 10, == 50, …).
     func recordThoughtFired(artifactId: Int, cohort: AgeCohort) {
         guard let idx = state.artifacts.firstIndex(where: { $0.id == artifactId }) else { return }
         let typeRate = state.artifacts[idx].type.memoryAccrualRate
@@ -212,6 +218,18 @@ final class GameViewModel {
                       * typeRate
         state.artifacts[idx].memoryWeight += increment
         state.artifacts[idx].thoughtReferenceCount += 1
+
+        let newCount = state.artifacts[idx].thoughtReferenceCount
+        if LedgerEntry.attentionMilestoneThresholds.contains(newCount) {
+            state.ledger.append(.attentionMilestone(
+                artifactId: state.artifacts[idx].id,
+                name: state.artifacts[idx].name,
+                type: state.artifacts[idx].type,
+                threshold: newCount,
+                year: state.year,
+                month: state.month
+            ))
+        }
     }
 
     // v9 — toast queue helpers. Pure state mutators; the view layer

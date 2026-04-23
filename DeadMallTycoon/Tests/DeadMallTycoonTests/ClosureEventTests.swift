@@ -64,18 +64,23 @@ final class ClosureEventEmissionTests: XCTestCase {
         XCTAssertNotNil(toast.subtitle, "closure flavor line lives in subtitle")
     }
 
-    func testAnchorClosureLedgerEntryRecordsAnchorTier() {
+    // v9 Prompt 9 Phase A — anchor closures route to .anchorDeparture, not
+    // .closure. The departure entry carries the wing, traffic delta,
+    // coincident closure names, years open, and slot id; non-anchor
+    // closures continue to emit .closure.
+    func testAnchorClosureEmitsAnchorDepartureNotClosure() {
         var s = StartingMall.initialState()
         s = plantTenant(s, at: 1, name: "Halvorsen", tier: .anchor)
         let idx = s.stores.firstIndex(where: { $0.id == 1 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
 
-        guard case .closure(let ev) = s.ledger.last! else {
-            return XCTFail("expected .closure ledger entry")
-        }
-        XCTAssertTrue(ev.isAnchor)
-        XCTAssertEqual(ev.tenantTier, .anchor)
+        guard case .anchorDeparture(let name, _, _, _, _, let slotId, _, _) = s.ledger.last!
+        else { return XCTFail("expected .anchorDeparture ledger entry") }
+        XCTAssertEqual(name, "Halvorsen")
+        XCTAssertEqual(slotId, 1)
+        XCTAssertFalse(s.ledger.contains { $0.isClosure },
+                       "anchor vacate must NOT emit .closure")
     }
 
     func testYearsOpenDerivedFromMonthsOccupied() {

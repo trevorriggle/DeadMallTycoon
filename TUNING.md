@@ -97,6 +97,10 @@ Six-state visual + audio state machine keyed to mall occupancy (plus a 60-month 
 - `EnvironmentTuning.ghostMallBlackoutDuration = 0.4` / `ghostMallBlackoutCadence = 5.0` seconds — longer periodic full-corridor dimming, ghostMall-only, on top of the per-tick flicker. (Prompt 8)
 - `EnvironmentTuning.decayAgeTierMonths = 24` months — decay overlay texture is regenerated when `(EnvironmentState, ageMonths / 24)` changes. A year-3 struggling mall and a year-15 struggling mall get materially different wear patterns. (Prompt 8)
 
+## Ledger
+
+- `LedgerEntry.attentionMilestoneThresholds = [10, 50, 100, 500, 1000]` — thoughtReferenceCount values that emit an `.attentionMilestone` ledger entry. Sparse, order-of-magnitude spacing so late-run artifacts (fountain, kugel) still produce legible beats without flooding the ledger. Each threshold fires at most once per artifact. (Prompt 9 Phase A)
+
 ## Visual
 
 - Halo pulse: ±8% alpha, ±3% scale, 3.5s period. (Prompt 4)

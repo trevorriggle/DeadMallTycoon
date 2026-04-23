@@ -10,6 +10,12 @@ enum TickEngine {
         var s = state
         if s.gameover || s.paused || !s.started { return s }
 
+        // v9 Prompt 9 Phase A — capture environmental state at tick start
+        // (before any mutation). Compared against post-tick state at the
+        // end of the function to emit .envTransition when the mall crosses
+        // a band (thriving→fading→…→dead→ghostMall, or any recovery).
+        let prevEnv = EnvironmentState.from(state)
+
         // 1. advance clock — v8: G.m++; if(G.m>=12){G.m=0;G.y++}
         s.month += 1
         if s.month >= 12 { s.month = 0; s.year += 1 }
@@ -38,6 +44,20 @@ enum TickEngine {
         }
 
         // 4. store updates — v8: G.stores.forEach(s => ...)
+
+        // v9 Prompt 9 Phase A — pre-scan the closure set for anchor-cascade
+        // context. A closure fires this tick when the pre-loop store has
+        // tier != vacant, wing not closed, and closing || leaving already
+        // true (set by last tick's hardship / lease logic). The pre-scan
+        // gives each vacateSlot call the list of OTHER tenant names closing
+        // alongside it so .anchorDeparture can record coincident names.
+        let closuresThisTick: [String] = s.stores.compactMap { store in
+            guard store.tier != .vacant else { return nil }
+            guard !Mall.isWingClosed(store.wing, in: s) else { return nil }
+            guard store.closing || store.leaving else { return nil }
+            return store.name
+        }
+
         for i in s.stores.indices {
             if s.stores[i].tier == .vacant {
                 s.stores[i].monthsVacant += 1
@@ -51,12 +71,19 @@ enum TickEngine {
             // spawn a memorial boardedStorefront artifact. Mechanics unchanged —
             // TenantLifecycle does the same Store.vacant(...) transition inside
             // and appends to state.artifacts.
+            // v9 Prompt 9 Phase A — pass the coincident-closure names from the
+            // pre-scan above (minus self) so .anchorDeparture can narrate the
+            // cascade.
             if s.stores[i].closing {
-                s = TenantLifecycle.vacateSlot(storeIndex: i, state: s)
+                let others = closuresThisTick.filter { $0 != s.stores[i].name }
+                s = TenantLifecycle.vacateSlot(
+                    storeIndex: i, state: s, coincidentClosureNames: others)
                 continue
             }
             if s.stores[i].leaving {
-                s = TenantLifecycle.vacateSlot(storeIndex: i, state: s)
+                let others = closuresThisTick.filter { $0 != s.stores[i].name }
+                s = TenantLifecycle.vacateSlot(
+                    storeIndex: i, state: s, coincidentClosureNames: others)
                 continue
             }
 
@@ -99,8 +126,21 @@ enum TickEngine {
             let decayChance = (0.02 + Double(s.artifacts[i].condition) * 0.01) * janitorialMult
 
             if s.artifacts[i].condition < 4 && rng.chance(decayChance) {
+                // v9 Prompt 9 Phase A — capture from-condition for the ledger
+                // entry, increment, then emit. One entry per increment
+                // (0→1, 1→2, 2→3, 3→4).
+                let fromCondition = s.artifacts[i].condition
                 s.artifacts[i].condition += 1
                 s.artifacts[i].monthsAtCondition = 0
+                s.ledger.append(.decayTransition(
+                    artifactId: s.artifacts[i].id,
+                    name: s.artifacts[i].name,
+                    type: s.artifacts[i].type,
+                    fromCondition: fromCondition,
+                    toCondition: s.artifacts[i].condition,
+                    year: s.year,
+                    month: s.month
+                ))
                 if s.artifacts[i].condition >= 4
                     && !s.artifacts[i].hazard
                     && rng.chance(0.4) {
@@ -183,6 +223,20 @@ enum TickEngine {
 
         // 10. maybe a decision (tenant offer or flavor event) — v8: maybeDecision()
         s = EventDeck.maybeDecision(s, rng: &rng)
+
+        // 10.5 environmental transition — v9 Prompt 9 Phase A.
+        // Compare the post-tick EnvironmentState against prevEnv captured at
+        // top. Emit one .envTransition entry if the mall crossed a band.
+        // Placed BEFORE the bankruptcy short-circuit so the ledger still
+        // captures a state change that happened in the same tick the mall
+        // went under.
+        let newEnv = EnvironmentState.from(s)
+        if newEnv != prevEnv {
+            s.ledger.append(.envTransition(
+                from: prevEnv, to: newEnv,
+                year: s.year, month: s.month
+            ))
+        }
 
         // 11. bankruptcy — v8: if(G.debt>=DEBT_CEIL) endGame('bankruptcy')
         if s.debt >= GameConstants.debtCeiling {
