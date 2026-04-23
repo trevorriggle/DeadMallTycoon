@@ -132,14 +132,26 @@ final class MusicService: NSObject {
     private func loadTrackPool() {
         for (env, folder) in Self.folderByState {
             var urls: [URL] = []
-            let subdir = "audio/music/\(folder)"
-            for ext in Self.acceptedExtensions {
-                if let found = Bundle.main.urls(
-                    forResourcesWithExtension: ext,
-                    subdirectory: subdir
-                ) {
-                    urls.append(contentsOf: found)
+            // Try several subdirectory layouts. Xcode's
+            // PBXFileSystemSynchronizedRootGroup may preserve the full
+            // path, only the leaf folder, or flatten entirely — which
+            // of those wins depends on the sync configuration and isn't
+            // documented clearly. Try each in turn; first non-empty wins.
+            let subdirs = [
+                "audio/music/\(folder)",   // full disk path
+                "music/\(folder)",          // audio/ stripped
+                folder,                      // only the leaf folder
+            ]
+            for subdir in subdirs {
+                for ext in Self.acceptedExtensions {
+                    if let found = Bundle.main.urls(
+                        forResourcesWithExtension: ext,
+                        subdirectory: subdir
+                    ), !found.isEmpty {
+                        urls.append(contentsOf: found)
+                    }
                 }
+                if !urls.isEmpty { break }
             }
             trackPool[env] = urls
         }
@@ -149,11 +161,31 @@ final class MusicService: NSObject {
     // are actually being picked up by Bundle.main. If a state shows `0`,
     // Xcode didn't bundle the subdirectory (or the files aren't in the
     // bundle at all) and the pool is empty — service will stay silent.
+    //
+    // Also enumerates ALL audio files in the bundle (no subdirectory
+    // filter) so we can see WHERE Xcode actually put them if our
+    // subdirectory probes missed. Once this ships one good reading,
+    // the enumeration block can be removed.
     private func logPoolDiagnostic() {
         let counts = Self.folderByState.map { (env, _) in
             "\(env.rawValue):\(trackPool[env]?.count ?? 0)"
         }.joined(separator: " ")
         print("MusicService: loaded pools — \(counts)")
+
+        print("MusicService DEBUG: bundle audio inventory:")
+        for ext in Self.acceptedExtensions {
+            if let all = Bundle.main.urls(
+                forResourcesWithExtension: ext,
+                subdirectory: nil
+            ), !all.isEmpty {
+                for url in all {
+                    let rel = url.path.replacingOccurrences(
+                        of: Bundle.main.bundlePath, with: "<bundle>"
+                    )
+                    print("  .\(ext): \(rel)")
+                }
+            }
+        }
     }
 
     private func targetVolume(for env: EnvironmentState) -> Float {
