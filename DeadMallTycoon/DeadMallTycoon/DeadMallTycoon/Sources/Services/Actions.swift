@@ -275,6 +275,10 @@ enum ArtifactActions {
             year: s.year,
             month: s.month
         ))
+        // v9 Prompt 13 — curation action burst. Scales with env state;
+        // zero at thriving/fading, up to 50 at ghostMall. See
+        // Scoring.actionBurst for the curve.
+        s.score += Scoring.actionBurst(for: s)
         s.placingArtifactType = nil
         return s
     }
@@ -346,6 +350,10 @@ enum ArtifactActions {
             ArtifactFactory.defaultThoughtTriggers(for: .sealedStorefront)
 
         s.ledger.append(entry)
+        // v9 Prompt 13 — curation action burst. Sealing is a terminal
+        // curatorial choice; gets the same burst as placement and display
+        // conversion.
+        s.score += Scoring.actionBurst(for: s)
         return s
     }
 
@@ -374,6 +382,10 @@ enum ArtifactActions {
         s.artifacts[idx].thoughtTriggers = content.thoughtPool
 
         s.ledger.append(entry)
+        // v9 Prompt 13 — curation action burst. Converting a boarded
+        // memorial to an active display space is the canonical curation
+        // move; bursts scale with state.
+        s.score += Scoring.actionBurst(for: s)
         return s
     }
 
@@ -382,6 +394,10 @@ enum ArtifactActions {
     // memory accrual back to 1.0×. Re-repurposing after revert picks a
     // fresh random content — the prior displayContent is intentionally
     // forgotten.
+    //
+    // v9 Prompt 13 — explicitly NO action burst on revert. Un-curation
+    // is regression-free (state + accumulated memory preserved) but not
+    // rewarded. Bursts are for CURATING, not un-curating.
     static func revertToBoarded(artifactId: Int, _ state: GameState) -> GameState {
         var s = state
         guard let idx = s.artifacts.firstIndex(where: { $0.id == artifactId }) else { return s }

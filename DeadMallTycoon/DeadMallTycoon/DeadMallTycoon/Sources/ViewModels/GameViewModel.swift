@@ -225,6 +225,10 @@ final class GameViewModel {
                       * typeRate
         state.artifacts[idx].memoryWeight += increment
         state.artifacts[idx].thoughtReferenceCount += 1
+        // v9 Prompt 13 — reset decay counter. Any thought fire keeps the
+        // artifact "lived-in"; TickEngine's memory decay only kicks in
+        // once 6+ ticks pass without a hit.
+        state.artifacts[idx].monthsSinceLastThought = 0
 
         let newCount = state.artifacts[idx].thoughtReferenceCount
         if LedgerEntry.attentionMilestoneThresholds.contains(newCount) {

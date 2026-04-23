@@ -7,6 +7,20 @@ Update as part of any prompt that introduces or modifies a tunable value.
 
 - `ScoringTuning.baseVacancyRate = 2.0` — vacancy:memory ratio lever. Target 65:35 to 75:25 vacancy-favored at month 36. Raise if memory dominates; lower if memory is invisible. (Prompt 5)
 - `Artifact.decayMultiplier` — curve: `1.0 + condition × 0.25`, clamped [1.0, 2.0]. Amplifies memoryScore as artifacts decay. (Prompt 5)
+- `ScoringTuning.stateMemoryMultiplier` — per-env-state multiplier on the memory substrate. Memory becomes more rewarded as the mall ages. (Prompt 13)
+    | state | multiplier |
+    |---|---|
+    | thriving | 1.0 |
+    | fading | 1.0 |
+    | struggling | 1.2 |
+    | dying | 1.5 |
+    | dead | 1.8 |
+    | ghostMall | 2.0 |
+- `ScoringTuning.actionBurstBase = 50` — base value for curation action bursts. Actual burst = `Int(actionBurstBase × max(0, stateMemoryMultiplier − 1.0))`. Zero at thriving/fading, 10 / 25 / 40 / 50 at struggling / dying / dead / ghostMall. Bursts fire on `ArtifactActions.sealStorefront`, `.place`, and `.repurposeAsDisplay`. `revertToBoarded` is score-neutral (un-curation). (Prompt 13)
+- `ScoringTuning.memoryDecayMonths = 6` — months an artifact can go without a thought before its `memoryWeight` begins to decay. Reset by `GameViewModel.recordThoughtFired`; incremented each tick by `TickEngine`. (Prompt 13)
+- `ScoringTuning.memoryDecayRatePerMonth = 0.05` — multiplicative fractional loss per tick once decay kicks in. Weight asymptotes toward zero but never reaches it; halves roughly every 14 months of uninterrupted neglect. (Prompt 13)
+
+**Gate split (Prompt 13)**: `Scoring.monthlyScore` evaluates vacancy and memory as separate substrates with different gates. Vacancy keeps the v5 strict gate (`activeTenants >= 2 AND currentTraffic >= 30`) — "can't coast on emptiness" emerges naturally as the mall shrinks past 2 tenants. Memory relaxes to `activeTenants >= 1` and bypasses the hard traffic gate (still damped by `lifeMult` at low traffic) so the ENDGAME fantasy works: one tenant remains, the mall still scores from accumulated memory. Fully empty mall (`activeTenants < 1`) returns 0 regardless of memory. See `Scoring.swift` design-note block for the full formula.
 
 ## Memory weight
 

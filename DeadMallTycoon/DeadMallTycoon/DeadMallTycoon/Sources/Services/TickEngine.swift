@@ -149,6 +149,24 @@ enum TickEngine {
         // Decorations) are subject to decay. Ambient / memorial types
         // (boardedStorefront, sealedEntrance, emptyFoodCourt, custom) are
         // frozen — condition is set at creation and doesn't advance here.
+        // v9 Prompt 13 — memory weight decay. Applies to ALL artifacts
+        // (not just player-placeable ones — memorial artifacts decay too
+        // if nobody thinks about them). Counter is incremented every
+        // tick; once it crosses memoryDecayMonths (6), memoryWeight
+        // multiplicatively decays by memoryDecayRatePerMonth (5%) per
+        // tick. GameViewModel.recordThoughtFired resets the counter to 0
+        // so any visitor thought on an artifact refreshes its "lived-in"
+        // status. Decay is multiplicative so weight asymptotes toward
+        // zero but never reaches exactly zero until reset.
+        for i in s.artifacts.indices {
+            s.artifacts[i].monthsSinceLastThought += 1
+            if s.artifacts[i].monthsSinceLastThought >= Scoring.ScoringTuning.memoryDecayMonths {
+                let retention = 1.0 - Scoring.ScoringTuning.memoryDecayRatePerMonth
+                s.artifacts[i].memoryWeight = max(0,
+                    s.artifacts[i].memoryWeight * retention)
+            }
+        }
+
         let janitorialMult = s.activeStaff.janitorial ? 0.5 : 1.0
         for i in s.artifacts.indices {
             guard ArtifactCatalog.info(s.artifacts[i].type).cost > 0 else { continue }

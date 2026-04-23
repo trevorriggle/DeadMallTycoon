@@ -152,6 +152,14 @@ struct Artifact: Identifiable, Equatable, Codable {
     // memorial-cost line ("referenced in N visitor thoughts").
     var thoughtReferenceCount: Int = 0
 
+    // v9 Prompt 13 — memory weight decay tracker. Incremented each
+    // month by TickEngine; reset to 0 by GameViewModel.recordThoughtFired.
+    // When the counter reaches ScoringTuning.memoryDecayMonths (6),
+    // memoryWeight begins losing ScoringTuning.memoryDecayRatePerMonth
+    // (5%) per tick. Counterweights accumulation: the player has to
+    // keep the mall lived-in to keep scoring, not just old.
+    var monthsSinceLastThought: Int = 0
+
     // v9 Prompt 7 — display content variant, populated ONLY when type is
     // .displaySpace. ArtifactActions.repurposeAsDisplay sets it at conversion
     // time (caller passes a DisplayContent picked via rng); revertToBoarded
