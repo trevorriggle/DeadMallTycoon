@@ -64,6 +64,21 @@ Update as part of any prompt that introduces or modifies a tunable value.
 - Per-type pixel dimensions live in `Data/Catalog.swift` via `ArtifactCatalog.info(_:).size`. Sizes are in world / CSS coords; scene renders `.aspectFit` to device.
 - Landmark items (kugel ball, fountain, pay phone bank, arcade cabinet, photo booth, coin horse, conversation pit, benches, directory board) rescaled 1.4×–1.8× post-Prompt-9 so they read as monuments against the 100×90 storefront scale. Texture items (planter, terrazzo, brass railing, cracked tile) and ceiling items (skylight, flickering fluorescent, emergency exit sign, stale christmas, stained tile) unchanged — small is correct for those.
 
+## Anchor departure cascade
+
+Triggered once per wing when that wing's anchor vacates (Prompt 10). All effects are permanent — the wing doesn't heal when/if re-tenanted.
+
+- **Wing traffic multiplier**: `0.75` — in-wing non-anchor tenants treat mall-wide traffic as 75% for hardship calc. Scoped to the hardship comparison only; mall-wide `rawTraffic` and visitor motion are unaffected. Set in `state.wingTrafficMultipliers[wing]` by `TenantLifecycle.applyAnchorDepartureCascade`. (Prompt 10 Phase A)
+- **Hardship stagger**: `3 months` — in-wing non-anchor tenants each receive `hardship += 1` on the next 3 consecutive ticks after anchor departure. Countdown in `state.pendingWingHardshipMonths[wing]`, consumed in `TickEngine` step 4.5 (after the main store loop, before artifact decay). Cascade-induced closings trip on the NEXT tick, reinforcing the staggered unraveling feel. (Prompt 10 Phase A)
+- **Wing env-state offset**: `+1 band` — the wing's `EnvironmentState` drops one step toward `ghostMall` independently of the mall-wide state. Applied via `state.wingEnvOffsets[wing]`; resolved through `Mall.wingEnvironmentState(for:in:)`. Phase A ships the DATA only; scene rendering consumes this in Phase C. (Prompt 10 Phase A)
+- **Cluster artifacts**: three ambient artifacts spawn in the wing alongside the `boardedStorefront` memorial. Positions are hand-picked per wing (deterministic; tests pin them) in `TenantLifecycle.clusterPositions`.
+    | artifact | north wing | south wing |
+    |---|---|---|
+    | `stoppedEscalator` | (230, 260) | (930, 1140) |
+    | `skylight` @ condition 3 | (550, 130) | (650, 1270) |
+    | `lostSignage` | (270, 700) | (900, 700) |
+- **Idempotency**: `state.anchorDepartedWings: Set<Wing>` flags fired cascades. Re-closing an anchor on a flagged wing does NOT re-fire the cascade — no double-cluster, no counter reset.
+
 ## Entrances
 
 - Open-door traffic multiplier — applied in `Economy.entranceTrafficMultiplier(openEntranceCount:)`. Diminishing-returns curve; two open is the baseline that matches the pre-Prompt-6.5 two-wing layout, so rent / hardship tuning carries over unchanged. (Prompt 6.5)

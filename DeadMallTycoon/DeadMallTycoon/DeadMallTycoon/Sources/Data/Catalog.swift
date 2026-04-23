@@ -493,6 +493,38 @@ enum ArtifactCatalog {
                     "[placeholder: empty food court thought 3]",
                 ],
                 pathingClass: .floor)
+        case .stoppedEscalator:
+            // v9 Prompt 10 — spawned as part of anchor departure cascade.
+            // Vertical obstacle (visitors route around), positioned at the
+            // wing entry adjacent to the departed anchor.
+            return ArtifactTypeInfo(
+                type: .stoppedEscalator, name: "Stopped Escalator",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 40, height: 80),
+                cost: 0, repair: 0,
+                description: "Steps frozen mid-descent.",
+                defaultTriggers: [
+                    "[placeholder: stopped escalator thought 1]",
+                    "[placeholder: stopped escalator thought 2]",
+                    "[placeholder: stopped escalator thought 3]",
+                ],
+                pathingClass: .obstacle)
+        case .lostSignage:
+            // v9 Prompt 10 — spawned as part of anchor departure cascade.
+            // Flat on the corridor floor — the anchor's removed sign,
+            // left leaning against a wall or dropped in the corridor.
+            return ArtifactTypeInfo(
+                type: .lostSignage, name: "Lost Signage",
+                baseMult: 0, ruinMult: 0,
+                size: CGSize(width: 30, height: 20),
+                cost: 0, repair: 0,
+                description: "The letters outlived the logo.",
+                defaultTriggers: [
+                    "[placeholder: lost signage thought 1]",
+                    "[placeholder: lost signage thought 2]",
+                    "[placeholder: lost signage thought 3]",
+                ],
+                pathingClass: .floor)
         case .custom:
             return ArtifactTypeInfo(
                 type: .custom, name: "Artifact",

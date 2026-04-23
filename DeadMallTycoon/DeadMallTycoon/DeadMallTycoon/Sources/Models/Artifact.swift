@@ -73,6 +73,8 @@ enum ArtifactType: String, Codable, CaseIterable, Equatable {
     case displaySpace        // v9 Prompt 7 — player converted memorial to non-commercial display
     case sealedEntrance      // v9 Prompt 1 — reserved; not spawned in mechanics yet
     case emptyFoodCourt      // v9 Prompt 1 — reserved
+    case stoppedEscalator    // v9 Prompt 10 — spawned as part of anchor departure cascade
+    case lostSignage         // v9 Prompt 10 — spawned as part of anchor departure cascade
     case custom              // escape hatch for scripted / event content
 }
 

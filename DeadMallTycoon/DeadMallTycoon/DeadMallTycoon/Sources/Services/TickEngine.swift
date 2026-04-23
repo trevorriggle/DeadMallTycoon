@@ -92,7 +92,15 @@ enum TickEngine {
             // hardship based on traffic against (thresh*2.2), scaled by rent multiplier
             var threshold = Double(s.stores[i].threshold) * 2.2
             if s.stores[i].rentMultiplier > 1.2 { threshold *= 1.2 }
-            if Double(tr) < threshold {
+            // v9 Prompt 10 Phase A — wing traffic multiplier. In-wing
+            // non-anchor tenants see reduced effective traffic (0.75×)
+            // after the wing's anchor has departed. Scoped to hardship
+            // calc so the mall-wide tr / rent / visitor motion stay
+            // honest; only the struggling-neighbor calculus reflects
+            // that one wing has been gutted.
+            let wingMult = s.wingTrafficMultipliers[s.stores[i].wing] ?? 1.0
+            let effectiveTr = Double(tr) * wingMult
+            if effectiveTr < threshold {
                 s.stores[i].hardship += 1
                 if s.stores[i].hardship >= 4 { s.stores[i].closing = true }
             } else {
@@ -110,6 +118,29 @@ enum TickEngine {
                     s.stores[i].lease = 12
                 }
             }
+        }
+
+        // 4.5 anchor cascade — v9 Prompt 10 Phase A.
+        // For each wing with a pending hardship cascade, bump +1 hardship
+        // on every in-wing non-anchor non-vacant tenant and decrement the
+        // counter. Runs AFTER the main store loop so the loop's closing-
+        // detection doesn't re-fire within the same tick — cascade-
+        // induced closings trip on the NEXT tick, reinforcing the staggered
+        // "the wing is unraveling" cadence over 3 months.
+        for wing in Wing.allCases {
+            let remaining = s.pendingWingHardshipMonths[wing] ?? 0
+            guard remaining > 0 else { continue }
+            for i in s.stores.indices {
+                let store = s.stores[i]
+                guard store.wing == wing,
+                      store.tier != .vacant,
+                      store.tier != .anchor else { continue }
+                s.stores[i].hardship += 1
+                if s.stores[i].hardship >= 4 {
+                    s.stores[i].closing = true
+                }
+            }
+            s.pendingWingHardshipMonths[wing] = remaining - 1
         }
 
         // 5. artifact decay — v8: G.decorations.forEach(...)

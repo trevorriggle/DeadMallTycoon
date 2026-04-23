@@ -140,4 +140,44 @@ struct GameState: Equatable {
     // already owns the pause, the sheet hands off — closing it won't
     // resume prematurely.
     var decisionSheetOwnedPause: Bool = false
+
+    // v9 Prompt 10 Phase A — anchor-departure cascade state.
+    //
+    // When an anchor closes, the wing it occupied enters a permanent
+    // degraded state: traffic in that wing drops 25%, the wing's
+    // environmental visual drops by one band relative to the mall-wide
+    // state, and the non-anchor tenants in the wing receive a staggered
+    // hardship cascade over 3 months.
+    //
+    // Phase A ships the DATA only. Phase C will consume wingEnvOffsets
+    // for scene rendering; the resolver (Mall.wingEnvironmentState) is
+    // wired in Phase A so consumers can ask the right question without
+    // re-pattern-matching on the cascade state.
+
+    // 25% traffic drop applies as a 0.75 multiplier to tr seen by in-wing
+    // non-anchor tenants during the hardship calc in TickEngine. Keys are
+    // set to 1.0 at game start (no drop); mutated to 0.75 on the
+    // corresponding anchor's departure. Not reset — wing-level damage
+    // from an anchor loss is permanent.
+    var wingTrafficMultipliers: [Wing: Double] = [.north: 1.0, .south: 1.0]
+
+    // Per-wing offset into EnvironmentState.allCases. 0 means the wing
+    // renders at the mall-wide env state; 1 means one band darker; etc.
+    // Mall.wingEnvironmentState(for:in:) applies this with clamping.
+    // Permanent once set — the wing ages faster than the mall overall.
+    var wingEnvOffsets: [Wing: Int] = [.north: 0, .south: 0]
+
+    // Countdown of remaining hardship-cascade months for each wing.
+    // Starts at 3 when the wing's anchor departs; decremented each tick
+    // after the monthly cascade hardship is applied. When a wing's count
+    // hits 0, the stagger is complete.
+    var pendingWingHardshipMonths: [Wing: Int] = [.north: 0, .south: 0]
+
+    // Set of wings whose anchors have departed at some point in the run.
+    // Idempotency guard for the cascade: the spawn + field-set logic in
+    // TenantLifecycle runs once per wing (the first time that wing's
+    // anchor vacates). If an anchor could ever re-tenant and re-close
+    // (not in current mechanics), this set prevents re-triggering the
+    // cascade on the same wing.
+    var anchorDepartedWings: Set<Wing> = []
 }

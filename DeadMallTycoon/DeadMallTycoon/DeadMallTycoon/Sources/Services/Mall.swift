@@ -87,4 +87,22 @@ enum Mall {
         let occ = open.filter { $0.tier != .vacant }.count
         return Double(occ) / Double(total)
     }
+
+    // v9 Prompt 10 Phase A — per-wing environmental state with offset
+    // applied. The mall-wide state (EnvironmentState.from) is the base;
+    // state.wingEnvOffsets[wing] bumps the wing further toward .dead /
+    // .ghostMall, independent of the mall-wide progression. Offset of 0
+    // returns the mall-wide state unchanged.
+    //
+    // Phase A ships the resolver. Scene rendering that consumes this
+    // lands in Phase C; until then, reading wingEnvironmentState is a
+    // pure query with no visual consequence.
+    static func wingEnvironmentState(for wing: Wing, in state: GameState) -> EnvironmentState {
+        let base = EnvironmentState.from(state)
+        let offset = state.wingEnvOffsets[wing] ?? 0
+        let all = EnvironmentState.allCases
+        guard let baseIdx = all.firstIndex(of: base) else { return base }
+        let clampedIdx = min(all.count - 1, max(0, baseIdx + offset))
+        return all[clampedIdx]
+    }
 }
