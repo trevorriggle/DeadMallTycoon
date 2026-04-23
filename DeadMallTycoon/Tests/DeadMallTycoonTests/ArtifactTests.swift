@@ -11,14 +11,14 @@ final class ArtifactFactoryTests: XCTestCase {
         let a = ArtifactFactory.make(
             id: 1,
             type: .boardedStorefront,
-            name: "Closed: Hot Topic",
-            origin: .tenant(name: "Hot Topic"),
+            name: "Closed: Razor & Rose",
+            origin: .tenant(name: "Razor & Rose"),
             yearCreated: 1985
         )
         XCTAssertEqual(a.condition, 0)
         XCTAssertEqual(a.memoryWeight, 0)
         XCTAssertEqual(a.yearCreated, 1985)
-        XCTAssertEqual(a.name, "Closed: Hot Topic")
+        XCTAssertEqual(a.name, "Closed: Razor & Rose")
         XCTAssertEqual(a.type, .boardedStorefront)
     }
 
@@ -56,7 +56,7 @@ final class ArtifactFactoryTests: XCTestCase {
     func testOriginEnumDiscriminates() {
         // Pattern-match sanity — Prompt 9 relies on this for cascade generation.
         let tenant = ArtifactFactory.make(id: 1, type: .boardedStorefront,
-                                           name: "n", origin: .tenant(name: "Sears"),
+                                           name: "n", origin: .tenant(name: "Halvorsen"),
                                            yearCreated: 1982)
         let event  = ArtifactFactory.make(id: 2, type: .waterStainedCeiling,
                                            name: "n", origin: .event(name: "Burst Pipes"),
@@ -64,7 +64,7 @@ final class ArtifactFactoryTests: XCTestCase {
         let player = ArtifactFactory.make(id: 3, type: .sealedEntrance,
                                            name: "n", origin: .playerAction("sealed wing"),
                                            yearCreated: 1984)
-        if case .tenant(let who) = tenant.origin { XCTAssertEqual(who, "Sears") }
+        if case .tenant(let who) = tenant.origin { XCTAssertEqual(who, "Halvorsen") }
         else { XCTFail("expected tenant origin") }
         if case .event(let who) = event.origin { XCTAssertEqual(who, "Burst Pipes") }
         else { XCTFail("expected event origin") }
@@ -80,7 +80,7 @@ final class ArtifactCodableTests: XCTestCase {
             id: 42,
             type: .stoppedFountain,
             name: "East fountain",
-            origin: .tenant(name: "Orange Julius"),
+            origin: .tenant(name: "Julius & Co"),
             yearCreated: 1987,
             thoughtTriggers: ["a", "b", "c"]
         )
@@ -91,7 +91,7 @@ final class ArtifactCodableTests: XCTestCase {
 
     func testOriginEnumRoundTripsForAllCases() throws {
         let origins: [ArtifactOrigin] = [
-            .tenant(name: "Sears"),
+            .tenant(name: "Halvorsen"),
             .event(name: "Burst Pipes"),
             .playerAction("sealed north wing"),
         ]

@@ -1,6 +1,15 @@
 # Dead Mall Tycoon — Core Game Mechanics Draft
 *Draft v0.3 — updated April 15, 2026*
 
+> **Archival snapshot (pre-v9 rename).** This document is a frozen design
+> artifact predating the v9 fictitious-brand pass. Real retailer names in the
+> flavor quotes and example tables below (Sears, KB Toys, Spirit Halloween,
+> etc.) were replaced in the live codebase with fictional parallel-universe
+> equivalents. Preserved as-is for mechanics context; **not** a source of
+> truth for tenant strings. See `Data/Catalog.swift`,
+> `Data/StartingMall.swift`, and `Data/ClosureFlavor.swift` for the
+> canonical names.
+
 ---
 
 ## Time & Pacing

@@ -2,7 +2,7 @@
 
 The game is finished when a player, forty minutes into a run, can experience the following:
 
-A massive mall — wings stretching in multiple directions, multiple anchors, dozens of storefronts. All but one closed. The Sears terminal is a dead end, boarded, signage removed. JCPenney is gone too — replaced by a vast quiet where an anchor used to be. The east wing is sealed entirely; the north wing is a curated graveyard of display spaces showing vintage mall photos, a historical plaque, a local artist's installation.
+A massive mall — wings stretching in multiple directions, multiple anchors, dozens of storefronts. All but one closed. The Halvorsen terminal is a dead end, boarded, signage removed. Pemberton is gone too — replaced by a vast quiet where an anchor used to be. The east wing is sealed entirely; the north wing is a curated graveyard of display spaces showing vintage mall photos, a historical plaque, a local artist's installation.
 
 One tenant remains — a pretzel kiosk, or a nail salon, or a pay phone repair shop. It has been there for fourteen years. It is the only thing generating rent.
 

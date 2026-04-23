@@ -34,9 +34,9 @@ enum Personalities {
         "Teen Rebel": Personality(
             key: "Teen Rebel", type: .teen, color: "#c4919a", headColor: "#e8b5b5",
             ageRange: 14...18,
-            preferredStores: ["Hot Topic","Spencer's","Sam Goody","Vape Shop","GameStop"],
+            preferredStores: ["Razor & Rose","Switchblade Novelty","Ricky's Records","Vape Shop","GameVault"],
             thoughts: [
-                .thriving:   ["\"This place is sick.\"", "\"Hot Topic has the new NIN shirt.\""],
+                .thriving:   ["\"This place is sick.\"", "\"Razor & Rose has the new Ironmaw shirt.\""],
                 .fading:     ["\"Everyone's going to the other mall.\""],
                 .struggling: ["\"This place has aura though.\""],
                 .dying:      ["\"This is a backrooms level.\""],
@@ -46,10 +46,10 @@ enum Personalities {
         "Teen Shopper": Personality(
             key: "Teen Shopper", type: .teen, color: "#d4a1a8", headColor: "#f0c5c5",
             ageRange: 13...17,
-            preferredStores: ["Claire's","Hot Topic","Foot Locker","Auntie Anne's"],
+            preferredStores: ["Lulu & Lace","Razor & Rose","Sole Center","Auntie Rae's"],
             thoughts: [
                 .thriving:   ["\"Mom gave me forty bucks.\""],
-                .fading:     ["\"Claire's is always empty now.\""],
+                .fading:     ["\"Lulu & Lace is always empty now.\""],
                 .struggling: ["\"My mom says this used to be nice.\""],
                 .dying:      ["\"There's nothing here anymore.\""],
                 .dead:       ["\"Can we leave?\""],
@@ -70,11 +70,11 @@ enum Personalities {
         "Nostalgic Dad": Personality(
             key: "Nostalgic Dad", type: .adult, color: "#6aada8", headColor: "#a0c8c4",
             ageRange: 35...48,
-            preferredStores: ["Radio Shack","B. Dalton","Foot Locker"],
+            preferredStores: ["Signal Shack","Beckett Books","Sole Center"],
             thoughts: [
                 .thriving:   ["\"My dad used to bring me here.\""],
-                .fading:     ["\"Where did Waldenbooks go?\""],
-                .struggling: ["\"Had my first job at Sam Goody.\""],
+                .fading:     ["\"Where did Brinkerhoff Books go?\""],
+                .struggling: ["\"Had my first job at Ricky's Records.\""],
                 .dying:      ["\"My kids will never know what a mall felt like.\""],
                 .dead:       ["\"Goodbye, old friend.\""],
             ]
@@ -82,7 +82,7 @@ enum Personalities {
         "Suburban Mom": Personality(
             key: "Suburban Mom", type: .adult, color: "#a8c4b8", headColor: "#d0e0d4",
             ageRange: 30...45,
-            preferredStores: ["Kay Jewelers","Bath & Body Works","Cinnabon","Sears"],
+            preferredStores: ["Bell & Thornton","Basin & Bloom","Cinna-Swirl","Halvorsen"],
             thoughts: [
                 .thriving:   ["\"Kids, stop running.\""],
                 .fading:     ["\"Well it's still cheaper.\""],
@@ -106,7 +106,7 @@ enum Personalities {
         "Goth Kid": Personality(
             key: "Goth Kid", type: .teen, color: "#3a2a3a", headColor: "#6a5a6a",
             ageRange: 15...19,
-            preferredStores: ["Hot Topic","Spencer's"],
+            preferredStores: ["Razor & Rose","Switchblade Novelty"],
             thoughts: [
                 .thriving:   ["\"Everyone here is a normie.\""],
                 .fading:     ["\"The decay is aesthetic.\""],
@@ -118,7 +118,7 @@ enum Personalities {
         "Little Kid": Personality(
             key: "Little Kid", type: .kid, color: "#f4c8a8", headColor: "#ffdcc0",
             ageRange: 5...9,
-            preferredStores: ["Claire's","Cinnabon","Orange Julius"],
+            preferredStores: ["Lulu & Lace","Cinna-Swirl","Julius & Co"],
             thoughts: [
                 .thriving:   ["\"MOM CAN I GET THIS\"", "\"THE KUGEL BALL!\""],
                 .fading:     ["\"Where's the toy store?\""],
@@ -154,19 +154,19 @@ enum Personalities {
         "Food Court Regular": Personality(
             key: "Food Court Regular", type: .adult, color: "#d4a874", headColor: "#e8c898",
             ageRange: 45...65,
-            preferredStores: ["Cinnabon","Orange Julius","Auntie Anne's"],
+            preferredStores: ["Cinna-Swirl","Julius & Co","Auntie Rae's"],
             thoughts: [
                 .thriving:   ["\"Same as yesterday, Linda.\""],
                 .fading:     ["\"What do I eat now?\""],
                 .struggling: ["\"The food court is half closed.\""],
-                .dying:      ["\"Cinnabon lady knows my name.\""],
+                .dying:      ["\"Cinna-Swirl lady knows my name.\""],
                 .dead:       ["\"She told me it's her last week.\""],
             ]
         ),
         "Bargain Hunter": Personality(
             key: "Bargain Hunter", type: .adult, color: "#b8a874", headColor: "#d4c898",
             ageRange: 38...58,
-            preferredStores: ["Claire's","Waldenbooks","Spencer's"],
+            preferredStores: ["Lulu & Lace","Brinkerhoff Books","Switchblade Novelty"],
             thoughts: [
                 .thriving:   ["\"50% off!\""],
                 .fading:     ["\"Clearance aisle thinned out.\""],
@@ -187,8 +187,8 @@ enum Personalities {
                 .thriving:   ["\"Too much foot traffic to pick anything up.\""],
                 .fading:     ["\"Sensitivity's creeping up. Give it a year.\""],
                 .struggling: [
-                    "\"The EMF reader keeps spiking near the old Orange Julius.\"",
-                    "\"Three separate visitors reported the woman in the JCPenney uniform.\"",
+                    "\"The EMF reader keeps spiking near the old Julius & Co.\"",
+                    "\"Three separate visitors reported the woman in the Pemberton uniform.\"",
                     "\"I can hear the elevator moving. The elevator was removed in 1994.\"",
                 ],
                 .dying: [
@@ -198,7 +198,7 @@ enum Personalities {
                 ],
                 .dead: [
                     "\"I've been coming here twelve years. It talks back now.\"",
-                    "\"We got a clear EVP last night. A child's voice said 'Cinnabon.'\"",
+                    "\"We got a clear EVP last night. A child's voice said 'Cinna-Swirl.'\"",
                     "\"The mall is remembering itself. That's the theory I'm working.\"",
                 ],
             ]
@@ -213,16 +213,16 @@ enum Personalities {
                 .fading:     ["\"Filing this one away for two years from now.\""],
                 .struggling: [
                     "\"Drove six hours. Worth it. Barely-open malls are the holy grail.\"",
-                    "\"Anyone who says YouTube ruined urbex hasn't been here.\"",
+                    "\"Anyone who says the platform ruined urbex hasn't been here.\"",
                     "\"The discord isn't going to believe the fountain.\"",
                 ],
                 .dying: [
                     "\"Eleven states crossed off. This one's top three.\"",
                     "\"I've been dreaming about this mall for months. I'm not joking.\"",
-                    "\"Brought the Mamiya. Film only. You don't shoot this on digital.\"",
+                    "\"Brought the Takata. Film only. You don't shoot this on digital.\"",
                 ],
                 .dead: [
-                    "\"Flew in just for today. The boards in Hot Topic — I HAVE to photograph them.\"",
+                    "\"Flew in just for today. The boards in Razor & Rose — I HAVE to photograph them.\"",
                     "\"This isn't content anymore. This is a pilgrimage.\"",
                     "\"The stillness is the thing. I've never heard stillness this loud.\"",
                 ],
@@ -238,7 +238,7 @@ enum Personalities {
                 .fading:     ["\"The patina is almost there. Give it three years.\""],
                 .struggling: [
                     "\"The decay under the fluorescents is perfect. Can you hold that pose?\"",
-                    "\"Vogue Italia loved the last set. This one's going to Harper's.\"",
+                    "\"Milan Editorial loved the last set. This one's going to Atlas Quarterly.\"",
                     "\"I'm gonna need the stylist to rethink everything. This wins.\"",
                 ],
                 .dying: [
@@ -248,7 +248,7 @@ enum Personalities {
                 ],
                 .dead: [
                     "\"This is the location. This is THE location.\"",
-                    "\"I told the stylist to theme the looks around Sbarro.\"",
+                    "\"I told the stylist to theme the looks around Via Roma.\"",
                     "\"I don't want the mall in the background. I want it as the subject.\"",
                 ],
             ]

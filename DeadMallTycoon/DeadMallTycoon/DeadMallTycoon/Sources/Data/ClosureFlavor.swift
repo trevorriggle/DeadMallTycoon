@@ -18,31 +18,31 @@ import Foundation
 // two or three sentences for anchors.
 //
 // Starting-mall tenants (seeded in StartingMall.storeSeeds):
-//   [ ] "Sears"            (anchor)
-//   [ ] "JCPenney"         (anchor)
-//   [ ] "Sam Goody"        (standard)
-//   [ ] "Waldenbooks"      (standard)
-//   [ ] "Foot Locker"      (standard)
-//   [ ] "Hot Topic"        (standard)
-//   [ ] "Claire's"         (standard)
-//   [ ] "Radio Shack"      (standard)
-//   [ ] "Kay Jewelers"     (standard)
-//   [ ] "Spencer's"        (standard)
-//   [ ] "B. Dalton"        (standard)
-//   [ ] "Cinnabon"         (kiosk)
-//   [ ] "Orange Julius"    (kiosk)
-//   [ ] "Sunglass Hut"     (kiosk)
-//   [ ] "Auntie Anne's"    (kiosk)
+//   [ ] "Halvorsen"            (anchor)
+//   [ ] "Pemberton"         (anchor)
+//   [ ] "Ricky's Records"        (standard)
+//   [ ] "Brinkerhoff Books"      (standard)
+//   [ ] "Sole Center"      (standard)
+//   [ ] "Razor & Rose"        (standard)
+//   [ ] "Lulu & Lace"         (standard)
+//   [ ] "Signal Shack"      (standard)
+//   [ ] "Bell & Thornton"     (standard)
+//   [ ] "Switchblade Novelty"        (standard)
+//   [ ] "Beckett Books"        (standard)
+//   [ ] "Cinna-Swirl"         (kiosk)
+//   [ ] "Julius & Co"    (kiosk)
+//   [ ] "Shadecraft"     (kiosk)
+//   [ ] "Auntie Rae's"    (kiosk)
 //   [ ] "Vape Shop"        (sketchy — also appears in offer pool)
 //
 // Offer-pool tenants (Catalog.Tenants.*; these can only close after being
 // signed, so lines only fire if the player ever accepts them):
-//   [ ] "The Limited"       (standard)
-//   [ ] "Bath & Body Works" (standard)
-//   [ ] "GameStop"          (standard)
-//   [ ] "Cingular"          (standard)
-//   [ ] "Sbarro"            (kiosk)
-//   [ ] "Spirit Halloween"  (kiosk)
+//   [ ] "The Edition"       (standard)
+//   [ ] "Basin & Bloom" (standard)
+//   [ ] "GameVault"          (standard)
+//   [ ] "BellWave"          (standard)
+//   [ ] "Via Roma"            (kiosk)
+//   [ ] "Phantasm Seasonal"  (kiosk)
 //   [ ] "Escape Room"       (sketchy)
 //   [ ] "Pawn Outlet"       (sketchy)
 //
@@ -64,32 +64,32 @@ enum ClosureFlavor {
     // in the catalog — StartingMall.storeSeeds and Catalog.Tenants.*.
     private static let perTenant: [String: String] = [
         // Anchors.
-        "Sears":            "[flavor line pending]",
-        "JCPenney":         "[flavor line pending]",
+        "Halvorsen":            "[flavor line pending]",
+        "Pemberton":         "[flavor line pending]",
         // Standards (starting).
-        "Sam Goody":        "[flavor line pending]",
-        "Waldenbooks":      "[flavor line pending]",
-        "Foot Locker":      "[flavor line pending]",
-        "Hot Topic":        "[flavor line pending]",
-        "Claire's":         "[flavor line pending]",
-        "Radio Shack":      "[flavor line pending]",
-        "Kay Jewelers":     "[flavor line pending]",
-        "Spencer's":        "[flavor line pending]",
-        "B. Dalton":        "[flavor line pending]",
+        "Ricky's Records":        "[flavor line pending]",
+        "Brinkerhoff Books":      "[flavor line pending]",
+        "Sole Center":      "[flavor line pending]",
+        "Razor & Rose":        "[flavor line pending]",
+        "Lulu & Lace":         "[flavor line pending]",
+        "Signal Shack":      "[flavor line pending]",
+        "Bell & Thornton":     "[flavor line pending]",
+        "Switchblade Novelty":        "[flavor line pending]",
+        "Beckett Books":        "[flavor line pending]",
         // Kiosks (starting).
-        "Cinnabon":         "[flavor line pending]",
-        "Orange Julius":    "[flavor line pending]",
-        "Sunglass Hut":     "[flavor line pending]",
-        "Auntie Anne's":    "[flavor line pending]",
+        "Cinna-Swirl":         "[flavor line pending]",
+        "Julius & Co":    "[flavor line pending]",
+        "Shadecraft":     "[flavor line pending]",
+        "Auntie Rae's":    "[flavor line pending]",
         // Sketchy (starting + offer pool).
         "Vape Shop":        "[flavor line pending]",
         // Offer pool — only close after being signed.
-        "The Limited":       "[flavor line pending]",
-        "Bath & Body Works": "[flavor line pending]",
-        "GameStop":          "[flavor line pending]",
-        "Cingular":          "[flavor line pending]",
-        "Sbarro":            "[flavor line pending]",
-        "Spirit Halloween":  "[flavor line pending]",
+        "The Edition":       "[flavor line pending]",
+        "Basin & Bloom": "[flavor line pending]",
+        "GameVault":          "[flavor line pending]",
+        "BellWave":          "[flavor line pending]",
+        "Via Roma":            "[flavor line pending]",
+        "Phantasm Seasonal":  "[flavor line pending]",
         "Escape Room":       "[flavor line pending]",
         "Pawn Outlet":       "[flavor line pending]",
     ]

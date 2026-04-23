@@ -27,7 +27,7 @@ private func plantTenant(_ state: GameState, at slotId: Int,
 
 // Standard (non-anchor) offer used across tests — matches a non-anchor vacant slot.
 private let standardOffer = TenantOffer(
-    name: "GameStop", tier: .standard, rent: 750, traffic: 50,
+    name: "GameVault", tier: .standard, rent: 750, traffic: 50,
     threshold: 25, lease: 24, pitch: "Teen traffic."
 )
 
@@ -71,7 +71,7 @@ final class MemorialCostResolutionTests: XCTestCase {
     func testMemorialCostPopulatedWhenBoardedStorefrontPresent() {
         var s = StartingMall.initialState()
         // Close a non-anchor tenant so a boardedStorefront lands on that slot.
-        s = plantTenant(s, at: 2, name: "Waldenbooks", monthsOccupied: 84)
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books", monthsOccupied: 84)
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
         // Seed some memory weight and reference count on the memorial.
@@ -83,7 +83,7 @@ final class MemorialCostResolutionTests: XCTestCase {
 
         let cost = StoreActions.memorialCost(for: standardOffer, in: s)
         XCTAssertNotNil(cost, "slot has a boardedStorefront → memorial cost resolves")
-        XCTAssertEqual(cost?.tenantName, "Waldenbooks")
+        XCTAssertEqual(cost?.tenantName, "Brinkerhoff Books")
         XCTAssertEqual(cost?.yearsBoarded, 7)
         XCTAssertEqual(cost?.memoryWeight, 34.0)
         XCTAssertEqual(cost?.thoughtReferenceCount, 12)
@@ -125,7 +125,7 @@ final class AcceptDestroysMemorialTests: XCTestCase {
 
     func testAcceptRemovesBoardedStorefront() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books")
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
         let beforeArtifactIds = Set(s.artifacts.map(\.id))
@@ -142,7 +142,7 @@ final class AcceptDestroysMemorialTests: XCTestCase {
 
     func testAcceptAppendsOfferDestructionLedgerEntry() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Waldenbooks", monthsOccupied: 60)
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books", monthsOccupied: 60)
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
         let aidx = s.artifacts.firstIndex(where: { $0.storeSlotId == 2 })!
@@ -158,7 +158,7 @@ final class AcceptDestroysMemorialTests: XCTestCase {
         guard case .offerDestruction(let oldName, let newName, let years,
                                      let weight, let thoughts, _, _) = s.ledger.last!
         else { return XCTFail("expected .offerDestruction as last entry") }
-        XCTAssertEqual(oldName, "Waldenbooks")
+        XCTAssertEqual(oldName, "Brinkerhoff Books")
         XCTAssertEqual(newName, standardOffer.name)
         XCTAssertEqual(years, 3)
         XCTAssertEqual(weight, 20.5)
@@ -178,7 +178,7 @@ final class AcceptDestroysMemorialTests: XCTestCase {
 
     func testDeclinePreservesArtifact() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books")
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
         let memorialId = s.artifacts.first { $0.storeSlotId == 2 }!.id

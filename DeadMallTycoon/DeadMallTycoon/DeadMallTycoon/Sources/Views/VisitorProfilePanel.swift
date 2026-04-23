@@ -93,7 +93,7 @@ struct VisitorProfilePanel: View {
 
     // Resolves a DestinationIntent to a human-readable line. The `.store`
     // case looks up the tenant name from state for flavor ("Heading to
-    // Waldenbooks") when the slot is populated.
+    // Brinkerhoff Books") when the slot is populated.
     private func destinationLabel(_ intent: DestinationIntent) -> String {
         switch intent {
         case .store(let slotId):

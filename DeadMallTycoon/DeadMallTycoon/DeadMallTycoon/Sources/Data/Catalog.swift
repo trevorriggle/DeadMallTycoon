@@ -549,7 +549,7 @@ enum AdDeals {
                description: "$1.5k/mo. Large billboard."),
         AdDeal(id: "naming",    name: "Sell Naming Rights",
                cost: 0, income: 3000, aestheticPenalty: 0.4,
-               description: "$3k/mo. \"The Cingular Experience.\""),
+               description: "$3k/mo. \"The BellWave Experience.\""),
         AdDeal(id: "floor",     name: "Floor Decals",
                cost: 0, income:  800, aestheticPenalty: 0.08,
                description: "$800/mo. Sticker ads."),
@@ -576,17 +576,17 @@ enum StaffTypes {
 enum Tenants {
 
     static let targetsAll: [TenantTarget] = [
-        TenantTarget(name: "The Limited",       tier: .standard, rent: 1100, traffic: 60, threshold: 30, lease: 36,
+        TenantTarget(name: "The Edition",       tier: .standard, rent: 1100, traffic: 60, threshold: 30, lease: 36,
                      approachCost: 2000, requiredStates: [.thriving, .fading]),
-        TenantTarget(name: "Bath & Body Works", tier: .standard, rent: 1200, traffic: 70, threshold: 35, lease: 36,
+        TenantTarget(name: "Basin & Bloom", tier: .standard, rent: 1200, traffic: 70, threshold: 35, lease: 36,
                      approachCost: 2500, requiredStates: [.thriving, .fading]),
-        TenantTarget(name: "GameStop",          tier: .standard, rent:  750, traffic: 50, threshold: 25, lease: 24,
+        TenantTarget(name: "GameVault",          tier: .standard, rent:  750, traffic: 50, threshold: 25, lease: 24,
                      approachCost: 1200, requiredStates: [.thriving, .fading, .struggling]),
-        TenantTarget(name: "Cingular",          tier: .standard, rent:  800, traffic: 40, threshold: 20, lease: 24,
+        TenantTarget(name: "BellWave",          tier: .standard, rent:  800, traffic: 40, threshold: 20, lease: 24,
                      approachCost: 1500, requiredStates: [.fading, .struggling]),
-        TenantTarget(name: "Sbarro",            tier: .kiosk,    rent:  400, traffic: 32, threshold: 18, lease: 18,
+        TenantTarget(name: "Via Roma",            tier: .kiosk,    rent:  400, traffic: 32, threshold: 18, lease: 18,
                      approachCost:  800, requiredStates: [.thriving, .fading, .struggling]),
-        TenantTarget(name: "Spirit Halloween",  tier: .kiosk,    rent:  250, traffic: 22, threshold: 15, lease:  4,
+        TenantTarget(name: "Phantasm Seasonal",  tier: .kiosk,    rent:  250, traffic: 22, threshold: 15, lease:  4,
                      approachCost:  300, requiredStates: [.struggling, .dying, .dead]),
         TenantTarget(name: "Escape Room",       tier: .sketchy,  rent:  400, traffic: 16, threshold:  5, lease: 24,
                      approachCost:  500, requiredStates: [.struggling, .dying, .dead]),
@@ -598,16 +598,16 @@ enum Tenants {
 
     // v8: offerPool()
     private static let good: [TenantOffer] = [
-        TenantOffer(name: "The Limited",       tier: .standard, rent: 1100, traffic: 60, threshold: 30, lease: 36, pitch: "National chain."),
-        TenantOffer(name: "Bath & Body Works", tier: .standard, rent: 1200, traffic: 70, threshold: 35, lease: 36, pitch: "Saturday crowds."),
+        TenantOffer(name: "The Edition",       tier: .standard, rent: 1100, traffic: 60, threshold: 30, lease: 36, pitch: "National chain."),
+        TenantOffer(name: "Basin & Bloom", tier: .standard, rent: 1200, traffic: 70, threshold: 35, lease: 36, pitch: "Saturday crowds."),
     ]
     private static let mid: [TenantOffer] = [
-        TenantOffer(name: "GameStop", tier: .standard, rent: 750, traffic: 50, threshold: 25, lease: 24, pitch: "Teen traffic."),
-        TenantOffer(name: "Cingular", tier: .standard, rent: 800, traffic: 40, threshold: 20, lease: 24, pitch: "Cell phone store."),
-        TenantOffer(name: "Sbarro",   tier: .kiosk,    rent: 400, traffic: 32, threshold: 18, lease: 18, pitch: "Food court pizza."),
+        TenantOffer(name: "GameVault", tier: .standard, rent: 750, traffic: 50, threshold: 25, lease: 24, pitch: "Teen traffic."),
+        TenantOffer(name: "BellWave", tier: .standard, rent: 800, traffic: 40, threshold: 20, lease: 24, pitch: "Cell phone store."),
+        TenantOffer(name: "Via Roma",   tier: .kiosk,    rent: 400, traffic: 32, threshold: 18, lease: 18, pitch: "Food court pizza."),
     ]
     private static let sketchy: [TenantOffer] = [
-        TenantOffer(name: "Spirit Halloween", tier: .kiosk,   rent: 250, traffic: 22, threshold: 15, lease:  4, pitch: "Seasonal."),
+        TenantOffer(name: "Phantasm Seasonal", tier: .kiosk,   rent: 250, traffic: 22, threshold: 15, lease:  4, pitch: "Seasonal."),
         TenantOffer(name: "Escape Room",      tier: .sketchy, rent: 400, traffic: 16, threshold:  5, lease: 24, pitch: "\"The liminal vibe.\""),
     ]
     private static let desperate: [TenantOffer] = [

@@ -5,7 +5,7 @@ import SpriteKit
 // Christian's final 128x128 pixel art — the PNG bakes in sign + window + frame,
 // so the procedural sign/window/gate overlays from earlier phases are retired.
 //
-// Anchor slots (Sears west, JCPenney east) are full-height end-caps and use a
+// Anchor slots (Halvorsen west, Pemberton east) are full-height end-caps and use a
 // procedural facade + SKLabelNode signage instead of the stretched pixel-art PNG.
 // An anchor slot is detected by footprint width (>= 180pt) — see StartingMall
 // positions for the 200pt anchor width.

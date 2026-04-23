@@ -34,7 +34,7 @@ private func closeTenant(in state: GameState, at slotId: Int, name: String) -> (
 }
 
 private let standardOffer = TenantOffer(
-    name: "GameStop", tier: .standard, rent: 750, traffic: 50,
+    name: "GameVault", tier: .standard, rent: 750, traffic: 50,
     threshold: 25, lease: 24, pitch: "Teen traffic."
 )
 
@@ -44,7 +44,7 @@ final class SealStorefrontTests: XCTestCase {
 
     func testSealMutatesBoardedToSealed() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         let after = ArtifactActions.sealStorefront(artifactId: aid, state)
         let a = after.artifacts.first { $0.id == aid }!
         XCTAssertEqual(a.type, .sealedStorefront)
@@ -53,7 +53,7 @@ final class SealStorefrontTests: XCTestCase {
 
     func testSealPreservesMemorialProvenance() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Claire's")
+                                        at: 2, name: "Lulu & Lace")
         // Seed some weight to verify preservation.
         if let idx = state.artifacts.firstIndex(where: { $0.id == aid }) {
             state.artifacts[idx].memoryWeight = 12.5
@@ -72,7 +72,7 @@ final class SealStorefrontTests: XCTestCase {
     // CRITICAL INVARIANT — seal removes the slot from the offer pool.
     func testSealRemovesSlotFromOfferPool() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Sam Goody")
+                                        at: 2, name: "Ricky's Records")
         XCTAssertNotNil(StoreActions.prospectiveSlotIndex(for: standardOffer, in: state),
                         "precondition: boardedStorefront slot is in the pool")
         let after = ArtifactActions.sealStorefront(artifactId: aid, state)
@@ -87,7 +87,7 @@ final class SealStorefrontTests: XCTestCase {
 
     func testSealZeroesVacancyPenalty() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Hot Topic")
+                                        at: 2, name: "Razor & Rose")
         let costBefore = Economy.operatingCost(state)
         let after = ArtifactActions.sealStorefront(artifactId: aid, state)
         let costAfter = Economy.operatingCost(after)
@@ -97,20 +97,20 @@ final class SealStorefrontTests: XCTestCase {
 
     func testSealWritesLedgerEntry() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         let ledgerBefore = state.ledger.count
         let after = ArtifactActions.sealStorefront(artifactId: aid, state)
         XCTAssertEqual(after.ledger.count, ledgerBefore + 1)
         guard case .artifactSealed(let name, let src, _, _, _, _) = after.ledger.last! else {
             return XCTFail("expected .artifactSealed ledger entry")
         }
-        XCTAssertEqual(name, "Waldenbooks")
+        XCTAssertEqual(name, "Brinkerhoff Books")
         XCTAssertEqual(src, .boardedStorefront)
     }
 
     func testSealFromDisplayAlsoWorks() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Foot Locker")
+                                        at: 2, name: "Sole Center")
         state = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                     content: .communityArt, state)
         let after = ArtifactActions.sealStorefront(artifactId: aid, state)
@@ -138,7 +138,7 @@ final class RepurposeAsDisplayTests: XCTestCase {
 
     func testRepurposeMutatesBoardedToDisplay() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         let after = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                         content: .vintageMallPhotos, state)
         let a = after.artifacts.first { $0.id == aid }!
@@ -148,7 +148,7 @@ final class RepurposeAsDisplayTests: XCTestCase {
 
     func testRepurposePopulatesThoughtPoolFromContent() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Sam Goody")
+                                        at: 2, name: "Ricky's Records")
         let after = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                         content: .historicalPlaque, state)
         let a = after.artifacts.first { $0.id == aid }!
@@ -159,7 +159,7 @@ final class RepurposeAsDisplayTests: XCTestCase {
     // CRITICAL INVARIANT — repurpose removes the slot from the offer pool.
     func testRepurposeRemovesSlotFromOfferPool() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         XCTAssertNotNil(StoreActions.prospectiveSlotIndex(for: standardOffer, in: state))
         let after = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                         content: .seasonalVignette, state)
@@ -172,7 +172,7 @@ final class RepurposeAsDisplayTests: XCTestCase {
 
     func testRepurposeAddsMaintenanceCost() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Hot Topic")
+                                        at: 2, name: "Razor & Rose")
         let costBefore = Economy.operatingCost(state)
         let after = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                         content: .localArtistShowcase, state)
@@ -185,13 +185,13 @@ final class RepurposeAsDisplayTests: XCTestCase {
 
     func testRepurposeWritesLedgerEntry() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Claire's")
+                                        at: 2, name: "Lulu & Lace")
         let after = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                         content: .communityArt, state)
         guard case .displayConversion(let name, let content, _, _, _, _) = after.ledger.last! else {
             return XCTFail("expected .displayConversion")
         }
-        XCTAssertEqual(name, "Claire's")
+        XCTAssertEqual(name, "Lulu & Lace")
         XCTAssertEqual(content, .communityArt)
     }
 
@@ -206,7 +206,7 @@ final class RepurposeAsDisplayTests: XCTestCase {
 
     func testRepurposeOnSealedIsNoOp() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         state = ArtifactActions.sealStorefront(artifactId: aid, state)
         let after = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                         content: .vintageMallPhotos, state)
@@ -221,7 +221,7 @@ final class RevertToBoardedTests: XCTestCase {
 
     func testRevertMutatesDisplayToBoarded() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         state = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                    content: .vintageMallPhotos, state)
         let after = ArtifactActions.revertToBoarded(artifactId: aid, state)
@@ -232,7 +232,7 @@ final class RevertToBoardedTests: XCTestCase {
 
     func testRevertRemovesMaintenanceCost() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Sam Goody")
+                                        at: 2, name: "Ricky's Records")
         state = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                    content: .historicalPlaque, state)
         let displayCost = Economy.operatingCost(state)
@@ -244,7 +244,7 @@ final class RevertToBoardedTests: XCTestCase {
 
     func testRevertRestoresOfferPoolEligibility() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Hot Topic")
+                                        at: 2, name: "Razor & Rose")
         state = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                    content: .communityArt, state)
         let after = ArtifactActions.revertToBoarded(artifactId: aid, state)
@@ -259,27 +259,27 @@ final class RevertToBoardedTests: XCTestCase {
 
     func testRevertWritesLedgerEntry() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Claire's")
+                                        at: 2, name: "Lulu & Lace")
         state = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                    content: .communityArt, state)
         let after = ArtifactActions.revertToBoarded(artifactId: aid, state)
         guard case .displayReverted(let name, let content, _, _, _, _) = after.ledger.last! else {
             return XCTFail("expected .displayReverted")
         }
-        XCTAssertEqual(name, "Claire's")
+        XCTAssertEqual(name, "Lulu & Lace")
         XCTAssertEqual(content, .communityArt, "records the content that was abandoned")
     }
 
     func testRevertOnBoardedIsNoOp() {
         let (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         let after = ArtifactActions.revertToBoarded(artifactId: aid, state)
         XCTAssertEqual(after, state)
     }
 
     func testRevertOnSealedIsNoOp() {
         var (state, aid) = closeTenant(in: StartingMall.initialState(),
-                                        at: 2, name: "Waldenbooks")
+                                        at: 2, name: "Brinkerhoff Books")
         state = ArtifactActions.sealStorefront(artifactId: aid, state)
         let after = ArtifactActions.revertToBoarded(artifactId: aid, state)
         XCTAssertEqual(after, state)
@@ -302,7 +302,7 @@ final class MemoryAccrualRateTests: XCTestCase {
         let vm = GameViewModel(seed: 1)
         vm.state = StartingMall.initialState()
         // Close three tenants so we have a clean boardedStorefront to manipulate.
-        let (s1, boardedId) = closeTenant(in: vm.state, at: 2, name: "Waldenbooks")
+        let (s1, boardedId) = closeTenant(in: vm.state, at: 2, name: "Brinkerhoff Books")
         vm.state = s1
 
         // Baseline: boarded with Explorer cohort (×1.0) and base 0.5 = +0.5.
@@ -321,7 +321,7 @@ final class MemoryAccrualRateTests: XCTestCase {
     func testDisplayAccrual() {
         let vm = GameViewModel(seed: 1)
         vm.state = StartingMall.initialState()
-        let (s1, aid) = closeTenant(in: vm.state, at: 2, name: "Sam Goody")
+        let (s1, aid) = closeTenant(in: vm.state, at: 2, name: "Ricky's Records")
         vm.state = ArtifactActions.repurposeAsDisplay(artifactId: aid,
                                                       content: .historicalPlaque, s1)
 

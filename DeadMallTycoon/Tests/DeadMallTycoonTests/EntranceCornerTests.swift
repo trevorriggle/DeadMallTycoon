@@ -84,26 +84,26 @@ final class EntranceTrafficMultiplierTests: XCTestCase {
 
 final class AnchorGeometryTests: XCTestCase {
 
-    func testSearsStretchedForFullScreenCorridor() {
+    func testHalvorsenStretchedForFullScreenCorridor() {
         // v9 patch — worldHeight 1400. Anchors stretch to fill the corridor
         // (h:1000 spanning y:200..1200) so the H-shape walkable layout
         // stays proportional in the taller world.
         let s = StartingMall.initialState()
-        let sears = s.stores.first { $0.name == "Sears" }
+        let sears = s.stores.first { $0.name == "Halvorsen" }
         XCTAssertNotNil(sears)
         XCTAssertEqual(sears?.position.x, 0)
         XCTAssertEqual(sears?.position.y, 200,
-                       "Sears top at y:200 leaves a 110pt access corridor above")
+                       "Halvorsen top at y:200 leaves a 110pt access corridor above")
         XCTAssertEqual(sears?.position.w, 200)
         XCTAssertEqual(sears?.position.h, 1000,
-                       "Sears stretched to fill corridor in worldHeight 1400")
+                       "Halvorsen stretched to fill corridor in worldHeight 1400")
         XCTAssertGreaterThanOrEqual(sears?.position.w ?? 0, 180,
                                     "anchor-tier detection by w >= 180 must survive")
     }
 
-    func testJCPenneyStretchedForFullScreenCorridor() {
+    func testPembertonStretchedForFullScreenCorridor() {
         let s = StartingMall.initialState()
-        let jcp = s.stores.first { $0.name == "JCPenney" }
+        let jcp = s.stores.first { $0.name == "Pemberton" }
         XCTAssertNotNil(jcp)
         XCTAssertEqual(jcp?.position.x, 1000)
         XCTAssertEqual(jcp?.position.y, 200)
@@ -135,10 +135,10 @@ final class AnchorGeometryTests: XCTestCase {
         // 110pt walkable strips above/below anchors connect corner doors
         // to the main corridor without clipping anchors.
         let s = StartingMall.initialState()
-        guard let sears = s.stores.first(where: { $0.name == "Sears" }) else {
-            return XCTFail("Sears missing")
+        guard let sears = s.stores.first(where: { $0.name == "Halvorsen" }) else {
+            return XCTFail("Halvorsen missing")
         }
-        // North row bottom = y:90. Sears top = y:200. Gap = 110pt.
+        // North row bottom = y:90. Halvorsen top = y:200. Gap = 110pt.
         let northRowBottom = 0.0 + 90.0
         let gapAbove = sears.position.y - northRowBottom
         XCTAssertEqual(gapAbove, 110,
@@ -253,8 +253,8 @@ final class PathPlanningTests: XCTestCase {
         for p in wp {
             let inWestAnchorRect = p.x >= 0 && p.x < 200 && p.y >= 200 && p.y <= 1200
             let inEastAnchorRect = p.x > 1000 && p.x <= 1200 && p.y >= 200 && p.y <= 1200
-            XCTAssertFalse(inWestAnchorRect, "waypoint \(p) lies inside Sears")
-            XCTAssertFalse(inEastAnchorRect, "waypoint \(p) lies inside JCPenney")
+            XCTAssertFalse(inWestAnchorRect, "waypoint \(p) lies inside Halvorsen")
+            XCTAssertFalse(inEastAnchorRect, "waypoint \(p) lies inside Pemberton")
         }
     }
 

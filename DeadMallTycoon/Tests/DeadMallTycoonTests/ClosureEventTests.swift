@@ -31,7 +31,7 @@ final class ClosureEventEmissionTests: XCTestCase {
 
     func testVacateAppendsClosureLedgerEntry() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Claire's")
+        s = plantTenant(s, at: 2, name: "Lulu & Lace")
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
@@ -40,7 +40,7 @@ final class ClosureEventEmissionTests: XCTestCase {
         guard case .closure(let ev) = s.ledger[0] else {
             return XCTFail("expected .closure ledger entry, got \(s.ledger[0])")
         }
-        XCTAssertEqual(ev.tenantName, "Claire's")
+        XCTAssertEqual(ev.tenantName, "Lulu & Lace")
         XCTAssertEqual(ev.tenantTier, .standard)
         XCTAssertEqual(ev.slotId, 2)
         XCTAssertEqual(ev.year, s.year)
@@ -50,7 +50,7 @@ final class ClosureEventEmissionTests: XCTestCase {
 
     func testVacatePushesClosureToast() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books")
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
 
         let before = s.toasts.count
@@ -58,7 +58,7 @@ final class ClosureEventEmissionTests: XCTestCase {
 
         XCTAssertEqual(s.toasts.count, before + 1)
         let toast = s.toasts.last!
-        XCTAssertEqual(toast.title, "Waldenbooks",
+        XCTAssertEqual(toast.title, "Brinkerhoff Books",
                        "closure toast title is the retailer name")
         XCTAssertEqual(toast.style, .closure)
         XCTAssertNotNil(toast.subtitle, "closure flavor line lives in subtitle")
@@ -66,7 +66,7 @@ final class ClosureEventEmissionTests: XCTestCase {
 
     func testAnchorClosureLedgerEntryRecordsAnchorTier() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 1, name: "Sears", tier: .anchor)
+        s = plantTenant(s, at: 1, name: "Halvorsen", tier: .anchor)
         let idx = s.stores.firstIndex(where: { $0.id == 1 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
@@ -80,7 +80,7 @@ final class ClosureEventEmissionTests: XCTestCase {
 
     func testYearsOpenDerivedFromMonthsOccupied() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Sam Goody", monthsOccupied: 48)
+        s = plantTenant(s, at: 2, name: "Ricky's Records", monthsOccupied: 48)
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
@@ -95,7 +95,7 @@ final class ClosureEventEmissionTests: XCTestCase {
     func testVacateDoesNotPauseGame() {
         var s = StartingMall.initialState()
         s.paused = false
-        s = plantTenant(s, at: 2, name: "Hot Topic")
+        s = plantTenant(s, at: 2, name: "Razor & Rose")
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
@@ -108,9 +108,9 @@ final class ClosureEventEmissionTests: XCTestCase {
 
     func testMultipleClosuresStackToasts() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 1, name: "Sam Goody")
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
-        s = plantTenant(s, at: 3, name: "Foot Locker")
+        s = plantTenant(s, at: 1, name: "Ricky's Records")
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books")
+        s = plantTenant(s, at: 3, name: "Sole Center")
 
         s = TenantLifecycle.vacateSlot(storeIndex: 1, state: s)
         s = TenantLifecycle.vacateSlot(storeIndex: 2, state: s)
@@ -121,21 +121,21 @@ final class ClosureEventEmissionTests: XCTestCase {
         let closureToasts = s.toasts.filter { $0.style == .closure }
         XCTAssertEqual(closureToasts.count, 3)
         XCTAssertEqual(closureToasts.map(\.title),
-                       ["Sam Goody", "Waldenbooks", "Foot Locker"])
+                       ["Ricky's Records", "Brinkerhoff Books", "Sole Center"])
     }
 
     // MARK: Eviction path
 
     func testEvictPathAlsoEmitsClosure() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 4, name: "Hot Topic")
+        s = plantTenant(s, at: 4, name: "Razor & Rose")
         s.score = 1000
 
         s = StoreActions.evict(storeId: 4, s)
 
         XCTAssertEqual(s.ledger.count, 1)
         let closureToasts = s.toasts.filter { $0.style == .closure }
-        XCTAssertEqual(closureToasts.last?.title, "Hot Topic")
+        XCTAssertEqual(closureToasts.last?.title, "Razor & Rose")
     }
 }
 
@@ -150,13 +150,13 @@ final class ClosureFlavorLookupTests: XCTestCase {
     }
 
     func testPerTenantLookupReturnsPlaceholderWhilePending() {
-        let line = ClosureFlavor.line(for: event("Waldenbooks"))
+        let line = ClosureFlavor.line(for: event("Brinkerhoff Books"))
         XCTAssertEqual(line, "[flavor line pending]",
                        "per-tenant entry returns the placeholder until authored")
     }
 
     func testPerTenantTakesPrecedenceOverTier() {
-        let rostered = ClosureFlavor.line(for: event("Sears", tier: .anchor))
+        let rostered = ClosureFlavor.line(for: event("Halvorsen", tier: .anchor))
         let unrostered = ClosureFlavor.line(for: event("Unknown Retailer", tier: .anchor))
         XCTAssertEqual(rostered, "[flavor line pending]")
         XCTAssertEqual(unrostered, "[flavor line pending]",

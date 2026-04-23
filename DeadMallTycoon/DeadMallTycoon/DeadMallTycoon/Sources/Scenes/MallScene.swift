@@ -1076,7 +1076,7 @@ final class MallScene: SKScene {
 
     // v9 Prompt 6.5 fix — H-shape walkable geometry constants.
     // v9 patch — values updated for worldHeight 1400. Main corridor band
-    // is y:200..1200 (h:1000) flanked by Sears (x<200) / JCPenney (x>1000).
+    // is y:200..1200 (h:1000) flanked by Halvorsen (x<200) / Pemberton (x>1000).
     // Access corridors at y:90..200 (upper, 110pt) and y:1200..1310 (lower,
     // 110pt) span full mall width and are the only path between corner
     // blocks and the main corridor.
@@ -1089,7 +1089,7 @@ final class MallScene: SKScene {
     private static let upperAccessLaneY: Double   = 145    // preferred lane (mid of upper access)
     private static let lowerAccessLaneY: Double   = 1255   // preferred lane (mid of lower access)
     // Gate x: where corner-column traffic enters the main corridor. 10pt
-    // inside the main corridor so visitors don't skim Sears/JCPenney walls.
+    // inside the main corridor so visitors don't skim Halvorsen/Pemberton walls.
     private static let westGateX: Double = 210
     private static let eastGateX: Double = 990
 

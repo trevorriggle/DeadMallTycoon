@@ -65,7 +65,7 @@ enum VisitorActivity: String, Codable, CaseIterable {
 
 // v9 Prompt 4 Phase 1 — where the visitor says they're headed.
 // Narrative. The storeSlotId case carries a concrete slot id so the panel
-// can render "Heading to Waldenbooks" by looking up the store name.
+// can render "Heading to Brinkerhoff Books" by looking up the store name.
 enum DestinationIntent: Equatable, Codable {
     case fountain
     case foodCourt

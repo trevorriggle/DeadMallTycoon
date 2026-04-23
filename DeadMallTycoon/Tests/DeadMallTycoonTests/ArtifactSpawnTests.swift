@@ -38,7 +38,7 @@ final class TenantLifecycleTests: XCTestCase {
 
     func testVacateSlotProducesBoardedStorefrontArtifact() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books")
         let idx = s.stores.firstIndex(where: { $0.id == 2 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
@@ -46,12 +46,12 @@ final class TenantLifecycleTests: XCTestCase {
         XCTAssertEqual(s.artifacts.count, 1)
         let a = s.artifacts[0]
         XCTAssertEqual(a.type, .boardedStorefront)
-        XCTAssertEqual(a.name, "Waldenbooks", "name stores literal tenant name, no Old/Former prefix")
+        XCTAssertEqual(a.name, "Brinkerhoff Books", "name stores literal tenant name, no Old/Former prefix")
         XCTAssertEqual(a.yearCreated, s.year)
         XCTAssertEqual(a.storeSlotId, 2)
         XCTAssertNil(a.tenantId, "tenantId is reserved for a future prompt; nil in Prompt 2")
         if case .tenant(let who) = a.origin {
-            XCTAssertEqual(who, "Waldenbooks")
+            XCTAssertEqual(who, "Brinkerhoff Books")
         } else {
             XCTFail("expected .tenant origin, got \(a.origin)")
         }
@@ -61,7 +61,7 @@ final class TenantLifecycleTests: XCTestCase {
 
     func testVacateSlotTransitionsStoreToVacant() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 5, name: "Claire's")
+        s = plantTenant(s, at: 5, name: "Lulu & Lace")
         let idx = s.stores.firstIndex(where: { $0.id == 5 })!
 
         s = TenantLifecycle.vacateSlot(storeIndex: idx, state: s)
@@ -85,9 +85,9 @@ final class TenantLifecycleTests: XCTestCase {
 
     func testMultipleVacationsAccumulateUniqueArtifacts() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 1, name: "Sam Goody")
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
-        s = plantTenant(s, at: 3, name: "Foot Locker")
+        s = plantTenant(s, at: 1, name: "Ricky's Records")
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books")
+        s = plantTenant(s, at: 3, name: "Sole Center")
 
         s = TenantLifecycle.vacateSlot(storeIndex: 1, state: s)
         s = TenantLifecycle.vacateSlot(storeIndex: 2, state: s)
@@ -95,14 +95,14 @@ final class TenantLifecycleTests: XCTestCase {
 
         XCTAssertEqual(s.artifacts.count, 3)
         let names = Set(s.artifacts.map(\.name))
-        XCTAssertEqual(names, ["Sam Goody", "Waldenbooks", "Foot Locker"])
+        XCTAssertEqual(names, ["Ricky's Records", "Brinkerhoff Books", "Sole Center"])
         let ids = Set(s.artifacts.map(\.id))
         XCTAssertEqual(ids.count, 3, "artifact ids must be unique")
     }
 
     func testYearOfCreationMatchesStateYearAtClosure() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 1, name: "Sam Goody")
+        s = plantTenant(s, at: 1, name: "Ricky's Records")
         s.year = 1987
         s = TenantLifecycle.vacateSlot(storeIndex: 1, state: s)
         XCTAssertEqual(s.artifacts[0].yearCreated, 1987)
@@ -116,7 +116,7 @@ final class HardshipClosureSpawnsArtifactTests: XCTestCase {
     func testClosingFlagTransitionSpawnsArtifact() {
         var s = StartingMall.initialState()
         s.pendingLawsuitMonth = nil
-        s = plantTenant(s, at: 1, name: "Sam Goody")
+        s = plantTenant(s, at: 1, name: "Ricky's Records")
         // Pre-set closing so the next tick will execute the closing branch.
         if let i = s.stores.firstIndex(where: { $0.id == 1 }) {
             s.stores[i].closing = true
@@ -126,7 +126,7 @@ final class HardshipClosureSpawnsArtifactTests: XCTestCase {
         s = TickEngine.tick(s, rng: &rng)
         autoDismiss(&s)
 
-        let samArtifacts = s.artifacts.filter { $0.name == "Sam Goody" }
+        let samArtifacts = s.artifacts.filter { $0.name == "Ricky's Records" }
         XCTAssertEqual(samArtifacts.count, 1, "hardship-driven closure must produce an artifact")
         XCTAssertEqual(samArtifacts.first?.storeSlotId, 1)
     }
@@ -134,7 +134,7 @@ final class HardshipClosureSpawnsArtifactTests: XCTestCase {
     func testLeavingFlagTransitionSpawnsArtifact() {
         var s = StartingMall.initialState()
         s.pendingLawsuitMonth = nil
-        s = plantTenant(s, at: 2, name: "Waldenbooks")
+        s = plantTenant(s, at: 2, name: "Brinkerhoff Books")
         if let i = s.stores.firstIndex(where: { $0.id == 2 }) {
             s.stores[i].leaving = true
         }
@@ -143,7 +143,7 @@ final class HardshipClosureSpawnsArtifactTests: XCTestCase {
         s = TickEngine.tick(s, rng: &rng)
         autoDismiss(&s)
 
-        let wb = s.artifacts.filter { $0.name == "Waldenbooks" }
+        let wb = s.artifacts.filter { $0.name == "Brinkerhoff Books" }
         XCTAssertEqual(wb.count, 1, "lease non-renewal (leaving) must produce an artifact")
         XCTAssertEqual(wb.first?.storeSlotId, 2)
     }
@@ -153,11 +153,11 @@ final class ForceEvictionSpawnsArtifactTests: XCTestCase {
 
     func testEvictionSpawnsArtifactAndVacatesSlot() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 5, name: "Claire's")
+        s = plantTenant(s, at: 5, name: "Lulu & Lace")
 
         s = StoreActions.evict(storeId: 5, s)
 
-        let c = s.artifacts.filter { $0.name == "Claire's" }
+        let c = s.artifacts.filter { $0.name == "Lulu & Lace" }
         XCTAssertEqual(c.count, 1, "force-eviction must produce an artifact")
         XCTAssertEqual(c.first?.storeSlotId, 5)
         if let i = s.stores.firstIndex(where: { $0.id == 5 }) {
@@ -169,12 +169,12 @@ final class ForceEvictionSpawnsArtifactTests: XCTestCase {
 
     func testEvictionOriginIsTenantName() {
         var s = StartingMall.initialState()
-        s = plantTenant(s, at: 6, name: "Radio Shack")
+        s = plantTenant(s, at: 6, name: "Signal Shack")
         s = StoreActions.evict(storeId: 6, s)
-        let a = s.artifacts.first { $0.name == "Radio Shack" }
+        let a = s.artifacts.first { $0.name == "Signal Shack" }
         XCTAssertNotNil(a)
         if case .tenant(let who) = a!.origin {
-            XCTAssertEqual(who, "Radio Shack")
+            XCTAssertEqual(who, "Signal Shack")
         } else {
             XCTFail("expected .tenant origin, got \(String(describing: a?.origin))")
         }
