@@ -180,4 +180,25 @@ struct GameState: Equatable {
     // (not in current mechanics), this set prevents re-triggering the
     // cascade on the same wing.
     var anchorDepartedWings: Set<Wing> = []
+
+    // v9 Prompt 10 Phase B — anchor departure modal card queue.
+    //
+    // Queue (not single slot) so concurrent anchor closures in the same
+    // tick serialize — one card presents at a time, the next waits.
+    // Appended by TenantLifecycle.vacateSlot in the anchor branch;
+    // popped by GameViewModel.dismissAnchorDepartureCard on Continue.
+    //
+    // Render gate is `state.decision == nil && !queue.isEmpty` — if a
+    // tenant-offer decision is active when an anchor cascade fires, the
+    // anchor card waits behind it. One decision surface at a time.
+    var anchorDepartureCardQueue: [AnchorDepartureCardPayload] = []
+
+    // Pause ownership flag for the anchor-departure card. Mirrors
+    // tutorialOwnedPause / decisionSheetOwnedPause: the card claims the
+    // pause on .onAppear iff nothing else has paused the game, and
+    // releases it only when the queue is empty AFTER pop. If a tenant
+    // offer pause was active when the cascade fired, the card hands off
+    // — ownership stays with the decision, and the card doesn't
+    // clobber on dismiss.
+    var anchorCardOwnedPause: Bool = false
 }

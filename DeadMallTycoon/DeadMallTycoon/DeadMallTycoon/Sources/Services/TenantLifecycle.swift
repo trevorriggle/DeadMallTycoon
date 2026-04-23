@@ -106,6 +106,17 @@ enum TenantLifecycle {
                 year: s.year,
                 month: s.month
             ))
+            // v9 Prompt 10 Phase B — queue the modal card payload. UI
+            // (AnchorDepartureCardView in MallView) gates on decision ==
+            // nil && !queue.isEmpty; pause is claimed on the card's
+            // .onAppear, not here, so a concurrent tenant-offer decision
+            // owns its own pause unchallenged.
+            s.anchorDepartureCardQueue.append(AnchorDepartureCardPayload(
+                id: UUID(),
+                tenantName: tenantName,
+                wing: wing,
+                yearsOpen: yearsOpen
+            ))
         } else {
             let event = ClosureEvent(
                 id: UUID(),

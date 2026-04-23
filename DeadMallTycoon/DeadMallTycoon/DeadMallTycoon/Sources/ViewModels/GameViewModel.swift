@@ -302,6 +302,34 @@ final class GameViewModel {
         state.decisionSheetOwnedPause = false
     }
 
+    // MARK: v9 Prompt 10 Phase B — anchor departure modal card
+
+    // Called when AnchorDepartureCardView.onAppear fires. Claims the
+    // pause IF nothing else owns it; otherwise hands off — a tenant
+    // offer (state.decision set, paused=true) or the tutorial still
+    // owns the pause and the card just layers on top of the shared
+    // paused state.
+    func claimAnchorCardPause() {
+        guard !state.paused else { return }
+        state.paused = true
+        state.anchorCardOwnedPause = true
+    }
+
+    // Called by the card's Continue button. Pops the current card off
+    // the queue. If the queue is now empty AND we claimed the pause,
+    // release it. If more cards are queued, leave pause held — the
+    // next card's .onAppear will re-claim (but finds pause already
+    // true, so it guards out cleanly — no flicker between cards).
+    func dismissAnchorDepartureCard() {
+        if !state.anchorDepartureCardQueue.isEmpty {
+            state.anchorDepartureCardQueue.removeFirst()
+        }
+        if state.anchorDepartureCardQueue.isEmpty && state.anchorCardOwnedPause {
+            state.paused = false
+            state.anchorCardOwnedPause = false
+        }
+    }
+
     // MARK: v9 Prompt 7 — memorial verbs
 
     // UI entry: called from ArtifactInfoCard when the player taps Seal on a

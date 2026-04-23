@@ -101,6 +101,20 @@ struct MallView: View {
                 SealConfirmOverlay(vm: vm)
                     .transition(.opacity)
             }
+
+            // v9 Prompt 10 Phase B — anchor departure modal card.
+            // Gated on decision == nil so a tenant offer (or event card)
+            // takes precedence; the anchor card waits behind it. Queue
+            // supports serialized presentation if multiple anchors close
+            // in rapid succession (not expected in the current 2-anchor
+            // design, but defensively correct). Rendered LAST in the
+            // ZStack so it overlays everything else when active.
+            if vm.state.decision == nil,
+               let card = vm.state.anchorDepartureCardQueue.first {
+                AnchorDepartureCardView(vm: vm, payload: card)
+                    .id(card.id)   // fresh .onAppear per queued card
+                    .transition(.opacity)
+            }
         }
     }
 
