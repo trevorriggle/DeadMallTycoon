@@ -7,9 +7,10 @@ import SwiftUI
 // ManageDrawer History tab lives inside the drawer's top-level ScrollView;
 // GameOverView wraps this in its own ScrollView).
 //
-// Used by both the History tab and the end-screen ledger so the two
-// surfaces stay identical. No tap interaction in Phase B; Phase C adds
-// the tap-to-highlight wiring at the row level.
+// v9 Prompt 9 Phase C — optional per-entry tap. History tab passes a
+// handler that routes through vm.focusLedgerEntry; GameOverView passes
+// nil to stay non-interactive (retrospective view; pulse would be hidden
+// under the opaque end-screen background).
 struct LedgerView: View {
     let entries: [LedgerEntry]
 
@@ -18,10 +19,20 @@ struct LedgerView: View {
     // game; the end-screen uses something more memorial.
     let emptyStateText: String
 
+    // v9 Prompt 9 Phase C — optional tap handler. Nil → every row is
+    // plain text (non-interactive). Non-nil → rows whose entry is
+    // .isPotentiallyTappable render as buttons and invoke this with the
+    // tapped entry. Entries that can never reference an artifact
+    // (.envTransition, .offerDestruction, .artifactDestroyed) stay
+    // plain even when a handler is provided.
+    let onEntryTap: ((LedgerEntry) -> Void)?
+
     init(entries: [LedgerEntry],
-         emptyStateText: String = "No entries yet. The run has just begun.") {
+         emptyStateText: String = "No entries yet. The run has just begun.",
+         onEntryTap: ((LedgerEntry) -> Void)? = nil) {
         self.entries = entries
         self.emptyStateText = emptyStateText
+        self.onEntryTap = onEntryTap
     }
 
     var body: some View {
@@ -55,8 +66,11 @@ struct LedgerView: View {
             // Entries under the year. Offset-as-id is fine for an
             // append-only log: existing indices are stable across mutation.
             ForEach(Array(group.entries.enumerated()), id: \.offset) { _, entry in
-                LedgerEntryRow(entry: entry)
-                    .padding(.vertical, 1)
+                LedgerEntryRow(
+                    entry: entry,
+                    onTap: onEntryTap.map { handler in { handler(entry) } }
+                )
+                .padding(.vertical, 1)
             }
         }
     }

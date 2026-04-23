@@ -322,6 +322,14 @@ struct GameOverView: View {
             // The ledger. Primary content. Scrolls freely; fills every
             // pixel between the header and footer that isn't already
             // reserved.
+            //
+            // v9 Prompt 9 Phase C — deliberately non-interactive
+            // (onEntryTap is the default nil). At game over the mall is
+            // frozen AND the GameOverView covers it at 0.97 opacity, so
+            // the scene-pulse Phase C renders would be invisible. The
+            // end-screen is a reading surface — rows stay plain text.
+            // Users inspecting where an artifact IS on the mall use the
+            // mid-game History tab, not this one.
             ScrollView {
                 LedgerView(
                     entries: vm.state.ledger,

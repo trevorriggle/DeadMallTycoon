@@ -274,6 +274,92 @@ extension LedgerEntry {
     static let attentionMilestoneThresholds: [Int] = [10, 50, 100, 500, 1000]
 }
 
+// v9 Prompt 9 Phase C — tap-to-highlight resolution.
+//
+// Two concerns:
+//   1. Should the ledger row be tappable at all? (UI question, known
+//      without state — returns true iff the case conceptually references
+//      a specific artifact.)
+//   2. If tapped, what artifactId should the scene pulse? (Requires
+//      state — some cases lookup by slotId or name.)
+//
+// The lookup returns nil for non-tappable cases AND for tappable cases
+// whose referenced artifact no longer exists (offer-destroyed, etc.).
+// The tap handler uses that nil distinction to pick between "pulse the
+// scene" and "push 'no longer exists' toast."
+//
+// Design call on name-based lookup for .artifactSealed / .displayConversion /
+// .displayReverted: those cases don't carry an artifactId or slotId in
+// their payload (pre-Phase-A shape), so we resolve by tenantName +
+// most-recent-id tiebreaker — same heuristic MemorialCost uses. In the
+// unusual case of a retailer closing, re-tenanting, and closing again,
+// this could focus the newer memorial rather than the one the entry
+// historically referenced. Not catastrophic — it's still "a memorial of
+// the right retailer" — and adding artifactId to those cases is out of
+// Phase C's "no new data fields" scope.
+extension LedgerEntry {
+
+    // Is this case the kind that CAN be tapped? Answered without state
+    // (UI decides chevron/affordance from this). True iff the case
+    // conceptually references a specific artifact; false for pure-event
+    // cases (envTransition) and for cases where the artifact was
+    // destroyed by the event itself (offerDestruction, artifactDestroyed).
+    var isPotentiallyTappable: Bool {
+        switch self {
+        case .artifactCreated, .decayTransition, .attentionMilestone,
+             .closure, .anchorDeparture,
+             .artifactSealed, .displayConversion, .displayReverted:
+            return true
+        case .offerDestruction, .artifactDestroyed, .envTransition:
+            return false
+        }
+    }
+
+    // Resolve the artifactId to focus when this entry is tapped, against
+    // current GameState. Returns nil iff:
+    //   - the case doesn't reference an artifact (envTransition et al), OR
+    //   - the case referenced an artifact that no longer exists (the
+    //     "this artifact no longer exists" fallback message the UI shows)
+    //
+    // Resolution strategies:
+    //   - Direct artifactId field (artifactCreated / decayTransition /
+    //     attentionMilestone) — return it iff the artifact is still in
+    //     state.artifacts.
+    //   - slotId lookup (closure / anchorDeparture) — find the memorial
+    //     sitting on that slot, preferring the highest-id artifact on
+    //     defensive tie (matches MemorialCost's lookup).
+    //   - tenantName lookup (artifactSealed / displayConversion /
+    //     displayReverted) — same name-match pattern, most-recent wins.
+    func focusArtifactId(in state: GameState) -> Int? {
+        switch self {
+        case .artifactCreated(let aid, _, _, _, _, _),
+             .decayTransition(let aid, _, _, _, _, _, _),
+             .attentionMilestone(let aid, _, _, _, _, _):
+            return state.artifacts.contains(where: { $0.id == aid }) ? aid : nil
+
+        case .closure(let ev):
+            return state.artifacts
+                .filter { $0.storeSlotId == ev.slotId }
+                .max(by: { $0.id < $1.id })?.id
+
+        case .anchorDeparture(_, _, _, _, _, let slotId, _, _):
+            return state.artifacts
+                .filter { $0.storeSlotId == slotId }
+                .max(by: { $0.id < $1.id })?.id
+
+        case .artifactSealed(let name, _, _, _, _, _),
+             .displayConversion(let name, _, _, _, _, _),
+             .displayReverted(let name, _, _, _, _, _):
+            return state.artifacts
+                .filter { $0.name == name }
+                .max(by: { $0.id < $1.id })?.id
+
+        case .offerDestruction, .artifactDestroyed, .envTransition:
+            return nil
+        }
+    }
+}
+
 // v9 Prompt 9 Phase B — timestamp accessors. Every case carries a
 // (year, month) pair; these expose it uniformly so consumers (the
 // year-grouper, future Phase C focus-by-time helpers) don't have to

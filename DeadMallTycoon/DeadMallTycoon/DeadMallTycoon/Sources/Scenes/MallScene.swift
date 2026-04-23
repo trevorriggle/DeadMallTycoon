@@ -415,6 +415,10 @@ final class MallScene: SKScene {
         // CIColorControls filter, fluorescent flicker, ghostMall blackout,
         // decay overlay, isolation vignette, and ambient hum volume.
         reconcileEnvironment(state)
+        // v9 Prompt 9 Phase C — ledger tap-to-highlight pulse. Reads
+        // state.pendingFocusArtifactId; if set, runs a 2-second saturated
+        // ring on the referenced node and asks the VM to clear the request.
+        reconcileFocusRequest(state)
         // visitor selection highlight (visitors themselves are scene-local)
         for (id, node) in visitorNodes {
             node.markSelected(state.selectedVisitorId == id)
@@ -651,6 +655,60 @@ final class MallScene: SKScene {
             sprite.color = tint
             sprite.colorBlendFactor = CGFloat(1.0 - saturation) * 0.5 + dim
         }
+    }
+
+    // MARK: v9 Prompt 9 Phase C — ledger tap-to-highlight pulse
+
+    // Reads the one-shot focus request from GameState, runs the pulse if
+    // set, and asks the VM to clear the request. Clearing flips the
+    // state back to nil so the next tap (even of the same entry) is
+    // observed as a fresh mutation. No local dedup tracking needed —
+    // idempotent against repeated reconciles with a nil request.
+    private func reconcileFocusRequest(_ state: GameState) {
+        guard let aid = state.pendingFocusArtifactId else { return }
+        focusArtifact(id: aid, in: state)
+        vm?.clearFocusRequest()
+    }
+
+    // Runs a 2-second saturated-pink pulse ring centered on the target
+    // node. Target resolution, in order:
+    //   1. artifactNodes[id] — placed decorations/artifacts with an
+    //      ArtifactNode sprite.
+    //   2. storeNodes[artifact.storeSlotId] — memorial-type artifacts
+    //      (boardedStorefront, sealedStorefront, displaySpace) that
+    //      don't have a dedicated ArtifactNode; they're rendered as the
+    //      storefront texture flip on the StoreNode, so the pulse
+    //      targets the storefront.
+    //   3. No target → no-op. Happens for types that don't render (e.g.
+    //      emptyFoodCourt in theory). VM's nil-path toast covers "no
+    //      longer exists"; this guard covers "exists but invisible."
+    func focusArtifact(id: Int, in state: GameState) {
+        guard let artifact = state.artifacts.first(where: { $0.id == id }) else { return }
+
+        let targetNode: SKNode? = {
+            if let n = artifactNodes[id] { return n }
+            if let slot = artifact.storeSlotId, let sn = storeNodes[slot] { return sn }
+            return nil
+        }()
+        guard let target = targetNode else { return }
+
+        // Saturated pink ring. Hot color so it reads against any
+        // environmental state (even ghostMall's desaturated palette).
+        // 2-second total action — matches the Phase C spec.
+        let ring = SKShapeNode(circleOfRadius: 36)
+        ring.strokeColor = UIColor(red: 1.00, green: 0.30, blue: 0.74, alpha: 1.0)
+        ring.lineWidth = 4
+        ring.fillColor = .clear
+        ring.position = target.position
+        ring.zPosition = 100
+        ring.setScale(1.0)
+        ring.alpha = 0.9
+        overlayLayer.addChild(ring)
+
+        let grow = SKAction.scale(to: 2.8, duration: 2.0)
+        let fade = SKAction.fadeOut(withDuration: 2.0)
+        let remove = SKAction.removeFromParent()
+        ring.run(.sequence([.group([grow, fade]), remove]))
     }
 
     // MARK: Visitor motion — Phase 3 scene-local state machine

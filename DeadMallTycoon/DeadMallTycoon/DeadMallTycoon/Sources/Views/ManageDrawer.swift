@@ -15,6 +15,12 @@ struct ManageDrawer: View {
     @Environment(\.dismiss) private var dismiss
     @State private var tab: ManageTab = .acquire
 
+    // v9 Prompt 9 Phase C — detent binding so History-tab taps can snap
+    // the drawer down to .medium, exposing the scene behind where the
+    // focus pulse runs. Binding is local to ManageDrawer (no parent
+    // coordination needed); at .medium, SwiftUI leaves it alone.
+    @State private var detent: PresentationDetent = .medium
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -37,7 +43,7 @@ struct ManageDrawer: View {
             }
         }
         .background(Color(hex: "#14141a"))
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $detent)
         .presentationDragIndicator(.visible)
     }
 
@@ -305,20 +311,32 @@ struct ManageDrawer: View {
         }
     }
 
-    // MARK: - History (v9 Prompt 9 Phase B)
+    // MARK: - History (v9 Prompt 9 Phase B + C)
 
     // The ledger. Year-grouped, scrollable (drawer's top-level ScrollView
     // handles scrolling). Placeholder "[ledger pending: …]" strings render
     // as-is until the authoring pass lands — that's expected; the
-    // structure is legible even without the prose. No tap interaction in
-    // Phase B (Phase C wires tap-to-highlight on the scene).
+    // structure is legible even without the prose.
+    //
+    // v9 Prompt 9 Phase C — tapping a row routes through
+    // vm.focusLedgerEntry, which either sets state.pendingFocusArtifactId
+    // (MallScene then runs a 2-second ring pulse on the referenced node)
+    // or pushes a "no longer exists" toast. Every tap also snaps the
+    // drawer detent to .medium so the scene behind is visible; at the
+    // large detent the drawer covers the pulse entirely. Non-tappable
+    // cases (envTransition, offerDestruction, artifactDestroyed) skip
+    // the tap wiring at the LedgerEntryRow level.
     private var historyTab: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("The Ledger")
             subtle("Every closure, every decay, every era — as the mall remembers it.")
             LedgerView(
                 entries: vm.state.ledger,
-                emptyStateText: "No entries yet. Nothing has happened worth remembering."
+                emptyStateText: "No entries yet. Nothing has happened worth remembering.",
+                onEntryTap: { entry in
+                    vm.focusLedgerEntry(entry)
+                    withAnimation { detent = .medium }
+                }
             )
         }
     }

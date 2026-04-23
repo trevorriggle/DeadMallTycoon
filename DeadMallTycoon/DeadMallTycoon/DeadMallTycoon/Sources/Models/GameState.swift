@@ -124,4 +124,11 @@ struct GameState: Equatable {
     // the ghostMall environmental state transition at
     // EnvironmentTuning.monthsInDeadForGhostMall (60 months / 5 years).
     var monthsInDeadState: Int = 0
+
+    // v9 Prompt 9 Phase C — one-shot focus request from the ledger UI.
+    // Set by GameViewModel.focusLedgerEntry when the tapped entry resolves
+    // to a still-present artifact; MallScene.reconcileFocusRequest reads it,
+    // runs the 2-second pulse, and calls vm.clearFocusRequest() to reset.
+    // Nil in the common case.
+    var pendingFocusArtifactId: Int? = nil
 }

@@ -242,6 +242,33 @@ final class GameViewModel {
         state.toasts.removeAll { $0.id == id }
     }
 
+    // MARK: v9 Prompt 9 Phase C — ledger tap-to-highlight
+
+    // UI entry: called when the player taps a row in the History tab.
+    // Resolves the entry against current state — if the referenced
+    // artifact is still present, stash its id in pendingFocusArtifactId
+    // for MallScene to pulse; otherwise push an informational toast.
+    // Non-tappable entries (envTransition, offerDestruction, etc.)
+    // shouldn't reach this path because the row won't wire a tap
+    // handler, but the nil branch handles them safely.
+    func focusLedgerEntry(_ entry: LedgerEntry) {
+        if let aid = entry.focusArtifactId(in: state) {
+            state.pendingFocusArtifactId = aid
+        } else {
+            pushToast(Toast(
+                title: "This artifact no longer exists.",
+                style: .info
+            ))
+        }
+    }
+
+    // Called by MallScene after it runs the pulse for a focus request.
+    // Clears the pending id so the next tap (even of the same entry) is
+    // observed as a fresh mutation and re-fires.
+    func clearFocusRequest() {
+        state.pendingFocusArtifactId = nil
+    }
+
     // MARK: v9 Prompt 7 — memorial verbs
 
     // UI entry: called from ArtifactInfoCard when the player taps Seal on a
