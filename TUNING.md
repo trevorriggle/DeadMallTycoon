@@ -52,6 +52,13 @@ Update as part of any prompt that introduces or modifies a tunable value.
 - Display maintenance cost = `$75/mo` per `displaySpace` artifact — `Economy.operatingCost`. Covers cleaning, lighting, occasional content refresh. Raise if display spaces feel too cheap to curate. (Prompt 7)
 - Sealed vacancy relief: a vacant slot with a `sealedStorefront` artifact does NOT incur the $350/mo vacancy penalty — the space is walled off, not maintained. Implemented as a filter in `Economy.operatingCost`, not a separate constant. (Prompt 7)
 
+## Camera
+
+- `MallScene.cameraMinZoom = 1.0` — fit-all zoom (shows entire authored world 1200 × 1400). Matches the pre-camera `.aspectFit` rendering exactly; no pan available at this zoom (camera pins to world center).
+- `MallScene.cameraMaxZoom = 2.5` — closest zoom-in, enough to read a single storefront's signage without losing corridor context.
+- Pan clamping: camera viewport stays entirely within world bounds — no black overscroll past the mall edges.
+- Gesture scope: UIPinchGestureRecognizer + UIPanGestureRecognizer attached to the SKView inside `MallSceneView`. HUD, toasts, drawer, coachmarks, overlays are SwiftUI layers above the SKView and never receive the gestures — they remain fully interactive regardless of camera state. Single-tap (tap-to-select visitors/stores/artifacts) continues to route through `MallScene.touchesEnded` because `cancelsTouchesInView = false` on both recognizers.
+
 ## Artifact sizes
 
 - Per-type pixel dimensions live in `Data/Catalog.swift` via `ArtifactCatalog.info(_:).size`. Sizes are in world / CSS coords; scene renders `.aspectFit` to device.

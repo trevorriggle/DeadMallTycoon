@@ -151,6 +151,22 @@ final class MallScene: SKScene {
     private var lastStoreAnchor: CGPoint?
     private var lastDecorationAnchor: CGPoint?
 
+    // MARK: Camera — pinch-zoom + pan
+
+    // v9 patch — SKCameraNode enables pinch-zoom and pan scoped to the mall
+    // field. HUD / toasts / drawer / overlays are SwiftUI layers above the
+    // SKView and are unaffected by these gestures. Camera xScale is inverse
+    // of user-facing zoom (xScale 1.0 = fit-all = user zoom 1.0; xScale 0.4
+    // = user zoom 2.5×). Constants below are user-facing.
+    private let cameraNode = SKCameraNode()
+    static let cameraMinZoom: CGFloat = 1.0     // fit-all — matches original .aspectFit
+    static let cameraMaxZoom: CGFloat = 2.5     // closest zoom-in
+
+    // Pinch-focal anchor: the scene point under the two-finger midpoint at
+    // pinch start. Used to re-anchor the camera each .changed event so the
+    // point under the fingers stays under the fingers through the zoom.
+    private var pinchAnchorScene: CGPoint?
+
     // MARK: Lifecycle
 
     override func didMove(to view: SKView) {
@@ -168,6 +184,17 @@ final class MallScene: SKScene {
         buildStaticBackground()
         addChild(worldNode)
         worldNode.addChild(corridorNode)
+
+        // v9 patch — install camera, centered on the world, at fit-all zoom.
+        // Render output at this baseline matches the pre-camera .aspectFit
+        // behavior exactly; pinch/pan from MallSceneView transform it.
+        cameraNode.position = CGPoint(
+            x: GameConstants.worldWidth / 2,
+            y: GameConstants.worldHeight / 2
+        )
+        cameraNode.setScale(1.0)
+        addChild(cameraNode)
+        camera = cameraNode
 
         // v9 Prompt 8 — decay overlay sits above the corridor floor but
         // below stores so wear patterns show beneath storefront sprites.
@@ -1066,6 +1093,89 @@ final class MallScene: SKScene {
             : store.position.y - 15
         return VisitorTarget(x: store.position.x + store.position.w / 2,
                              y: ty, storeId: store.id)
+    }
+
+    // MARK: Camera gestures — pinch + pan (wired by MallSceneView's Coordinator)
+
+    // Pinch: adjust camera scale, preserving the world point under the two-
+    // finger midpoint. Called by the Coordinator's UIPinchGestureRecognizer
+    // handler. `g.scale` is cumulative-since-last-reset; after applying we
+    // reset to 1.0 so the next .changed event delivers the incremental delta.
+    func handlePinch(_ g: UIPinchGestureRecognizer) {
+        guard let view = view else { return }
+        switch g.state {
+        case .began:
+            let viewPoint = g.location(in: view)
+            pinchAnchorScene = convertPoint(fromView: viewPoint)
+        case .changed:
+            // User zoom inverts xScale. Apply the gesture scale inverse so
+            // pinch-out (g.scale < 1) zooms out, pinch-in (g.scale > 1) zooms in.
+            let proposedXScale = cameraNode.xScale / g.scale
+            let clampedXScale = clampCameraXScale(proposedXScale)
+            cameraNode.setScale(clampedXScale)
+            // Re-anchor: after zoom, the world point under the fingers has
+            // drifted from where we captured at .began — shift camera to
+            // put it back where the fingers are.
+            if let anchor = pinchAnchorScene {
+                let viewPointNow = g.location(in: view)
+                let scenePointNow = convertPoint(fromView: viewPointNow)
+                cameraNode.position.x += anchor.x - scenePointNow.x
+                cameraNode.position.y += anchor.y - scenePointNow.y
+            }
+            clampCameraPosition()
+            g.scale = 1.0
+        default:
+            pinchAnchorScene = nil
+        }
+    }
+
+    // Pan: translate camera in response to finger drag. Drag direction is
+    // the world-follows-finger convention (drag right → world scrolls right
+    // → camera moves left). At fit-all zoom, clampCameraPosition pins the
+    // camera to world center so pan is a no-op.
+    func handlePan(_ g: UIPanGestureRecognizer) {
+        guard let view = view else { return }
+        switch g.state {
+        case .changed:
+            let t = g.translation(in: view)
+            // Translation is in view points; convert to scene distance via
+            // camera scale. SpriteKit uses y-up; UIKit uses y-down — finger
+            // dragging down (positive t.y) should move the camera up
+            // (positive scene y) so the user sees "more above."
+            let scale = cameraNode.xScale
+            cameraNode.position.x -= t.x * scale
+            cameraNode.position.y += t.y * scale
+            clampCameraPosition()
+            g.setTranslation(.zero, in: view)
+        default:
+            break
+        }
+    }
+
+    private func clampCameraXScale(_ proposed: CGFloat) -> CGFloat {
+        // User zoom 1.0×..2.5× → xScale 1.0..0.4 (inverted).
+        let minXScale = 1.0 / Self.cameraMaxZoom
+        let maxXScale = 1.0 / Self.cameraMinZoom
+        return max(minXScale, min(maxXScale, proposed))
+    }
+
+    // Clamp camera position so the visible rect stays entirely within the
+    // authored world bounds (no black overscroll). At fit-all zoom the
+    // visible rect IS the world, so minX == maxX and the camera pins to
+    // world center — pan becomes a no-op at that zoom.
+    private func clampCameraPosition() {
+        let visibleW = size.width * cameraNode.xScale
+        let visibleH = size.height * cameraNode.yScale
+        let halfW = visibleW / 2
+        let halfH = visibleH / 2
+        let worldW = GameConstants.worldWidth
+        let worldH = GameConstants.worldHeight
+        let minX = halfW
+        let maxX = worldW - halfW
+        let minY = halfH
+        let maxY = worldH - halfH
+        cameraNode.position.x = max(minX, min(maxX, cameraNode.position.x))
+        cameraNode.position.y = max(minY, min(maxY, cameraNode.position.y))
     }
 
     // MARK: Touch routing — tap visitors / stores / decorations / place decoration
