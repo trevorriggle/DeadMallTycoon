@@ -163,9 +163,14 @@ final class MallScene: SKScene {
     static let cameraMaxZoom: CGFloat = 2.5     // closest zoom-in
 
     // Pinch-focal anchor: the scene point under the two-finger midpoint at
-    // pinch start. Used to re-anchor the camera each .changed event so the
-    // point under the fingers stays under the fingers through the zoom.
+    // pinch start, plus the view-space midpoint itself. Both are captured
+    // at .began; .changed uses the FIXED view midpoint (not g.location's
+    // current value) so pinch only corrects for scale-induced offset, not
+    // for midpoint drift. Midpoint drift is handled by the pan recognizer
+    // running simultaneously — if pinch also absorbed drift, the two
+    // recognizers would double-count and the camera would pan 2× too far.
     private var pinchAnchorScene: CGPoint?
+    private var pinchAnchorView: CGPoint?
 
     // MARK: Lifecycle
 
@@ -1097,54 +1102,66 @@ final class MallScene: SKScene {
 
     // MARK: Camera gestures — pinch + pan (wired by MallSceneView's Coordinator)
 
-    // Pinch: adjust camera scale, preserving the world point under the two-
-    // finger midpoint. Called by the Coordinator's UIPinchGestureRecognizer
-    // handler. `g.scale` is cumulative-since-last-reset; after applying we
-    // reset to 1.0 so the next .changed event delivers the incremental delta.
+    // Pinch: adjust camera scale, preserving the world point under the
+    // original (at-.began) two-finger midpoint. `g.scale` is cumulative-
+    // since-last-reset; after applying we reset to 1.0 so the next
+    // .changed event delivers the incremental delta.
+    //
+    // IMPORTANT: re-anchor uses the STORED view midpoint (pinchAnchorView),
+    // not g.location's current value. Otherwise, when the user pinches AND
+    // drifts their fingers (very common), both this re-anchor AND the pan
+    // recognizer would shift the camera for the same drift — the camera
+    // would pan 2× too fast. Pinch only corrects for the scale-induced
+    // offset; pan handles drift.
     func handlePinch(_ g: UIPinchGestureRecognizer) {
         guard let view = view else { return }
         switch g.state {
         case .began:
             let viewPoint = g.location(in: view)
+            pinchAnchorView = viewPoint
             pinchAnchorScene = convertPoint(fromView: viewPoint)
         case .changed:
             // User zoom inverts xScale. Apply the gesture scale inverse so
-            // pinch-out (g.scale < 1) zooms out, pinch-in (g.scale > 1) zooms in.
+            // pinch-out (g.scale > 1) zooms in, pinch-in (g.scale < 1) zooms out.
             let proposedXScale = cameraNode.xScale / g.scale
             let clampedXScale = clampCameraXScale(proposedXScale)
             cameraNode.setScale(clampedXScale)
-            // Re-anchor: after zoom, the world point under the fingers has
-            // drifted from where we captured at .began — shift camera to
-            // put it back where the fingers are.
-            if let anchor = pinchAnchorScene {
-                let viewPointNow = g.location(in: view)
-                let scenePointNow = convertPoint(fromView: viewPointNow)
-                cameraNode.position.x += anchor.x - scenePointNow.x
-                cameraNode.position.y += anchor.y - scenePointNow.y
+            // Re-anchor at the FIXED starting view point. After the scale
+            // change, the scene point at that view coordinate has drifted
+            // from where we captured it; nudge the camera to put it back.
+            if let anchorScene = pinchAnchorScene, let anchorView = pinchAnchorView {
+                let sceneNow = convertPoint(fromView: anchorView)
+                cameraNode.position.x += anchorScene.x - sceneNow.x
+                cameraNode.position.y += anchorScene.y - sceneNow.y
             }
             clampCameraPosition()
             g.scale = 1.0
         default:
             pinchAnchorScene = nil
+            pinchAnchorView = nil
         }
     }
 
-    // Pan: translate camera in response to finger drag. Drag direction is
-    // the world-follows-finger convention (drag right → world scrolls right
-    // → camera moves left). At fit-all zoom, clampCameraPosition pins the
-    // camera to world center so pan is a no-op.
+    // Pan: translate camera in response to finger drag. World-follows-
+    // finger convention: drag right → world scrolls right on screen →
+    // camera moves left in world coords.
+    //
+    // Translation delta is converted from view-space to scene-space via
+    // `convertPoint(fromView:)`, which is both camera-scale-aware AND
+    // aspect-fit-scale-aware in one call — no separate view.bounds math.
+    // The sign handles the SpriteKit y-up / UIKit y-down flip
+    // automatically: dragging finger down (t.y > 0) produces a negative
+    // scene-y delta, which moves the camera UP in scene coords (shows
+    // more of the top content to the user).
     func handlePan(_ g: UIPanGestureRecognizer) {
         guard let view = view else { return }
         switch g.state {
         case .changed:
             let t = g.translation(in: view)
-            // Translation is in view points; convert to scene distance via
-            // camera scale. SpriteKit uses y-up; UIKit uses y-down — finger
-            // dragging down (positive t.y) should move the camera up
-            // (positive scene y) so the user sees "more above."
-            let scale = cameraNode.xScale
-            cameraNode.position.x -= t.x * scale
-            cameraNode.position.y += t.y * scale
+            let zeroInScene = convertPoint(fromView: .zero)
+            let tInScene = convertPoint(fromView: t)
+            cameraNode.position.x -= tInScene.x - zeroInScene.x
+            cameraNode.position.y -= tInScene.y - zeroInScene.y
             clampCameraPosition()
             g.setTranslation(.zero, in: view)
         default:
