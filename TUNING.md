@@ -10,7 +10,7 @@ Update as part of any prompt that introduces or modifies a tunable value.
 
 ## Memory weight
 
-- `ThoughtTuning.memoryWeightBaseIncrement = 0.5` — base weight per thought fire. (Prompt 4)
+- `ThoughtTuning.memoryWeightBaseIncrement = 0.25` — base weight per thought fire. (Prompt 4; halved 0.5 → 0.25 in v9 base-tick patch to keep memory-per-game-month constant after 1x tick doubled from 4000ms → 8000ms. See "Tick interval" below.)
 - `ThoughtTuning.artifactProximityRadius = 40` — pts; visitor must be within this radius of an artifact for a thought to tag it. (Prompt 4)
 - Cohort multipliers: Originals ×2.5, Nostalgics ×1.5, Explorers ×1.0. (Prompt 4)
 - `MemoryWeight.visualThreshold = 5.0` — weight above which the pulse halo appears. (Prompt 4)
@@ -19,6 +19,27 @@ Update as part of any prompt that introduces or modifies a tunable value.
 
 - `MallScene.passiveThoughtMinInterval = 20` — seconds, min per-visitor cadence. (Prompt 4)
 - `MallScene.passiveThoughtMaxInterval = 30` — seconds, max per-visitor cadence. (Prompt 4)
+- Cadence is REAL-TIME (seconds), not game-time (months). When the base tick slows, visitors fire more thoughts per game-month; the halved `memoryWeightBaseIncrement` offsets this for memory weight, so the per-game-month memory accrual is preserved. Attention-milestone counts (raw, per real-time) are unaffected — a fountain hits its 100th thought at the same real-time second regardless of tick speed.
+
+## Tick interval
+
+- `Speed.tickIntervalMs` — milliseconds per in-game month at each speed. (v9 base-tick patch — doubled from the original v8 cadence of 4000/2000/1000/500ms. The slowdown is to let ambient life read as atmosphere rather than fast-forward.)
+    | speed | ms/month |
+    |---|---|
+    | `paused` | nil (timer off) |
+    | `x1` | 8000 |
+    | `x2` | 4000 |
+    | `x4` | 2000 |
+    | `x8` | 1000 |
+- Per-tick probabilities (decay, entrance sealing, hardship, lease decay) stay correct: they're `per game-month`, unchanged by the real-time duration of a month.
+- Real-time cadence events (toast durations, halo pulse, fluorescent flicker, env tween, ghost blackout, focus pulse, isolation check) stay correct: they're `per real-time`, unchanged by tick speed.
+- Tutorial override: **dropped** in v9 base-tick patch. The tutorial previously forced 8000ms during year 1 — but the new base 1x IS 8000ms, so the override had no remaining effect. `state.tickIntervalOverrideMs` still exists as a seam for future subsystems; currently always nil.
+
+## Decision-sheet pause
+
+- `GameState.decisionSheetOwnedPause: Bool` — set when a decision sheet (MANAGE drawer or top-level Acquire sheet) claims the pause on open, cleared on close. (v9 patch)
+- Pattern mirrors `tutorialOwnedPause`: a sheet opens → if nothing else has paused the game, claim the pause and set the flag. On close → if we owned it, release. If a tenant-offer decision or tutorial coachmark already owns the pause, the sheet hands off (flag stays false; closing the sheet does not resume).
+- Ambient surfaces (visitor profile panel, artifact info card) do NOT pause. Only decision surfaces pause.
 
 ## Artifact conversions
 

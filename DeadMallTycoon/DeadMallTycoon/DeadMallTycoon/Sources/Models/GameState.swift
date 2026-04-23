@@ -131,4 +131,13 @@ struct GameState: Equatable {
     // runs the 2-second pulse, and calls vm.clearFocusRequest() to reset.
     // Nil in the common case.
     var pendingFocusArtifactId: Int? = nil
+
+    // v9 patch — decision-sheet pause ownership. Mirrors tutorialOwnedPause:
+    // the MANAGE drawer and the top-level Acquire sheet are decision
+    // surfaces (not ambient), so they pause the game while open. Flag is
+    // set when a sheet claims the pause (only if nothing else owns it);
+    // cleared when that same sheet closes. If a tenant offer or tutorial
+    // already owns the pause, the sheet hands off — closing it won't
+    // resume prematurely.
+    var decisionSheetOwnedPause: Bool = false
 }

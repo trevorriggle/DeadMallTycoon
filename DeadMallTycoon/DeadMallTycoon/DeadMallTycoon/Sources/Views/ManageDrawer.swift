@@ -45,6 +45,12 @@ struct ManageDrawer: View {
         .background(Color(hex: "#14141a"))
         .presentationDetents([.medium, .large], selection: $detent)
         .presentationDragIndicator(.visible)
+        // v9 patch — decision-sheet pause. The drawer is a decision surface
+        // (Acquire, Tenants, Wings, etc. are all player choices), so time
+        // stops while it's open. Ownership hands off if something else
+        // already owns the pause (tenant offer, tutorial coachmark).
+        .onAppear    { vm.pauseForDecisionSheet() }
+        .onDisappear { vm.resumeFromDecisionSheet() }
     }
 
     // MARK: - Chrome

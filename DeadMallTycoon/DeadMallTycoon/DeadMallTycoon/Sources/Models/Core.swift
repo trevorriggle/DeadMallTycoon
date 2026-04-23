@@ -59,13 +59,19 @@ enum VisitorState: String, Codable {
 enum Speed: Int, Codable, CaseIterable {
     case paused = 0, x1 = 1, x2 = 2, x4 = 3, x8 = 4
     // v8: setSpd() — [null, 4000, 2000, 1000, 500]
+    // v9 patch — doubled the base tick to 8s/month at 1x. Speed ratios are
+    // preserved (each step halves the previous). The slowdown is to let
+    // ambient life (visitor walking, thoughts firing) read as sustained
+    // atmosphere rather than a fast-forward montage. Memory weight per
+    // game-month is held constant via the corresponding halving of
+    // ThoughtTuning.memoryWeightBaseIncrement (see Thought.swift).
     var tickIntervalMs: Int? {
         switch self {
         case .paused: return nil
-        case .x1: return 4000
-        case .x2: return 2000
-        case .x4: return 1000
-        case .x8: return 500
+        case .x1: return 8000
+        case .x2: return 4000
+        case .x4: return 2000
+        case .x8: return 1000
         }
     }
 }

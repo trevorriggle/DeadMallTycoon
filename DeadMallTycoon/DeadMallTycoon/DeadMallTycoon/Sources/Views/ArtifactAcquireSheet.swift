@@ -24,6 +24,12 @@ struct ArtifactAcquireSheet: View {
         .background(Color(hex: "#14141a"))
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        // v9 patch — decision-sheet pause. The Acquire sheet is a
+        // placement-decision surface: time must not advance while the
+        // player picks an artifact to buy. Ownership hands off if
+        // something else already owns the pause.
+        .onAppear    { vm.pauseForDecisionSheet() }
+        .onDisappear { vm.resumeFromDecisionSheet() }
     }
 
     private var header: some View {

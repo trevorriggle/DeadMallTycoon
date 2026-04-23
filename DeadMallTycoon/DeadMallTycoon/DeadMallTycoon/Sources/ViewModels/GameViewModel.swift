@@ -19,14 +19,15 @@ final class GameViewModel {
     }
 
     // v8: startGame()
-    // withTutorial=true enables the guided first-year tutorial: tick rate slows
-    // to 8000ms, game starts paused on the welcome coachmark, director (Phase 3)
-    // handles beat scheduling from there.
+    // withTutorial=true enables the guided first-year tutorial: game starts
+    // paused on the welcome coachmark, director (Phase 3) handles beat
+    // scheduling from there. The old tick-interval override (8000ms "half
+    // speed" during year 1) was dropped with the v9 base-tick patch —
+    // new 1x is already 8000ms, so the override had no remaining effect.
     func startGame(withTutorial: Bool = false) {
         state = StartingMall.initialState()
         if withTutorial {
             state.tutorialActive = true
-            state.tickIntervalOverrideMs = 8000
             state.activeTutorialStep = .welcomeIntro
             state.paused = true
             state.tutorialOwnedPause = true
@@ -44,7 +45,10 @@ final class GameViewModel {
             state.paused = false
             state.tutorialOwnedPause = false
         }
-        // Graduation: tutorial is over, release the speed override and the flag.
+        // Graduation: tutorial is over. The tickIntervalOverrideMs field is
+        // no longer set by the tutorial (v9 patch dropped the override), but
+        // we still clear it + re-apply speed as a defensive no-op in case
+        // some future path sets an override.
         if step == .graduation {
             state.tutorialActive = false
             state.tickIntervalOverrideMs = nil
@@ -73,9 +77,12 @@ final class GameViewModel {
         ticker?.invalidate(); ticker = nil
         guard !state.gameover, state.started,
               let baseMs = state.speed.tickIntervalMs else { return }
-        // Tutorial-set override (e.g. 8000ms during year 1) wins over the player's
-        // selected speed. Pause still wins over everything — speed.tickIntervalMs
-        // is nil when paused, so we've already returned above in that case.
+        // tickIntervalOverrideMs is a kept seam for any future subsystem
+        // that wants to slow the clock. v9 dropped the tutorial's use of
+        // it (new 1x is already the slower pace); the override is currently
+        // always nil in practice. Pause still wins over everything —
+        // speed.tickIntervalMs is nil when paused, so we've already
+        // returned above in that case.
         let ms = state.tickIntervalOverrideMs ?? baseMs
         let interval = TimeInterval(ms) / 1000.0
         ticker = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
@@ -267,6 +274,32 @@ final class GameViewModel {
     // observed as a fresh mutation and re-fires.
     func clearFocusRequest() {
         state.pendingFocusArtifactId = nil
+    }
+
+    // MARK: v9 patch — decision-sheet pause
+
+    // Called by ManageDrawer.onAppear and ArtifactAcquireSheet.onAppear.
+    // Both surfaces are decision contexts — the player is deciding what to
+    // place or which tenant to pursue — so time must not advance while
+    // they're open. Ambient surfaces (visitor profile panel, artifact info
+    // card) do NOT call this.
+    //
+    // Ownership semantics mirror tutorialOwnedPause: claim the pause only
+    // if nothing else owns it. If a tenant-offer decision or a tutorial
+    // coachmark is already paused when the sheet opens, we hand off — the
+    // sheet closing will not clobber the decision / tutorial's pause.
+    func pauseForDecisionSheet() {
+        guard !state.paused else { return }
+        state.paused = true
+        state.decisionSheetOwnedPause = true
+    }
+
+    // Called by ManageDrawer.onDisappear and ArtifactAcquireSheet.onDisappear.
+    // Only releases the pause if this sheet claimed it.
+    func resumeFromDecisionSheet() {
+        guard state.decisionSheetOwnedPause else { return }
+        state.paused = false
+        state.decisionSheetOwnedPause = false
     }
 
     // MARK: v9 Prompt 7 — memorial verbs

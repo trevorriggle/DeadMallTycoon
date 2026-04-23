@@ -23,7 +23,16 @@ enum ThoughtTuning {
 
     // v9 Prompt 4 Phase 3 — memory weight increment per thought fire (before
     // cohort multiplier). Cohort multipliers are on AgeCohort.
-    static let memoryWeightBaseIncrement: Double = 0.5
+    //
+    // v9 patch — halved from 0.5 to 0.25 to offset the base-tick slowdown
+    // (Speed.tickIntervalMs 1x: 4000 → 8000). Visitor thoughts fire on a
+    // real-time cadence (20-30s per visitor), so doubling the real-time
+    // duration of a game-month would have doubled thoughts-per-game-month
+    // — and memory weight with it. Halving the per-thought increment holds
+    // memory-per-game-month constant, preserving the baseVacancyRate = 2.0
+    // ratio target (65:35 to 75:25 vacancy:memory at month 36). Total
+    // memory over a full real-time run is unchanged.
+    static let memoryWeightBaseIncrement: Double = 0.25
 }
 
 // v9 Prompt 4 Phase 4 — visual indicator threshold.
