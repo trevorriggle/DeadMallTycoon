@@ -439,6 +439,7 @@ final class MallScene: SKScene {
         reconcileArtifacts(state)        // v9 Prompt 3 — was reconcileDecorations
         reconcileEntrances(state)
         reconcileSealedWings(state)
+        reconcileWingCascadeDarkening(state)  // v9 Prompt 10 Phase C — anchor-cascade wing dim
         reconcileWingTint(state)        // Phase C — red tint on wings about to fail
         reconcileThreatFlash(state)     // Phase C — vignette flash when entering critical
         reconcileDim(state)
@@ -592,15 +593,25 @@ final class MallScene: SKScene {
 
     // v8: the decoration reconcile loop — iterated G.decorations.
     // v9 Prompt 3 — iterates state.artifacts. Ambient types (catalog cost == 0)
-    // are skipped here because they have no corridor position / sprite
+    // were originally skipped because they had no corridor position / sprite
     // representation; the storefront texture flip (Prompt 2) handles the
-    // visual for boardedStorefront, and the other ambient types aren't yet
-    // consumed by mechanics either. Every placeable artifact with a non-nil
-    // (x, y) gets an ArtifactNode sprite.
+    // visual for boardedStorefront, and the other ambient types weren't yet
+    // consumed by mechanics either.
+    //
+    // v9 Prompt 10 Phase C — expanded filter: any artifact with (x, y)
+    // set AND not slot-anchored renders. Admits the anchor-cascade
+    // cluster artifacts (stoppedEscalator, lostSignage) which have
+    // cost==0 but are spatially placed. Slot-anchored types
+    // (boardedStorefront / sealedStorefront / displaySpace) are still
+    // skipped — their visual is the StoreNode texture flip, not a
+    // standalone ArtifactNode sprite. ArtifactNode's placeholder-art
+    // fallback (grey dotted outline) covers types without authored
+    // textures.
     private func reconcileArtifacts(_ state: GameState) {
         let renderable = state.artifacts.filter { a in
-            guard ArtifactCatalog.info(a.type).cost > 0 else { return false }
-            return a.x != nil && a.y != nil
+            guard a.x != nil, a.y != nil else { return false }
+            guard a.storeSlotId == nil else { return false }
+            return true
         }
         let seen = Set(renderable.map { $0.id })
         for id in artifactNodes.keys where !seen.contains(id) {
@@ -670,6 +681,60 @@ final class MallScene: SKScene {
         if Mall.isWingClosed(.south, in: state) {
             overlay(for: .south, cssY: GameConstants.corridorBottom,
                     height: GameConstants.worldHeight - GameConstants.corridorBottom)
+        }
+    }
+
+    // v9 Prompt 10 Phase C — wing cascade darkening overlay.
+    //
+    // Consumes state.wingEnvOffsets (data from Phase A). When a wing has
+    // a positive offset (set when that wing's anchor departs), the wing's
+    // storefront row gets a semitransparent dark tint — the visual
+    // equivalent of "this wing has aged one env band beyond the rest of
+    // the mall." Follows the sealed-wing overlay's spatial scope: just
+    // the storefront row, not the anchor column (the anchor has its own
+    // dead-end darkening via StoreNode).
+    //
+    // Per-offset alpha lets future stacked cascades (not currently a
+    // thing) deepen the dim — one anchor gone = subtle; theoretical
+    // multiple cascades = deeper. Capped so a runaway offset doesn't
+    // fully black out the wing.
+    private func reconcileWingCascadeDarkening(_ state: GameState) {
+        overlayLayer.children
+            .filter { $0.name?.hasPrefix("wingCascade:") == true }
+            .forEach { $0.removeFromParent() }
+
+        for wing in Wing.allCases {
+            let offset = state.wingEnvOffsets[wing] ?? 0
+            guard offset > 0 else { continue }
+
+            // Skip if the wing is also fully sealed — the sealed overlay
+            // fully occludes this tint, so rendering both is wasted work
+            // (and layers z-ordering ambiguity).
+            guard !Mall.isWingClosed(wing, in: state) else { continue }
+
+            let width = GameConstants.worldWidth
+            let cssY: CGFloat
+            let height: CGFloat
+            switch wing {
+            case .north:
+                cssY = 0
+                height = GameConstants.corridorTop
+            case .south:
+                cssY = GameConstants.corridorBottom
+                height = GameConstants.worldHeight - GameConstants.corridorBottom
+            }
+
+            let alpha = min(0.7, CGFloat(offset) * 0.3)
+            let tint = SKSpriteNode(
+                color: SKColor.black.withAlphaComponent(alpha),
+                size: CGSize(width: width, height: height))
+            tint.position = csToScene(x: width / 2, y: cssY + height / 2)
+            // Below the sealed-wing overlay (z:50) so seal takes visual
+            // precedence when both are present; above base storefront /
+            // corridor layers so the tint actually darkens them.
+            tint.zPosition = 45
+            tint.name = "wingCascade:\(wing.rawValue)"
+            overlayLayer.addChild(tint)
         }
     }
 

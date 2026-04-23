@@ -20,6 +20,13 @@ final class StoreNode: SKSpriteNode {
     private let isAnchorSlot: Bool
     private var closingDot: SKShapeNode?
     private var anchorNameLabel: SKLabelNode?
+    // v9 Prompt 10 Phase C — permanent darkening layer on a vacant anchor.
+    // Sits above the base .boarded facade texture but below ambient
+    // indicators (closing dot / promo glow). Present only when the anchor
+    // has actually departed; adding/removing this layer is driven by
+    // apply(store:) so a re-tenant (not currently possible, but defensive)
+    // would clear it.
+    private var deadEndDimmer: SKSpriteNode?
 
     init(store: Store) {
         self.storeId = store.id
@@ -66,10 +73,33 @@ final class StoreNode: SKSpriteNode {
             // Hide the name label entirely when vacant so the void reads clean.
             anchorNameLabel?.text = store.isVacant ? "" : store.name.uppercased()
             anchorNameLabel?.isHidden = store.isVacant
+            updateDeadEndDimmer(vacant: store.isVacant)
         }
 
         updateClosingDot(store.closing)
         updatePromoGlow(store.promotionActive)
+    }
+
+    // v9 Prompt 10 Phase C — permanent darkening on a vacant anchor.
+    // The .boarded facade texture already bakes in the boarded-door look
+    // and the signage label is hidden separately above. This layer adds
+    // the extra "this side of the mall has gone dark" weight so a vacant
+    // anchor reads as a dead end, not just a closed store.
+    private func updateDeadEndDimmer(vacant: Bool) {
+        if vacant {
+            if deadEndDimmer == nil {
+                let dim = SKSpriteNode(
+                    color: SKColor.black.withAlphaComponent(0.45),
+                    size: size)
+                dim.zPosition = 10   // above base texture (0), below closing dot (50)
+                dim.name = "deadEndDimmer"
+                addChild(dim)
+                deadEndDimmer = dim
+            }
+        } else {
+            deadEndDimmer?.removeFromParent()
+            deadEndDimmer = nil
+        }
     }
 
     // MARK: - Ambient indicators
