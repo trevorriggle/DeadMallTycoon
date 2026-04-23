@@ -15,6 +15,19 @@ Update as part of any prompt that introduces or modifies a tunable value.
 - Cohort multipliers: Originals ×2.5, Nostalgics ×1.5, Explorers ×1.0. (Prompt 4)
 - `MemoryWeight.visualThreshold = 5.0` — weight above which the pulse halo appears. (Prompt 4)
 
+## Thought selection (Prompt 11)
+
+Visitor thoughts draw from artifact-specific pools when the visitor is in proximity; otherwise fall back to the personality × state pool. Proximity is the ONLY gate — the Prompt 4 "25% generic fallback" coin flip is gone. The "generic thoughts become rarer as the mall ages" property emerges naturally from late-game mall density: more artifacts → more proximity matches → less fallback.
+
+- **Per-cohort pool access** — older visitors see more of each artifact's `thoughtTriggers` pool. Accessed as the first N strings (prefix), so slices are nested: Explorers ⊆ Nostalgics ⊆ Originals.
+    | cohort | fraction | 10-string pool |
+    |---|---|---|
+    | Explorers | 0.30 | first 3 |
+    | Nostalgics | 0.60 | first 6 |
+    | Originals | 1.00 | all 10 |
+  Minimum one string for any non-empty pool (authorial convention: order thoughtTriggers universal → specific, so Explorers get the surface-level observations and Originals get the deep cuts at the tail).
+- **Weighted pick by memory weight** — when multiple artifacts are in proximity, selection is weighted by `memoryWeightFloor + memoryWeight`. Higher-memory artifacts become more likely to surface thoughts. `ThoughtTuning.memoryWeightFloor = 1.0` keeps fresh (memoryWeight=0) artifacts reachable; at memoryWeight=99 the artifact is ~50× more likely to win than a fresh peer. Tunes the "memory compounds" bias.
+
 ## Thought cadence
 
 - `MallScene.passiveThoughtMinInterval = 20` — seconds, min per-visitor cadence. (Prompt 4)

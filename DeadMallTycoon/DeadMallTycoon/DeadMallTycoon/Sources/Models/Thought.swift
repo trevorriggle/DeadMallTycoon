@@ -33,6 +33,33 @@ enum ThoughtTuning {
     // ratio target (65:35 to 75:25 vacancy:memory at month 36). Total
     // memory over a full real-time run is unchanged.
     static let memoryWeightBaseIncrement: Double = 0.25
+
+    // v9 Prompt 11 — per-cohort access fraction into an artifact's
+    // thoughtTriggers pool. Older cohorts see more of the pool; younger
+    // cohorts only see the "shallow" prefix. The rationale is narrative:
+    // Originals lived through the mall's history and remember more
+    // specifics; Explorers are newer visitors who only register surface
+    // observations.
+    //
+    // Authoring convention: order each artifact's thoughtTriggers array
+    // from MOST universal → MOST specific/lived-experience. Explorers
+    // only see the front 30%, so the most broadly-relatable observations
+    // belong there. Originals see the whole pool including the deep
+    // cuts at the tail.
+    static let cohortPoolFraction: [AgeCohort: Double] = [
+        .explorers:  0.30,
+        .nostalgics: 0.60,
+        .originals:  1.00,
+    ]
+
+    // v9 Prompt 11 — base weight added to memoryWeight when
+    // weighted-picking among nearby artifacts. Without a floor, fresh
+    // (memoryWeight==0) artifacts would never be picked; with a large
+    // floor, memoryWeight becomes irrelevant. 1.0 means a fresh artifact
+    // has the same base chance as a kugel at memoryWeight=1, and a
+    // kugel at memoryWeight=100 is ~50× more likely to win than a
+    // fresh artifact next to it. Tunes the "memory compounds" bias.
+    static let memoryWeightFloor: Double = 1.0
 }
 
 // v9 Prompt 4 Phase 4 — visual indicator threshold.

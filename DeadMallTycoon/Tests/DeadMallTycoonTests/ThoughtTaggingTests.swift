@@ -2,8 +2,17 @@ import XCTest
 @testable import DeadMallTycoon
 
 // v9 Prompt 4 Phase 2 coverage. Thoughts fired within the artifact proximity
-// radius tag the closest artifact; thoughts outside the radius leave
-// artifactId nil and draw from the personality pool.
+// radius tag an artifact; thoughts outside the radius leave artifactId nil
+// and draw from the personality pool.
+//
+// v9 Prompt 11 update:
+//   - Coordinates updated for the post-v9-patch starting mall (kugel now
+//     at y:700, not the pre-patch y:245 — the old test position was in
+//     the upper access corridor, nowhere near any artifact).
+//   - Proximity is now the ONLY gate — the Prompt 4 "25% generic fallback"
+//     coin flip is gone. If an artifact is in range, the thought will
+//     always tag it, so assertions tighten from "at least 1 of 20" to
+//     "all 20 of 20."
 
 final class ThoughtTaggingTests: XCTestCase {
 
@@ -16,32 +25,20 @@ final class ThoughtTaggingTests: XCTestCase {
 
     func testThoughtNearArtifactTagsArtifact() {
         let (v, s) = spawnVisitor()
-        // Seed mall has a kugel ball at (585, 245). Position the visitor
-        // right next to it (well inside 40pt radius).
+        // Seed mall has a kugel ball at (585, 700) per StartingMall
+        // artifactSeeds. Position the visitor right at it (well inside
+        // the 40pt radius). Under Prompt 11 rules, every call tags an
+        // artifact when in proximity — no fallback coin flip.
         var rng = SeededGenerator(seed: 99)
         let thought = PersonalityPicker.pickThought(
-            for: v, at: (x: 585, y: 245),
+            for: v, at: (x: 585, y: 700),
             in: s, rng: &rng
         )
-        // Over many seeds the tagging isn't guaranteed every single call
-        // (generic-fallback roll), but for this particular seed we expect
-        // the artifactId to be populated with the closest artifact (kugel).
-        // If nil, it's the genericFallback path — re-roll with a seed that
-        // avoids it to confirm tagging works.
-        var tagged: Thought = thought
-        if tagged.artifactId == nil {
-            // Force through a different seed.
-            var rng2 = SeededGenerator(seed: 3)
-            tagged = PersonalityPicker.pickThought(
-                for: v, at: (x: 585, y: 245),
-                in: s, rng: &rng2
-            )
-        }
-        guard let id = tagged.artifactId else {
+        guard let id = thought.artifactId else {
             return XCTFail("expected tagged thought near kugel (within radius)")
         }
-        let tagged_artifact = s.artifacts.first { $0.id == id }
-        XCTAssertNotNil(tagged_artifact)
+        let tagged = s.artifacts.first { $0.id == id }
+        XCTAssertNotNil(tagged)
     }
 
     func testThoughtFarFromArtifactsLeavesTagNil() {
@@ -57,20 +54,20 @@ final class ThoughtTaggingTests: XCTestCase {
     }
 
     func testProximityRadiusBoundary() {
-        // Position just outside vs just inside the radius of the kugel at (585, 245).
-        // Kugel seed is at (585, 245); radius is 40.
+        // Position just outside vs just inside the radius of the kugel at
+        // (585, 700). Radius is 40.
         let (v, s) = spawnVisitor()
         let insideX = 585 + ThoughtTuning.artifactProximityRadius - 5
         let outsideX = 585 + ThoughtTuning.artifactProximityRadius + 5
 
-        // Force through 20 attempts with varied seeds; inside should produce
-        // at least one tagged thought, outside should produce zero tagged.
+        // Under Prompt 11: every inside-radius attempt must tag; every
+        // outside-radius attempt must not. No more fallback coin flip.
         var insideTags = 0
         var outsideTags = 0
         for seed in UInt64(1)...20 {
             var rng = SeededGenerator(seed: seed)
             let t = PersonalityPicker.pickThought(
-                for: v, at: (x: insideX, y: 245),
+                for: v, at: (x: insideX, y: 700),
                 in: s, rng: &rng
             )
             if t.artifactId != nil { insideTags += 1 }
@@ -78,15 +75,15 @@ final class ThoughtTaggingTests: XCTestCase {
         for seed in UInt64(1)...20 {
             var rng = SeededGenerator(seed: seed)
             let t = PersonalityPicker.pickThought(
-                for: v, at: (x: outsideX, y: 245),
+                for: v, at: (x: outsideX, y: 700),
                 in: s, rng: &rng
             )
             if t.artifactId != nil { outsideTags += 1 }
         }
-        XCTAssertGreaterThan(insideTags, 0,
-                              "at least one of 20 inside-radius attempts should tag an artifact")
+        XCTAssertEqual(insideTags, 20,
+                       "every inside-radius attempt tags an artifact — no fallback when nearby")
         XCTAssertEqual(outsideTags, 0,
-                        "no outside-radius attempt should tag an artifact (kugel is the only in-range)")
+                       "no outside-radius attempt should tag an artifact")
     }
 
     func testAmbientArtifactsAreNotProximityCandidates() {
