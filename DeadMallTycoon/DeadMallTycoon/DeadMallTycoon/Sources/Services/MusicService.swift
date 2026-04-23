@@ -78,6 +78,7 @@ final class MusicService: NSObject {
     private override init() {
         super.init()
         loadTrackPool()
+        logPoolDiagnostic()
     }
 
     // MARK: Public API
@@ -87,9 +88,14 @@ final class MusicService: NSObject {
     // from the destination pool.
     func setEnvironmentState(_ env: EnvironmentState) {
         guard env != currentState else { return }
+        let previous = currentState
         currentState = env
         lastTrackURL = nil    // new session, no prior track to avoid
         crossfadeToNewTrack()
+        // Diagnostic — emits once per genuine transition.
+        let fromStr = previous.map(\.rawValue) ?? "nil"
+        let pickedStr = lastTrackURL?.lastPathComponent ?? "<none>"
+        print("MusicService: \(fromStr) → \(env.rawValue), picked \(pickedStr)")
     }
 
     // Hard stop. Called by GameViewModel.restart() if the audio layer
@@ -137,6 +143,17 @@ final class MusicService: NSObject {
             }
             trackPool[env] = urls
         }
+    }
+
+    // One-time startup log so we can tell from the console whether tracks
+    // are actually being picked up by Bundle.main. If a state shows `0`,
+    // Xcode didn't bundle the subdirectory (or the files aren't in the
+    // bundle at all) and the pool is empty — service will stay silent.
+    private func logPoolDiagnostic() {
+        let counts = Self.folderByState.map { (env, _) in
+            "\(env.rawValue):\(trackPool[env]?.count ?? 0)"
+        }.joined(separator: " ")
+        print("MusicService: loaded pools — \(counts)")
     }
 
     private func targetVolume(for env: EnvironmentState) -> Float {
