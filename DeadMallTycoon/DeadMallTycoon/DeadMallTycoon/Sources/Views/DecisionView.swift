@@ -282,44 +282,87 @@ struct TutorialView: View {
 
 // MARK: - Game over
 
+// v9 Prompt 9 Phase B — the end screen is the ledger.
+//
+// The run's story outweighs its number: the scrollable LedgerView fills
+// the screen, and the final score shrinks to a one-line footer above the
+// Try Again button. Per ENDGAME.md, the ledger "tells the story of this
+// mall: every tenant that left, every artifact that decayed, every wing
+// that went dark, every visitor that remembered something specific."
+// Score is a footnote.
+//
+// Pre-Phase-9 design (big red FORECLOSED + 64pt score) is gone. The
+// bankruptcy framing stays as a compact header — "FORECLOSED" still
+// opens the screen so the player knows what happened — but under it is
+// the ledger, not the number.
 struct GameOverView: View {
     @Bindable var vm: GameViewModel
 
+    private var yearsSurvived: Int { vm.state.year - GameConstants.startingYear }
+
     var body: some View {
-        VStack(spacing: 12) {
-            Text("FORECLOSED")
-                .font(.system(size: 42, weight: .black, design: .monospaced))
-                .tracking(1.8)
-                .foregroundStyle(Color(hex: "#ff2f4a"))
-            Text("The bank took the mall. The lights go dark.")
-                .font(.system(size: 18, design: .serif)).italic()
-                .foregroundStyle(Color(hex: "#d8d8e0"))
-            Text("FINAL SCORE")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
-                .tracking(2.4)
-                .foregroundStyle(Color(hex: "#6a6a78"))
-                .padding(.top, 20)
-            Text(vm.state.score.formatted())
-                .font(.system(size: 64, weight: .black, design: .monospaced))
-                .monospacedDigit()
-                .foregroundStyle(Color(hex: "#7fd3f0"))
-            Text("\(vm.state.year - GameConstants.startingYear) years, \(vm.state.month) months survived")
-                .font(.system(size: 18, design: .serif)).italic()
-                .foregroundStyle(Color(hex: "#d8d8e0"))
-            Button("Try Again") {
-                vm.restart()
+        VStack(spacing: 0) {
+
+            // Compact header — 24pt, not 42pt. "FORECLOSED" owns its
+            // line but doesn't dominate the screen. Subtitle is one
+            // sentence of context, not a dramatic beat.
+            VStack(spacing: 4) {
+                Text("FORECLOSED")
+                    .font(.system(size: 24, weight: .black, design: .monospaced))
+                    .tracking(2)
+                    .foregroundStyle(Color(hex: "#ff2f4a"))
+                Text("The bank took the mall. Below is what happened.")
+                    .font(.system(size: 13, design: .serif)).italic()
+                    .foregroundStyle(Color(hex: "#d8d8e0"))
             }
-            .font(.system(size: 20, weight: .bold, design: .monospaced))
-            .tracking(1.2)
-            .foregroundStyle(Color(hex: "#2a0a2a"))
-            .padding(.horizontal, 36).padding(.vertical, 14)
-            .background(Color(hex: "#ff4dbd"))
-            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-            .buttonStyle(.plain)
-            .padding(.top, 20)
+            .padding(.top, 24).padding(.bottom, 14)
+
+            Divider().background(Color(hex: "#3a3a48"))
+
+            // The ledger. Primary content. Scrolls freely; fills every
+            // pixel between the header and footer that isn't already
+            // reserved.
+            ScrollView {
+                LedgerView(
+                    entries: vm.state.ledger,
+                    emptyStateText: "Nothing happened worth remembering."
+                )
+                .padding(.horizontal, 24)
+                .padding(.vertical, 18)
+            }
+
+            Divider().background(Color(hex: "#3a3a48"))
+
+            // Footer — small score line, survival span, Try Again.
+            // Score is 12pt monospace, not 64pt. The number is a
+            // footnote to the narrative above.
+            VStack(spacing: 12) {
+                HStack {
+                    Text("Final score · \(vm.state.score.formatted())")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .tracking(1)
+                        .foregroundStyle(Color(hex: "#7fd3f0"))
+                    Spacer()
+                    Text("\(yearsSurvived)y \(vm.state.month)mo survived")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#6a6a78"))
+                }
+                .padding(.horizontal, 24)
+
+                Button("Try Again") {
+                    vm.restart()
+                }
+                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .tracking(1)
+                .foregroundStyle(Color(hex: "#2a0a2a"))
+                .padding(.horizontal, 28).padding(.vertical, 10)
+                .background(Color(hex: "#ff4dbd"))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(hex: "#5a2a4a"), lineWidth: 2))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 14).padding(.bottom, 20)
         }
-        .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.opacity(0.97))
     }

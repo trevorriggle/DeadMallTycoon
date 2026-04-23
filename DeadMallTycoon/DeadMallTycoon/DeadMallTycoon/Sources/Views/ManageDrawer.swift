@@ -1,10 +1,15 @@
 import SwiftUI
 
-// Bottom-drawer management sheet. Six tabs: Acquire · Tenants · Promos · Staff · Wings · Ads.
+// Bottom-drawer management sheet. Seven tabs:
+// Acquire · Tenants · Promos · Staff · Wings · Ads · History.
 // v9 Prompt 3 — Build tab renamed Acquire and moved to the first slot (more
 // prominent) per the spec: "the option to add new decorations needs to be
 // much more obvious in the UI." Also lists the full 26 placeable Artifact
 // types, not just the 6 legacy decorations.
+// v9 Prompt 9 Phase B — added History tab (seventh). Renders the run's
+// LedgerEntry list via the shared LedgerView — same view used in the
+// end-screen. Tab is last because it's reference, not action: the other
+// six are verbs the player performs, History is the mall's narrative log.
 struct ManageDrawer: View {
     @Bindable var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
@@ -24,6 +29,7 @@ struct ManageDrawer: View {
                     case .staff:   staffTab
                     case .wings:   wingsTab
                     case .ads:     adsTab
+                    case .history: historyTab
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -299,6 +305,24 @@ struct ManageDrawer: View {
         }
     }
 
+    // MARK: - History (v9 Prompt 9 Phase B)
+
+    // The ledger. Year-grouped, scrollable (drawer's top-level ScrollView
+    // handles scrolling). Placeholder "[ledger pending: …]" strings render
+    // as-is until the authoring pass lands — that's expected; the
+    // structure is legible even without the prose. No tap interaction in
+    // Phase B (Phase C wires tap-to-highlight on the scene).
+    private var historyTab: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("The Ledger")
+            subtle("Every closure, every decay, every era — as the mall remembers it.")
+            LedgerView(
+                entries: vm.state.ledger,
+                emptyStateText: "No entries yet. Nothing has happened worth remembering."
+            )
+        }
+    }
+
     // MARK: - Acquire (v9 Prompt 3)
 
     // v8: buildTab — six-kind decoration picker.
@@ -359,7 +383,9 @@ enum ManageTab: String, CaseIterable, Hashable {
     // v8/Prompt 1-2: tenants, promos, staff, wings, ads, build.
     // v9 Prompt 3 — `build` renamed `acquire` and promoted to the first slot
     // so artifact placement is the most obvious entry point in the drawer.
-    case acquire, tenants, promos, staff, wings, ads
+    // v9 Prompt 9 Phase B — `history` appended as the seventh tab (the
+    // mall's narrative log; reference, not action).
+    case acquire, tenants, promos, staff, wings, ads, history
     var title: String {
         switch self {
         case .acquire: return "Acquire"
@@ -368,6 +394,7 @@ enum ManageTab: String, CaseIterable, Hashable {
         case .staff:   return "Staff"
         case .wings:   return "Wings"
         case .ads:     return "Ads"
+        case .history: return "History"
         }
     }
 }

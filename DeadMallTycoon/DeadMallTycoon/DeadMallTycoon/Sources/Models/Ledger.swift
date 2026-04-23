@@ -273,3 +273,41 @@ enum LedgerEntry: Equatable, Codable {
 extension LedgerEntry {
     static let attentionMilestoneThresholds: [Int] = [10, 50, 100, 500, 1000]
 }
+
+// v9 Prompt 9 Phase B — timestamp accessors. Every case carries a
+// (year, month) pair; these expose it uniformly so consumers (the
+// year-grouper, future Phase C focus-by-time helpers) don't have to
+// re-pattern-match per case.
+extension LedgerEntry {
+    var year: Int {
+        switch self {
+        case .closure(let ev):                                       return ev.year
+        case .offerDestruction(_, _, _, _, _, let y, _):             return y
+        case .artifactSealed(_, _, _, _, let y, _):                  return y
+        case .displayConversion(_, _, _, _, let y, _):               return y
+        case .displayReverted(_, _, _, _, let y, _):                 return y
+        case .artifactCreated(_, _, _, _, let y, _):                 return y
+        case .decayTransition(_, _, _, _, _, let y, _):              return y
+        case .artifactDestroyed(_, _, _, _, let y, _):               return y
+        case .envTransition(_, _, let y, _):                         return y
+        case .anchorDeparture(_, _, _, _, _, _, let y, _):           return y
+        case .attentionMilestone(_, _, _, _, let y, _):              return y
+        }
+    }
+
+    var month: Int {
+        switch self {
+        case .closure(let ev):                                       return ev.month
+        case .offerDestruction(_, _, _, _, _, _, let m):             return m
+        case .artifactSealed(_, _, _, _, _, let m):                  return m
+        case .displayConversion(_, _, _, _, _, let m):               return m
+        case .displayReverted(_, _, _, _, _, let m):                 return m
+        case .artifactCreated(_, _, _, _, _, let m):                 return m
+        case .decayTransition(_, _, _, _, _, _, let m):              return m
+        case .artifactDestroyed(_, _, _, _, _, let m):               return m
+        case .envTransition(_, _, _, let m):                         return m
+        case .anchorDeparture(_, _, _, _, _, _, _, let m):           return m
+        case .attentionMilestone(_, _, _, _, _, let m):              return m
+        }
+    }
+}
