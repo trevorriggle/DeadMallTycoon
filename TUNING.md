@@ -52,6 +52,11 @@ Update as part of any prompt that introduces or modifies a tunable value.
 - Display maintenance cost = `$75/mo` per `displaySpace` artifact — `Economy.operatingCost`. Covers cleaning, lighting, occasional content refresh. Raise if display spaces feel too cheap to curate. (Prompt 7)
 - Sealed vacancy relief: a vacant slot with a `sealedStorefront` artifact does NOT incur the $350/mo vacancy penalty — the space is walled off, not maintained. Implemented as a filter in `Economy.operatingCost`, not a separate constant. (Prompt 7)
 
+## Artifact sizes
+
+- Per-type pixel dimensions live in `Data/Catalog.swift` via `ArtifactCatalog.info(_:).size`. Sizes are in world / CSS coords; scene renders `.aspectFit` to device.
+- Landmark items (kugel ball, fountain, pay phone bank, arcade cabinet, photo booth, coin horse, conversation pit, benches, directory board) rescaled 1.4×–1.8× post-Prompt-9 so they read as monuments against the 100×90 storefront scale. Texture items (planter, terrazzo, brass railing, cracked tile) and ceiling items (skylight, flickering fluorescent, emergency exit sign, stale christmas, stained tile) unchanged — small is correct for those.
+
 ## Entrances
 
 - Open-door traffic multiplier — applied in `Economy.entranceTrafficMultiplier(openEntranceCount:)`. Diminishing-returns curve; two open is the baseline that matches the pre-Prompt-6.5 two-wing layout, so rent / hardship tuning carries over unchanged. (Prompt 6.5)

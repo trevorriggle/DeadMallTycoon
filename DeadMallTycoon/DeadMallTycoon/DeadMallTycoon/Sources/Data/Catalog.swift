@@ -68,7 +68,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .kugelBall, name: "Kugel Ball",
                 baseMult: 0.15, ruinMult: 0.30,
-                size: CGSize(width: 28, height: 28),
+                size: CGSize(width: 50, height: 50),
                 cost: 3500, repair: 800,
                 description: "Granite sphere on water.",
                 defaultTriggers: [
@@ -82,7 +82,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .fountain, name: "Fountain",
                 baseMult: 0.10, ruinMult: 0.25,
-                size: CGSize(width: 46, height: 46),
+                size: CGSize(width: 80, height: 80),
                 cost: 2500, repair: 600,
                 description: "Pennies stay when it stops.",
                 defaultTriggers: [
@@ -124,7 +124,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .bench, name: "Bench",
                 baseMult: 0.02, ruinMult: 0.05,
-                size: CGSize(width: 36, height: 10),
+                size: CGSize(width: 50, height: 14),
                 cost: 600, repair: 150,
                 description: "Mall walkers rest here.",
                 defaultTriggers: [
@@ -138,7 +138,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .directoryBoard, name: "Directory Board",
                 baseMult: 0.05, ruinMult: 0.15,
-                size: CGSize(width: 22, height: 30),
+                size: CGSize(width: 32, height: 48),
                 cost: 1500, repair: 400,
                 description: "Never update it.",
                 defaultTriggers: [
@@ -185,7 +185,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .payPhoneBank, name: "Pay Phone Bank",
                 baseMult: 0.07, ruinMult: 0.18,
-                size: CGSize(width: 36, height: 24),
+                size: CGSize(width: 48, height: 32),
                 cost: 900, repair: 250,
                 description: "Nobody uses them.",
                 defaultTriggers: [
@@ -211,7 +211,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .coinOperatedHorseRide, name: "Coin Horse",
                 baseMult: 0.09, ruinMult: 0.22,
-                size: CGSize(width: 30, height: 28),
+                size: CGSize(width: 40, height: 36),
                 cost: 1100, repair: 300,
                 description: "Twenty-five cents, still.",
                 defaultTriggers: [
@@ -224,7 +224,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .photoBooth, name: "Photo Booth",
                 baseMult: 0.10, ruinMult: 0.24,
-                size: CGSize(width: 22, height: 36),
+                size: CGSize(width: 30, height: 48),
                 cost: 1400, repair: 350,
                 description: "Curtain torn halfway.",
                 defaultTriggers: [
@@ -276,7 +276,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .sunkenSeatingPit, name: "Conversation Pit",
                 baseMult: 0.12, ruinMult: 0.28,
-                size: CGSize(width: 60, height: 30),
+                size: CGSize(width: 100, height: 50),
                 cost: 2200, repair: 500,
                 description: "Nobody sits in it.",
                 defaultTriggers: [
@@ -341,7 +341,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .arcadeCabinet, name: "Arcade Cabinet",
                 baseMult: 0.11, ruinMult: 0.26,
-                size: CGSize(width: 20, height: 32),
+                size: CGSize(width: 28, height: 44),
                 cost: 1800, repair: 450,
                 description: "Decommissioned. Screen dark.",
                 defaultTriggers: [
@@ -406,7 +406,7 @@ enum ArtifactCatalog {
             return ArtifactTypeInfo(
                 type: .memorialBench, name: "Memorial Bench",
                 baseMult: 0.05, ruinMult: 0.14,
-                size: CGSize(width: 36, height: 10),
+                size: CGSize(width: 50, height: 14),
                 cost: 700, repair: 180,
                 description: "\"In Loving Memory of someone.\"",
                 defaultTriggers: [
