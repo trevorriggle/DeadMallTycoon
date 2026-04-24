@@ -310,8 +310,24 @@ struct ManageDrawer: View {
                 Text(down ? "Restore Power" : "Downgrade Lighting/HVAC  (−$1.5k/mo, −10% traffic)")
             }
             .disabled(closed)
+            // v9 Prompt 19 — seal direction routes through the confirmation
+            // preview (SealConfirmOverlay) so the drawer and the dedicated
+            // SEAL sheet share one confirm path. The drawer is itself a
+            // sheet, which means SealConfirmOverlay (mounted inside
+            // MallView) would render behind it — so we dismiss the drawer
+            // first, then raise the confirmation. The player confirms over
+            // the mall; re-opening the drawer to seal another wing is the
+            // expected flow (SealingSheet is the multi-seal surface).
+            //
+            // Reopen direction stays direct — reopening isn't destructive
+            // and doesn't need a warning card.
             actionButton(active: closed) {
-                vm.toggleWingClosed(wing)
+                if closed {
+                    vm.toggleWingClosed(wing)
+                } else {
+                    dismiss()
+                    vm.requestSeal(.wing(wing))
+                }
             } label: {
                 Text(closed ? "Reopen Wing" : "Seal Wing  (−$2.5k/mo ops, tenants lost)")
             }

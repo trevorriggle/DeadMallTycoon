@@ -67,6 +67,33 @@ enum TutorialBeatDetector {
             triggered.append(.firstDisplay)
         }
 
+        // v9 Prompt 19 — first time there's a boarded memorial on the
+        // scene the player could act on. Fires in the tick AFTER a
+        // tenant closure spawns the artifact (TenantLifecycle appends to
+        // state.artifacts inside the same tick; the detector runs after
+        // the tick returns). Distinct from firstClosure — that beat
+        // fires on the ledger entry; this one fires on the actionable
+        // artifact being available.
+        if state.artifacts.contains(where: { $0.type == .boardedStorefront }) {
+            triggered.append(.firstBoardedStorefront)
+        }
+
+        // v9 Prompt 19 — first wing that's dropped below 50% non-vacant
+        // occupancy. Mirrors the Sealing.wingOccupancyAdvisory threshold —
+        // below 50% is the inflection where sealing becomes an obvious
+        // move rather than an aggressive one. Uses non-closed wings so
+        // an already-sealed wing doesn't re-trigger.
+        for wing in Wing.allCases where !Mall.isWingClosed(wing, in: state) {
+            let stores = state.stores.filter { $0.wing == wing }
+            guard !stores.isEmpty else { continue }
+            let active = stores.filter { $0.tier != .vacant }.count
+            let ratio = Double(active) / Double(stores.count)
+            if ratio < 0.5 {
+                triggered.append(.firstWingEligibleForSealing)
+                break   // one fire per run; detector dedupes anyway
+            }
+        }
+
         // ---------- Tenant offers / closures ----------
         if case .tenant(let offer)? = state.decision {
             triggered.append(.firstTenantOffer)

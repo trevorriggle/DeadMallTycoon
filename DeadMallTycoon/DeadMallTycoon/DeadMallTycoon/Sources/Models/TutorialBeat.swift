@@ -39,6 +39,18 @@ enum TutorialBeat: String, Codable, CaseIterable {
     case firstSeal                    // first boardedStorefront sealed
     case firstDisplay                 // first boardedStorefront converted to displaySpace
 
+    // v9 Prompt 19 — sealing legibility beats. Three moments that make
+    // sealing discoverable as the game's primary economic + memorial
+    // verb. firstBoardedStorefront fires when the player first has a
+    // closure memorial available to act on; firstWingEligibleForSealing
+    // fires when a wing drops below 50% occupancy (the "sealing is now
+    // a clear move" inflection); firstSealCompleted fires on the first
+    // successful seal of ANY type (memorial, wing, or entrance) so the
+    // player sees the payoff beat after the action, not before.
+    case firstBoardedStorefront       // first .boardedStorefront in state.artifacts
+    case firstWingEligibleForSealing  // first wing with < 50% non-vacant occupancy
+    case firstSealCompleted           // first successful seal (any type)
+
     // Hazard + decay — fire on first time the player sees one.
     case firstHazard                  // first hazard artifact spawns on scene
 
@@ -83,7 +95,15 @@ enum TutorialBeat: String, Codable, CaseIterable {
     // against state.tutorialBeatsSeen.
     var isUITriggered: Bool {
         switch self {
-        case .manageDrawer, .firstLedgerView, .firstVisitorThought:
+        case .manageDrawer, .firstLedgerView, .firstVisitorThought,
+             .firstSealCompleted:
+            // v9 Prompt 19 — firstSealCompleted fires from the confirm
+            // action (GameViewModel.confirmSeal), not from a post-tick
+            // state scan. Wing and entrance seals don't emit ledger
+            // entries that the detector could observe, and gating the
+            // ledger on tutorialEnabled would leak tutorial flags into
+            // provenance data. fireBeat(...) already early-returns on
+            // !tutorialEnabled so non-tutorial runs stay untouched.
             return true
         default:
             return false

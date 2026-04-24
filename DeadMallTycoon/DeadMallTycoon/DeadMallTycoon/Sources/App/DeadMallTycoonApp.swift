@@ -33,6 +33,8 @@ struct ContentView: View {
     @State private var showPnL = false
     // v9 Prompt 3 followup — top-level Acquire shortcut.
     @State private var showAcquire = false
+    // v9 Prompt 19 — top-level Seal shortcut.
+    @State private var showSealing = false
     @Environment(\.horizontalSizeClass) private var hSize
     #if DEBUG
     // v9: Artifact debug panel entry — Prompt 1. Dev-only, stripped from release.
@@ -119,6 +121,10 @@ struct ContentView: View {
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 8) {
                         AcquireButton(action: { showAcquire = true })
+                        // v9 Prompt 19 — SEAL between ACQUIRE and MANAGE so
+                        // the sealing surface is discoverable at the same
+                        // level as the other top-level action shortcuts.
+                        SealButton(action: { showSealing = true })
                         ManageButton(action: { showManage = true })
                     }
                     #if DEBUG
@@ -148,6 +154,7 @@ struct ContentView: View {
         .sheet(isPresented: $showManage)  { ManageDrawer(vm: vm) }
         .sheet(isPresented: $showPnL)     { PnLModal(vm: vm) }
         .sheet(isPresented: $showAcquire) { ArtifactAcquireSheet(vm: vm) }
+        .sheet(isPresented: $showSealing) { SealingSheet(vm: vm) }
         #if DEBUG
         .sheet(isPresented: $showArtifactDebug) { ArtifactDebugPanel(vm: vm) }
         #endif

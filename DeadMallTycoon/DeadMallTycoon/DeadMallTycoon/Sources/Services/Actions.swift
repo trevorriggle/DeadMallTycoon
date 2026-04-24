@@ -491,6 +491,24 @@ enum WingActions {
     }
 }
 
+// v9 Prompt 19 — entrance sealing as a player action. Before Prompt 19,
+// corner entrances were only sealed automatically by TickEngine while the
+// mall was struggling+ (see TickEngine.swift step 9.5). The sealing sheet
+// adds a manual entrypoint so the player can seal eligible corners for the
+// $500/mo savings without waiting for the RNG path to fire. Auto-seal and
+// manual-seal coexist — both mutate the same state.sealedEntrances set.
+//
+// No cost to seal (matches wing sealing: the savings IS the reward, sealing
+// an entrance costs no cash up front). Idempotent — sealing an already-sealed
+// corner is a no-op and safe to call from confirm.
+enum EntranceActions {
+    static func seal(_ corner: EntranceCorner, _ state: GameState) -> GameState {
+        var s = state
+        s.sealedEntrances.insert(corner)
+        return s
+    }
+}
+
 enum PromoActions {
 
     // v8: launchPromo()

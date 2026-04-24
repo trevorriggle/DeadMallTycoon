@@ -159,6 +159,42 @@ enum Economy {
         return max(2000, base + perStore + vacancyPenalty - downgradeSavings + displayMaintenance)
     }
 
+    // v9 Prompt 19 — preview of operatingCost AFTER applying a SealAction,
+    // without mutating the live state. Used by SealConfirmOverlay to render
+    // "current: $X/mo → after: $Y/mo" accurately, reusing the canonical
+    // operatingCost function rather than reproducing its arithmetic.
+    //
+    // The mutation mirrors what the confirm path does: for wing/entrance
+    // seals, flip the flag; for memorial seals, morph the target artifact
+    // to .sealedStorefront. No ledger append, no action burst — we only
+    // need the cost surface to match. Returns nil if the action references
+    // an entity that no longer exists (artifact deleted, etc.), so callers
+    // can fall back to the current cost.
+    static func hypotheticalOperatingCost(
+        _ state: GameState,
+        ifApplying action: SealAction
+    ) -> Int? {
+        var s = state
+        switch action {
+        case .wing(let wing):
+            s.wingsClosed[wing] = true
+            s.wingsDowngraded[wing] = false
+        case .entrance(let corner):
+            s.sealedEntrances.insert(corner)
+        case .memorial(let artifactId):
+            guard let idx = s.artifacts.firstIndex(where: { $0.id == artifactId }) else {
+                return nil
+            }
+            let a = s.artifacts[idx]
+            guard a.type == .boardedStorefront || a.type == .displaySpace else {
+                return nil
+            }
+            s.artifacts[idx].type = .sealedStorefront
+            s.artifacts[idx].displayContent = nil
+        }
+        return operatingCost(s)
+    }
+
     // v8: hazardFines()
     // v9 Prompt 3 — reads state.artifacts (unified from deleted state.decorations).
     // Only placeable artifacts can carry hazard in practice; ambient/memorial

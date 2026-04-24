@@ -355,24 +355,55 @@ final class GameViewModel {
         }
     }
 
-    // MARK: v9 Prompt 7 — memorial verbs
+    // MARK: v9 Prompt 7 / Prompt 19 — seal confirmation flow
 
-    // UI entry: called from ArtifactInfoCard when the player taps Seal on a
-    // boardedStorefront or displaySpace. Opens the SealConfirmOverlay; the
-    // actual mutation happens in confirmSeal() after the player confirms.
-    // Sealing is irreversible, so the extra tap is an intentional guard.
+    // v9 Prompt 19 — unified request entrypoint for all three seal kinds.
+    // Called from SealingSheet and (via requestSealConfirmation wrapper,
+    // preserved for binary-minimal churn) ArtifactInfoCard. Opens the
+    // SealConfirmOverlay; confirmSeal dispatches on the action's case.
+    func requestSeal(_ action: SealAction) {
+        state.pendingSealAction = action
+    }
+
+    // v9 Prompt 7 — preserved call signature for ArtifactInfoCard.
+    // Thin wrapper over the generalized requestSeal(_:).
     func requestSealConfirmation(artifactId: Int) {
-        state.pendingSealConfirmationArtifactId = artifactId
+        requestSeal(.memorial(artifactId: artifactId))
     }
 
     func cancelSealConfirmation() {
-        state.pendingSealConfirmationArtifactId = nil
+        state.pendingSealAction = nil
     }
 
+    // v9 Prompt 19 — dispatches on pendingSealAction. Memorial seals route
+    // through ArtifactActions.sealStorefront (unchanged mutation path);
+    // wing seals route through WingActions.toggleClosed (which already
+    // handles the closed=true transition and clears downgrade); entrance
+    // seals route through the new EntranceActions.seal. All three clear
+    // pendingSealAction on completion.
     func confirmSeal() {
-        guard let id = state.pendingSealConfirmationArtifactId else { return }
-        state = ArtifactActions.sealStorefront(artifactId: id, state)
-        state.pendingSealConfirmationArtifactId = nil
+        guard let action = state.pendingSealAction else { return }
+        switch action {
+        case .memorial(let artifactId):
+            state = ArtifactActions.sealStorefront(artifactId: artifactId, state)
+        case .wing(let wing):
+            // Only close if not already closed; toggleClosed would re-open
+            // an already-closed wing. The sheet's eligibility filter prevents
+            // this from happening in practice, but guard here defensively.
+            if !(state.wingsClosed[wing] ?? false) {
+                state = WingActions.toggleClosed(wing, state)
+            }
+        case .entrance(let corner):
+            state = EntranceActions.seal(corner, state)
+        }
+        state.pendingSealAction = nil
+        // v9 Prompt 19 — UI-triggered tutorial beat. Fires on the first
+        // successful seal of ANY type. Wing and entrance seals don't
+        // emit ledger entries that the post-tick detector could observe,
+        // and gating ledger entries on tutorialEnabled would leak tutorial
+        // flags into provenance data. fireBeat early-returns on
+        // !tutorialEnabled so non-tutorial runs see zero effect here.
+        fireBeat(.firstSealCompleted)
     }
 
     // UI entry: one-tap conversion from the inspector. Content variant is

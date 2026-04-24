@@ -31,6 +31,9 @@ import Foundation
 //   [ ] .firstLedgerView               — first History/ledger open
 //   [ ] .firstSeal                     — first boardedStorefront sealed
 //   [ ] .firstDisplay                  — first boardedStorefront → displaySpace
+//   [ ] .firstBoardedStorefront        — first closure memorial on scene
+//   [ ] .firstWingEligibleForSealing   — first wing drops below 50% occupancy
+//   [ ] .firstSealCompleted            — first successful seal (any type)
 //   [ ] .firstHazard                   — first hazard artifact on scene
 //   [ ] .firstEnvTransition            — first env band crossed
 //   [ ] .firstMallDying                — first .dying state
@@ -166,6 +169,28 @@ enum TutorialBeatCopy {
             return TutorialBeatCardContent(
                 title: "GHOST MALL",
                 body: "[tutorial pending: firstGhostMall — state .ghostMall. Five consecutive years in dead. This is what the game exists to produce. Every month survived here is the highest-value month possible.]"
+            )
+
+        // v9 Prompt 19 — sealing legibility beats. Placeholder copy
+        // captures the intent from the Prompt 19 spec (Trevor to author
+        // the final voice). Each card teaches the SEAL button as the
+        // primary surface and frames sealing as an economic tool.
+        case .firstBoardedStorefront:
+            return TutorialBeatCardContent(
+                title: "A STOREFRONT IS EMPTY",
+                body: "[tutorial pending: firstBoardedStorefront — a storefront closed. An empty slot costs $350/mo in vacancy penalty. Tap SEAL in the HUD to convert it to a memorial — no more cost, and visitors will remember it. Wings and entrances can also be sealed from there later.]"
+            )
+
+        case .firstWingEligibleForSealing:
+            return TutorialBeatCardContent(
+                title: "A WING IS MOSTLY EMPTY",
+                body: "[tutorial pending: firstWingEligibleForSealing — a wing has dropped below half occupancy. Sealing it saves $4,500/mo and converts its empty space into memorial score. Tap SEAL to review the options.]"
+            )
+
+        case .firstSealCompleted:
+            return TutorialBeatCardContent(
+                title: "SEALED",
+                body: "[tutorial pending: firstSealCompleted — saved money AND gained score. Sealing is the primary economic tool as the mall declines. The game rewards shrinking deliberately, not preventing decline.]"
             )
         }
     }

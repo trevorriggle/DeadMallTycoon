@@ -152,9 +152,11 @@ struct GameState: Equatable {
     var ledger: [LedgerEntry] = []
 
     // v9 Prompt 7 — artifact id awaiting the Seal-confirmation overlay.
+    // v9 Prompt 19 — generalized from a bare artifactId to SealAction so
+    // wing and entrance seals route through the same confirmation flow.
     // Non-nil → SealConfirmOverlay is mounted in MallView. Confirming
-    // routes to ArtifactActions.sealStorefront; cancelling clears the id.
-    var pendingSealConfirmationArtifactId: Int? = nil
+    // dispatches on the action's case; cancelling clears the field.
+    var pendingSealAction: SealAction? = nil
 
     // v9 Prompt 8 — consecutive months in MallState.dead. Incremented per
     // tick while Mall.state == .dead; reset to 0 on any recovery. Drives

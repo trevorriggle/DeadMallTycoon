@@ -89,11 +89,13 @@ struct MallView: View {
             }
             .allowsHitTesting(false)
 
-            // v9 Prompt 7 — seal confirmation dialog. Appears when the player
-            // taps Seal in the artifact inspector; SealConfirmOverlay gates
-            // the destructive action behind one extra tap because sealing
-            // is irreversible.
-            if vm.state.pendingSealConfirmationArtifactId != nil {
+            // v9 Prompt 7 — seal confirmation dialog.
+            // v9 Prompt 19 — now triggered by any SealAction (memorial, wing,
+            // or entrance). Appears when the player taps a seal button in
+            // SealingSheet or the Seal verb in the artifact inspector.
+            // Gates the destructive action behind one extra tap because all
+            // three seal kinds are irreversible.
+            if vm.state.pendingSealAction != nil {
                 SealConfirmOverlay(vm: vm)
                     .transition(.opacity)
             }
