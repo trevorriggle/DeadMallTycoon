@@ -8,39 +8,9 @@ import Foundation
 // the view renders them as-is). Sections appear in the order defined
 // here; the reader scrolls top-to-bottom.
 //
-// Claude Code does NOT write these. The How to Play voice is Trevor's
-// — longer-form than the tutorial beats, explains the WHY behind each
-// mechanic, assumes the player has already played at least one run.
-// See the AUTHORING TODO below. Pattern mirrors the tutorial copy
-// file (Data/TutorialBeatCopy.swift) — placeholders are deliberately
-// uninteresting so missing auth is visible.
-//
-// -----------------------------------------------------------------------------
-// AUTHORING TODO — replace the body strings below. Voice: reference
-// material a returning player consults for optimization. No marketing
-// language. No introductions. Each section is self-contained; the
-// player may open a section directly and read it in isolation.
-//
-//   [ ] 1.  "What the game is"
-//   [ ] 2.  "Time and pacing"
-//   [ ] 3.  "Cash and score"
-//   [ ] 4.  "Tenants and tiers"
-//   [ ] 5.  "Closures and memorials"
-//   [ ] 6.  "The three memorial verbs"
-//   [ ] 7.  "Memory weight"
-//   [ ] 8.  "The mall state machine"
-//   [ ] 9.  "Anchors and the cascade"
-//   [ ] 10. "Scoring in detail"          ← MUST BE COMPLETE FORMULA REFERENCE
-//   [ ] 11. "Two failure modes"
-//   [ ] 12. "Endgame guidance"
-//   [ ] 13. "Credits and acknowledgments"
-//
-// Section 10 is the reference the player consults to optimize. The
-// placeholder below describes the structure the authored version needs:
-// every multiplier named, every formula reproduced, every numeric
-// constant given its current value. If a tuning value changes, the
-// section is updated. See Scoring.swift for the canonical source.
-// -----------------------------------------------------------------------------
+// Section 10 ("Scoring in detail") is the canonical formula reference
+// the player consults to optimize. If a value in Scoring.ScoringTuning
+// changes, update Section 10 in parallel.
 
 struct HowToPlaySection: Identifiable, Hashable {
     let id: Int
@@ -48,11 +18,10 @@ struct HowToPlaySection: Identifiable, Hashable {
     let body: String
 }
 
-// AUTHORING TODO: Trevor to audit and refine.
-// v9 Prompt 20 — scaffolding reference copy. Clear, structured, no
-// marketing tone. Numeric values mirror current Scoring.ScoringTuning;
-// update in parallel if those tune. Section 10 is the formula reference
-// the player consults to optimize.
+// v9 Prompt 20 — clear, structured reference copy. No marketing tone.
+// Numeric values mirror current Scoring.ScoringTuning; update in parallel
+// if those tune. Section 10 is the formula reference the player consults
+// to optimize.
 enum HowToPlayContent {
 
     static let sections: [HowToPlaySection] = [

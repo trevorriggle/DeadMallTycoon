@@ -5,27 +5,11 @@ import Foundation
 // A displaySpace artifact carries one DisplayContent variant, chosen at
 // conversion time in GameViewModel.repurposeAsDisplay via seeded rng.
 // The variant drives:
-//   - `thoughtPool`: per-variant placeholder strings that become the
-//     artifact's thoughtTriggers, flavoring what visitors remember.
+//   - `thoughtPool`: per-variant lines that become the artifact's
+//     thoughtTriggers, flavoring what visitors remember.
 //   - `tintHex`: the rendered tint color for the procedural display-window
 //     treatment (no authored asset yet).
 //   - `displayName`: inspector label.
-//
-// All thought-pool content ships as "[flavor line pending]" and needs
-// authoring. Claude Code does NOT write these lines. See AUTHORING TODO
-// below for the exact checklist.
-//
-// -----------------------------------------------------------------------------
-// AUTHORING TODO — replace "[flavor line pending]" entries in each variant's
-// thoughtPool. Voice: curated-memorial, first-person. Three lines per variant
-// minimum; more is fine. See ClosureFlavor.swift for tone reference.
-//
-//   [ ] vintageMallPhotos       — thoughtPool (3 lines)
-//   [ ] communityArt            — thoughtPool (3 lines)
-//   [ ] seasonalVignette        — thoughtPool (3 lines)
-//   [ ] historicalPlaque        — thoughtPool (3 lines)
-//   [ ] localArtistShowcase     — thoughtPool (3 lines)
-// -----------------------------------------------------------------------------
 enum DisplayContent: String, Codable, CaseIterable, Equatable {
     case vintageMallPhotos
     case communityArt
@@ -58,13 +42,11 @@ enum DisplayContent: String, Codable, CaseIterable, Equatable {
     }
 
     // Thought triggers that get assigned to the Artifact.thoughtTriggers
-    // field at conversion time. Placeholder entries are intentional; real
-    // authoring per the TODO checklist above.
+    // field at conversion time.
     var thoughtPool: [String] {
         switch self {
-        // AUTHORING TODO: Trevor to audit and refine.
-        // v9 Prompt 20 — scaffolding. Three lines per variant, Explorer →
-        // Nostalgic → Original per the cohort pool convention.
+        // v9 Prompt 20 — three lines per variant, Explorer → Nostalgic →
+        // Original per the cohort pool convention.
         case .vintageMallPhotos:
             return [
                 "\"Look at those haircuts.\"",

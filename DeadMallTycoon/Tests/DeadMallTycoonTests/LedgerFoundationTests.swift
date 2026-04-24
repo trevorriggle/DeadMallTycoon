@@ -322,13 +322,13 @@ final class AttentionMilestoneEmissionTests: XCTestCase {
     }
 }
 
-// MARK: - LedgerTemplates placeholder coverage
+// MARK: - LedgerTemplates rendering coverage
 
-final class LedgerTemplatePlaceholderTests: XCTestCase {
+final class LedgerTemplateRenderingTests: XCTestCase {
 
-    // Every case must return a non-empty placeholder so UI rendering never
-    // gets a blank row before copy lands.
-    func testEveryCaseHasAPlaceholderLine() {
+    // Every case must return a non-empty rendered line so the ledger UI
+    // never gets a blank row.
+    func testEveryCaseRendersANonEmptyLine() {
         let samples: [LedgerEntry] = [
             .closure(ClosureEvent(id: UUID(), tenantName: "X", tenantTier: .standard,
                                    yearsOpen: 2, slotId: 1, year: 1985, month: 3)),
@@ -360,9 +360,7 @@ final class LedgerTemplatePlaceholderTests: XCTestCase {
         ]
         for entry in samples {
             let line = LedgerTemplates.line(for: entry)
-            XCTAssertFalse(line.isEmpty, "every case must produce a placeholder line")
-            XCTAssertTrue(line.contains("["),
-                          "pending copy should surface via the '[ledger pending: …]' convention")
+            XCTAssertFalse(line.isEmpty, "every case must produce a rendered line")
         }
     }
 

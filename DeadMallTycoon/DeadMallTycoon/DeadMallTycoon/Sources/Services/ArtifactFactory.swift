@@ -44,8 +44,7 @@ enum ArtifactFactory {
     }
 
     // v9 Prompt 3 — pulled from ArtifactCatalog so this function remains the
-    // single place callers look for "default" triggers. Real prose authoring
-    // is deferred; placeholder strings are intentional.
+    // single place callers look for "default" triggers.
     static func defaultThoughtTriggers(for type: ArtifactType) -> [String] {
         ArtifactCatalog.info(type).defaultTriggers
     }

@@ -33,7 +33,7 @@ struct ArtifactTypeInfo: Equatable {
     let cost: Int             // 0 = not player-placeable (ambient / event-spawned)
     let repair: Int
     let description: String
-    let defaultTriggers: [String]   // placeholder thought pool per type
+    let defaultTriggers: [String]   // authored thought pool per type
     // v9 Prompt 6.5 fix — consumed by MallScene's local-artifact avoidance.
     // See ArtifactPathingClass for the three-class taxonomy.
     let pathingClass: ArtifactPathingClass
@@ -46,12 +46,11 @@ struct ArtifactTypeInfo: Equatable {
 // sealedEntrance, emptyFoodCourt, custom) have cost == 0 and are filtered out
 // of the Acquire tab.
 //
-// AUTHORING TODO: Trevor to audit and refine.
-// v9 Prompt 20 — scaffolding pass. Every defaultTriggers array below is
-// three lines ordered Explorer → Nostalgic → Original per the cohort pool
-// convention in Thought.swift (explorers see the front 30%, nostalgics
-// the front 60%, originals the full pool). Voice is grounded 1980s mall;
-// fictional-brand names only. Lines are scaffolding, not final copy.
+// v9 Prompt 20 — every defaultTriggers array below is three lines ordered
+// Explorer → Nostalgic → Original per the cohort pool convention in
+// Thought.swift (explorers see the front 30%, nostalgics the front 60%,
+// originals the full pool). Voice: grounded 1980s mall, fictional-brand
+// names only.
 enum ArtifactCatalog {
 
     // v9 Prompt 6.5 fix — convenience accessor for the avoidance/pathing system

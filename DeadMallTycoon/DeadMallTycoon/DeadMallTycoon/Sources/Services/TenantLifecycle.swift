@@ -131,9 +131,8 @@ enum TenantLifecycle {
         }
 
         // v9 patch — push an auto-dismiss closure toast. Title is the
-        // retailer name, subtitle is the authored ClosureFlavor line (or
-        // the [flavor line pending] placeholder until copy lands). Built
-        // from a lightweight ClosureEvent even for anchors so the existing
+        // retailer name, subtitle is the ClosureFlavor line. Built from
+        // a lightweight ClosureEvent even for anchors so the existing
         // ClosureFlavor lookup stays keyed on tenant name — the ledger
         // routing diverges but the player-facing toast doesn't.
         let toastEvent = ClosureEvent(

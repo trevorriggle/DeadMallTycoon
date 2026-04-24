@@ -2,41 +2,10 @@ import Foundation
 
 // v9 Prompt 9 Phase A — ledger line rendering templates.
 //
-// `LedgerTemplates.line(for:)` is the single function the History UI (Phase B)
-// and end-screen (Phase B) will call to render any LedgerEntry. Every case
-// currently returns a "[ledger line pending: ...]" placeholder with the
-// relevant fields interpolated. The structure is legible — a reader can see
-// what event fired and when — but the narrative voice is NOT authored yet.
-//
-// Claude Code does NOT write these. They are the narrative voice of the
-// ledger — the closure memorial, anchor departure, and decay moments get
-// their specific character here. See AUTHORING TODO below for the exact
-// checklist. The pattern mirrors Data/ClosureFlavor.swift (same "placeholder
-// is a legible signal, not a silent miss" convention).
-//
-// -----------------------------------------------------------------------------
-// AUTHORING TODO — replace the "[ledger line pending]" bodies below with
-// authored prose. Voice: memorial provenance. One sentence; past-tense,
-// third-person ledger entry style. Each line interpolates the relevant
-// fields (name, year, wing, threshold, condition names, etc.).
-//
-//   [ ] .closure(event:)                      — non-anchor tenant closure
-//   [ ] .anchorDeparture(...)                 — anchor closure + cascade (up to 3 sentences)
-//   [ ] .offerDestruction(...)                — memorial displaced by new tenant
-//   [ ] .artifactSealed(...)                  — player sealed a memorial permanently
-//   [ ] .displayConversion(...)               — player curated a memorial into a display
-//   [ ] .displayReverted(...)                 — player reverted a display back to boarded
-//   [ ] .artifactCreated(...)                 — new artifact entered the run
-//   [ ] .decayTransition(...)                 — condition advanced one step
-//   [ ] .artifactDestroyed(...)               — artifact removed (non-offer path)
-//   [ ] .envTransition(from:to:)              — mall entered a new environmental era
-//   [ ] .attentionMilestone(...)              — artifact hit a thought-count threshold
-//   [ ] .nameInheritance(...)                 — new tenant takes a departed anchor's name (homage)
-//
-// When authoring, keep interpolated fields in the same positions so the
-// tests in LedgerFoundationTests can continue to assert structure without
-// coupling to specific word choices.
-// -----------------------------------------------------------------------------
+// `LedgerTemplates.line(for:)` is the single function the History UI and
+// end-screen call to render any LedgerEntry. Voice is memorial provenance:
+// past-tense omniscient narrator, quiet and direct. Interpolated fields
+// stay in the positions LedgerFoundationTests asserts — don't reorder.
 enum LedgerTemplates {
 
     // Shared month-year formatter. "March 1991" style. No Date/Formatter
@@ -56,11 +25,9 @@ enum LedgerTemplates {
         return Condition(rawValue: clamped)?.name ?? "Unknown"
     }
 
-    // AUTHORING TODO: Trevor to audit and refine.
-    // v9 Prompt 20 — scaffolding prose. Omniscient narrator, quiet and
-    // direct. Single sentence per entry; past tense; interpolated fields
-    // kept in the same positions the tests assert. Anchor departure runs
-    // up to three sentences per the schema.
+    // v9 Prompt 20 — omniscient narrator, quiet and direct. Single sentence
+    // per entry; past tense; interpolated fields kept in the same positions
+    // the tests assert. Anchor departure runs up to three sentences.
     static func line(for entry: LedgerEntry) -> String {
         switch entry {
 

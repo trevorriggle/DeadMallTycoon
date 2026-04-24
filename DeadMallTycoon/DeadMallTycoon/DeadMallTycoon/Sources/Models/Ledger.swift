@@ -13,9 +13,8 @@ import Foundation
 //
 // v9 Prompt 9 Phase A — expanded beyond closures to cover the full run's
 // provenance: artifact creation, decay transitions, destruction, environmental
-// state advances, anchor departures, and visitor-attention milestones. Phase A
-// wires emission only (no UI); LedgerTemplates.line(for:) renders the cases
-// as placeholder strings pending authoring.
+// state advances, anchor departures, and visitor-attention milestones.
+// LedgerTemplates.line(for:) renders each case as authored prose.
 //
 // Both are value types so GameState's Equatable conformance is preserved.
 

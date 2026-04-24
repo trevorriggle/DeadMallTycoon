@@ -3,59 +3,17 @@ import Foundation
 // v9 Prompt 18 Phase A — tutorial beat card copy.
 //
 // TutorialBeatCopy.content(for:) is the single function the beat-card
-// view (Views/TutorialBeatCard.swift) calls to render any beat. Every
-// case currently returns a placeholder-but-legible body so the card is
-// readable before Trevor authors the real copy. The structure — title,
-// one or two sentences of lesson, Continue verb — is fixed; only the
-// text inside changes during authoring.
-//
-// Claude Code does NOT write these. The tutorial voice is Trevor's —
-// dry, present-tense, assumes intelligence, never explains the UI,
-// only explains WHY a mechanic exists. See the AUTHORING TODO below
-// for the checklist. Pattern mirrors Data/ClosureFlavor.swift and
-// Data/LedgerTemplates.swift — placeholders are deliberately
-// uninteresting so a missing auth is visible.
-//
-// -----------------------------------------------------------------------------
-// AUTHORING TODO — replace the body strings below. Voice: Trevor's
-// coach. Short. Specific. Never starts with "You are..." or "This is..."
-// Each card is one title + one body paragraph. Body CAN run two
-// sentences; three is the ceiling.
-//
-//   [ ] .welcome                       — paused welcome card (before Jan 1982)
-//   [ ] .manageDrawer                  — first MANAGE drawer open
-//   [ ] .firstPlacement                — first artifact placed from Acquire
-//   [ ] .firstTenantOffer              — first tenant Decision banner
-//   [ ] .firstClosure                  — first tenant closure
-//   [ ] .firstVisitorThought           — first visitor-thought read
-//   [ ] .firstLedgerView               — first History/ledger open
-//   [ ] .firstSeal                     — first boardedStorefront sealed
-//   [ ] .firstDisplay                  — first boardedStorefront → displaySpace
-//   [ ] .firstBoardedStorefront        — first closure memorial on scene
-//   [ ] .firstWingEligibleForSealing   — first wing drops below 50% occupancy
-//   [ ] .firstSealCompleted            — first successful seal (any type)
-//   [ ] .firstHazard                   — first hazard artifact on scene
-//   [ ] .firstEnvTransition            — first env band crossed
-//   [ ] .firstMallDying                — first .dying state
-//   [ ] .firstSealedWingSaving         — first wing closure visible in ops
-//   [ ] .firstActionBurst              — first non-zero actionBurst
-//   [ ] .firstAnchorDeparture          — first anchor closure (before cascade card)
-//   [ ] .firstSpecialtyOffer           — first specialty-tier offer
-//   [ ] .firstMallDead                 — first .dead state
-//   [ ] .approachingForgotten          — 3 months from forgotten trip
-//   [ ] .firstGhostMall                — first .ghostMall state
-//
-// -----------------------------------------------------------------------------
+// view (Views/TutorialBeatCard.swift) calls to render any beat. The
+// structure — title, one or two sentences of lesson, Continue verb —
+// is fixed; only the text changes with tuning.
 
 struct TutorialBeatCardContent {
     let title: String
     let body: String
 }
 
-// AUTHORING TODO: Trevor to audit and refine.
-// v9 Prompt 20 — scaffolding copy. Warm, direct, slightly wry. Teaches the
-// mechanic without performing. One or two sentences per beat. Final voice
-// pass pending Trevor's audit.
+// v9 Prompt 20 — warm, direct, slightly wry. Teaches the mechanic without
+// performing. One or two sentences per beat.
 enum TutorialBeatCopy {
 
     static func content(for beat: TutorialBeat) -> TutorialBeatCardContent {

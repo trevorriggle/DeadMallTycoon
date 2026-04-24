@@ -7,62 +7,12 @@ import Foundation
 //   2. Tier fallback in `perTier` (anchor / standard / kiosk / sketchy).
 //   3. Neutral template: "<name> has closed after <N> years."
 //
-// All specific entries ship as "[flavor line pending]" and need authoring.
-// Claude Code does NOT write these — they're the emotional beat that makes
-// the closure card a memorial instead of a notification. See AUTHORING TODO
-// below for the exact checklist.
-//
-// -----------------------------------------------------------------------------
-// AUTHORING TODO — replace "[flavor line pending]" for each of these entries.
-// Voice: memorial loss. One or two sentences for standards / kiosks / sketchy;
-// two or three sentences for anchors.
-//
-// Starting-mall tenants (seeded in StartingMall.storeSeeds):
-//   [ ] "Halvorsen"            (anchor)
-//   [ ] "Pemberton"         (anchor)
-//   [ ] "Ricky's Records"        (standard)
-//   [ ] "Brinkerhoff Books"      (standard)
-//   [ ] "Sole Center"      (standard)
-//   [ ] "Razor & Rose"        (standard)
-//   [ ] "Lulu & Lace"         (standard)
-//   [ ] "Signal Shack"      (standard)
-//   [ ] "Bell & Thornton"     (standard)
-//   [ ] "Switchblade Novelty"        (standard)
-//   [ ] "Beckett Books"        (standard)
-//   [ ] "Cinna-Swirl"         (kiosk)
-//   [ ] "Julius & Co"    (kiosk)
-//   [ ] "Shadecraft"     (kiosk)
-//   [ ] "Auntie Rae's"    (kiosk)
-//   [ ] "Vape Shop"        (sketchy — also appears in offer pool)
-//
-// Offer-pool tenants (Catalog.Tenants.*; these can only close after being
-// signed, so lines only fire if the player ever accepts them):
-//   [ ] "The Edition"       (standard)
-//   [ ] "Basin & Bloom" (standard)
-//   [ ] "GameVault"          (standard)
-//   [ ] "BellWave"          (standard)
-//   [ ] "Via Roma"            (kiosk)
-//   [ ] "Phantasm Seasonal"  (kiosk)
-//   [ ] "Escape Room"       (sketchy)
-//   [ ] "Pawn Outlet"       (sketchy)
-//
-// Tier fallbacks — fire when a retailer has no per-name entry (e.g. a future
-// tenant added to the catalog without a flavor line, or a custom-event
-// closure). Write these as a generic memorial for the retail class.
-//   [ ] anchor   fallback
-//   [ ] standard fallback
-//   [ ] kiosk    fallback
-//   [ ] sketchy  fallback
-//
-// The neutral "<name> has closed after <N> years." template in `neutralFallback`
-// is a last-resort hedge; it should be unreachable once all entries above are
-// authored (unless a new tier is added).
-// -----------------------------------------------------------------------------
+// The perTier fallbacks mean the neutral template is unreachable unless a
+// new StoreTier is added to the catalog without a corresponding entry here.
 enum ClosureFlavor {
 
-    // AUTHORING TODO: Trevor to audit and refine.
-    // v9 Prompt 20 — scaffolding lines. Memorial voice, emotionally specific
-    // to each tenant archetype. Final copy pending Trevor's audit.
+    // v9 Prompt 20 — memorial voice, emotionally specific to each tenant
+    // archetype.
     //
     // Per-tenant authored lines. Keyed by the exact Store.name as it appears
     // in the catalog — StartingMall.storeSeeds and Catalog.Tenants.*.
@@ -117,10 +67,7 @@ enum ClosureFlavor {
     }
 
     // Resolve the flavor line for a ClosureEvent. Exact match → tier
-    // fallback → neutral template. Returns an authored line when present;
-    // otherwise the placeholder string is returned verbatim so the UI shows
-    // "[flavor line pending]" — a legible signal that the entry still needs
-    // writing, not a silent miss.
+    // fallback → neutral template.
     static func line(for event: ClosureEvent) -> String {
         if let specific = perTenant[event.tenantName] { return specific }
         if let tierLine = perTier[event.tenantTier] { return tierLine }

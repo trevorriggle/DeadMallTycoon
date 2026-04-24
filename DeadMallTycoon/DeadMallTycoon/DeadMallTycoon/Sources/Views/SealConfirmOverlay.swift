@@ -9,10 +9,6 @@ import SwiftUI
 // Mounted in MallView as a full overlay when GameState.pendingSealAction
 // is non-nil. Obeys the Phase 0 overlay-only invariant from Prompt 4: the
 // mall scene and HUD positions do not shift when this appears or dismisses.
-//
-// Copy is placeholder for memorial seal flavor — marked `[copy pending]`.
-// Wing and entrance card copy is minimal and functional; no flavor layer
-// planned for those cases.
 struct SealConfirmOverlay: View {
     @Bindable var vm: GameViewModel
 
@@ -52,11 +48,11 @@ struct SealConfirmOverlay: View {
                 .tracking(1.6)
                 .foregroundStyle(Color(hex: "#ff4dbd"))
             Text(subtitle)
-                .font(.system(size: 22, weight: .black, design: .serif))
+                .font(.system(size: 22, weight: .black, design: .default))
                 .foregroundStyle(Color(hex: "#b8e8f8"))
             if let consequence {
                 Text(consequence)
-                    .font(.system(size: 15, design: .serif))
+                    .font(.system(size: 15, design: .default))
                     .italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
                     .fixedSize(horizontal: false, vertical: true)
@@ -169,7 +165,7 @@ struct SealConfirmOverlay: View {
     private func cardConsequence(for action: SealAction) -> String? {
         switch action {
         case .memorial:
-            return "[copy pending — seal confirmation flavor]"
+            return "The space gets drywalled over. No tenant will sign here again. Visitors will still remember it, just quieter."
         case .wing(let wing):
             let n = Sealing.activeTenantCount(in: wing, vm.state)
             if n == 0 {

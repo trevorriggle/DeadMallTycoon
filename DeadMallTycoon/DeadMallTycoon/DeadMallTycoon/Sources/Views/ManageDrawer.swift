@@ -363,9 +363,7 @@ struct ManageDrawer: View {
     // MARK: - History (v9 Prompt 9 Phase B + C)
 
     // The ledger. Year-grouped, scrollable (drawer's top-level ScrollView
-    // handles scrolling). Placeholder "[ledger pending: …]" strings render
-    // as-is until the authoring pass lands — that's expected; the
-    // structure is legible even without the prose.
+    // handles scrolling). Renders LedgerTemplates.line for each entry.
     //
     // v9 Prompt 9 Phase C — tapping a row routes through
     // vm.focusLedgerEntry, which either sets state.pendingFocusArtifactId
