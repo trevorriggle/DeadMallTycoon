@@ -36,7 +36,7 @@ struct DecisionBanner: View {
             Text(o.name).font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color(hex: "#b8e8f8"))
             Text(o.pitch)
-                .font(.system(size: 15, design: .serif))
+                .font(.system(size: 15, design: .default))
                 .foregroundStyle(Color(hex: "#d8d8e0"))
             Text("\(o.tier.rawValue) · \(o.lease)mo lease")
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
@@ -95,7 +95,7 @@ struct DecisionBanner: View {
             Text(ev.name).font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color(hex: "#b8e8f8"))
             Text(ev.description)
-                .font(.system(size: 15, design: .serif))
+                .font(.system(size: 15, design: .default))
                 .foregroundStyle(Color(hex: "#d8d8e0"))
             HStack(spacing: 8) {
                 decisionButton(primary: true,
@@ -188,7 +188,7 @@ struct StartScreenView: View {
                 collapse is a losing run. The goal is the long, slow middle — a mall that \
                 should have closed years ago but somehow hasn't.
                 """)
-                    .font(.system(size: 17, design: .serif))
+                    .font(.system(size: 17, design: .default))
                     .italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
                     .multilineTextAlignment(.center)
@@ -298,7 +298,7 @@ struct GameOverView: View {
                     .tracking(2)
                     .foregroundStyle(headlineColor)
                 Text(subtitle)
-                    .font(.system(size: 13, design: .serif)).italic()
+                    .font(.system(size: 13, design: .default)).italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
             }
             .padding(.top, 24).padding(.bottom, 14)

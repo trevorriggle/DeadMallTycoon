@@ -23,7 +23,7 @@ struct ToastBanner: View {
                 .minimumScaleFactor(0.85)
             if let subtitle = toast.subtitle {
                 Text(subtitle)
-                    .font(.system(size: 13, design: .serif))
+                    .font(.system(size: 13, design: .default))
                     .italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
                     .lineLimit(3)
@@ -56,7 +56,7 @@ struct ToastBanner: View {
 
     private var titleFont: Font {
         switch toast.style {
-        case .closure: return .system(size: 16, weight: .black, design: .serif)
+        case .closure: return .system(size: 16, weight: .black, design: .default)
         default:       return .system(size: 13, weight: .bold, design: .monospaced)
         }
     }

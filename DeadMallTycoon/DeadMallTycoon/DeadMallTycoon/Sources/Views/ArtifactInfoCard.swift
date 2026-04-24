@@ -28,7 +28,7 @@ struct ArtifactInfoCard: View {
             header(typeName: info.name, conditionLabel: conditionLabel(a))
 
             Text(info.description)
-                .font(.system(size: 13, design: .serif)).italic()
+                .font(.system(size: 13, design: .default)).italic()
                 .foregroundStyle(Color(hex: "#d8d8e0"))
 
             // Ambient types contribute no aesthetic multiplier yet (Prompt 5

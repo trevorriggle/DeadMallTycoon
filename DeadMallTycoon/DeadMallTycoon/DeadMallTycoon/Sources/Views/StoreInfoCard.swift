@@ -81,7 +81,7 @@ struct StoreInfoCard: View {
 
     private func vacantBody(_ s: Store) -> some View {
         Text("This empty space is generating score every month.")
-            .font(.system(size: 14, design: .serif))
+            .font(.system(size: 14, design: .default))
             .italic()
             .foregroundStyle(Color(hex: "#d8d8e0"))
     }

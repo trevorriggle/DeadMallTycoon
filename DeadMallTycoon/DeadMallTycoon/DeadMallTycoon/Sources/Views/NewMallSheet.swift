@@ -23,7 +23,7 @@ struct NewMallSheet: View {
                 once per run. You can skip it now and still open How to Play \
                 at any time from the MANAGE drawer.
                 """)
-                .font(.system(size: 15, design: .serif))
+                .font(.system(size: 15, design: .default))
                 .foregroundStyle(Color(hex: "#d8d8e0"))
                 .lineSpacing(3)
                 .multilineTextAlignment(.center)

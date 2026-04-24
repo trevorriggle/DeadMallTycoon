@@ -63,7 +63,7 @@ struct VisitorProfilePanel: View {
             if !v.lastMemory.isEmpty {
                 Divider().background(Color(hex: "#3a3a48")).padding(.vertical, 2)
                 Text("“\(v.lastMemory)”")
-                    .font(.system(size: 13, design: .serif)).italic()
+                    .font(.system(size: 13, design: .default)).italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
                     .fixedSize(horizontal: false, vertical: true)
             }

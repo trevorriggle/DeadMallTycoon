@@ -43,7 +43,7 @@ struct TutorialBeatCard: View {
 
                 // Body — two or three sentences of teaching prose.
                 Text(content.body)
-                    .font(.system(size: 17, design: .serif))
+                    .font(.system(size: 17, design: .default))
                     .foregroundStyle(Color(hex: "#b8e8f8"))
                     .lineSpacing(3)
                     .multilineTextAlignment(.center)

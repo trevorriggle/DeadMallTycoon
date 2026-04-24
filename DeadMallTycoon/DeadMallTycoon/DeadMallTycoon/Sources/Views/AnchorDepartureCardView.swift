@@ -29,20 +29,20 @@ struct AnchorDepartureCardView: View {
 
                 // Anchor name — the emblematic word the run just lost.
                 Text(payload.tenantName)
-                    .font(.system(size: 48, weight: .black, design: .serif))
+                    .font(.system(size: 48, weight: .black, design: .default))
                     .foregroundStyle(Color(hex: "#b8e8f8"))
                     .multilineTextAlignment(.center)
 
                 // Headline: "announces closure after N years."
                 Text(headlineSuffix)
-                    .font(.system(size: 20, design: .serif)).italic()
+                    .font(.system(size: 20, design: .default)).italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
 
                 // Authored flavor (2-3 sentences). Placeholder string
                 // renders as-is until copy lands, matching the
                 // ClosureFlavor / LedgerTemplates convention.
                 Text(AnchorDepartureFlavor.line(for: payload.tenantName))
-                    .font(.system(size: 15, design: .serif)).italic()
+                    .font(.system(size: 15, design: .default)).italic()
                     .foregroundStyle(Color(hex: "#c0c0cc"))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)

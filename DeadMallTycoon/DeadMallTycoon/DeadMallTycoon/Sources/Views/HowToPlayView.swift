@@ -66,7 +66,7 @@ struct HowToPlayView: View {
                 .tracking(1.4)
                 .foregroundStyle(Color(hex: "#7fd3f0"))
             Text(section.body)
-                .font(.system(size: 16, design: .serif))
+                .font(.system(size: 16, design: .default))
                 .foregroundStyle(Color(hex: "#d8d8e0"))
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
