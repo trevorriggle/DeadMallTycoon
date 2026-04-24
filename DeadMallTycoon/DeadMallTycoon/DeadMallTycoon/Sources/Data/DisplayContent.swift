@@ -62,35 +62,38 @@ enum DisplayContent: String, Codable, CaseIterable, Equatable {
     // authoring per the TODO checklist above.
     var thoughtPool: [String] {
         switch self {
+        // AUTHORING TODO: Trevor to audit and refine.
+        // v9 Prompt 20 — scaffolding. Three lines per variant, Explorer →
+        // Nostalgic → Original per the cohort pool convention.
         case .vintageMallPhotos:
             return [
-                "[flavor line pending — vintage mall photos 1]",
-                "[flavor line pending — vintage mall photos 2]",
-                "[flavor line pending — vintage mall photos 3]",
+                "\"Look at those haircuts.\"",
+                "\"That's the fountain when it worked. My family's in the background of the third one.\"",
+                "\"I brought my kids here the day it opened. The fountain worked then.\"",
             ]
         case .communityArt:
             return [
-                "[flavor line pending — community art 1]",
-                "[flavor line pending — community art 2]",
-                "[flavor line pending — community art 3]",
+                "\"My cousin's kid made one of those.\"",
+                "\"The art class used to set up in the center court every spring.\"",
+                "\"The first director insisted on local art in the windows. She was right.\"",
             ]
         case .seasonalVignette:
             return [
-                "[flavor line pending — seasonal vignette 1]",
-                "[flavor line pending — seasonal vignette 2]",
-                "[flavor line pending — seasonal vignette 3]",
+                "\"Nice they kept this up.\"",
+                "\"Reminds me of the window displays at Halvorsen. Used to stop me cold.\"",
+                "\"Whoever set this up remembers how these windows used to look. You can tell.\"",
             ]
         case .historicalPlaque:
             return [
-                "[flavor line pending — historical plaque 1]",
-                "[flavor line pending — historical plaque 2]",
-                "[flavor line pending — historical plaque 3]",
+                "\"Opened 1982. Huh.\"",
+                "\"I didn't know the mayor cut the ribbon.\"",
+                "\"I was at that ceremony. Forty below that January and they held it outside anyway.\"",
             ]
         case .localArtistShowcase:
             return [
-                "[flavor line pending — local artist showcase 1]",
-                "[flavor line pending — local artist showcase 2]",
-                "[flavor line pending — local artist showcase 3]",
+                "\"These are pretty good.\"",
+                "\"I went to high school with the person on the placard.\"",
+                "\"They're showing the same woman they featured in '84. She still lives on Orchard.\"",
             ]
         }
     }

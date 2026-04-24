@@ -56,64 +56,71 @@ enum LedgerTemplates {
         return Condition(rawValue: clamped)?.name ?? "Unknown"
     }
 
-    // Single lookup. Every case returns a placeholder-but-legible string
-    // containing the key fields so the ledger UI is readable before copy
-    // lands. Authored prose replaces the right-hand strings one case at a
-    // time without changing the switch structure.
+    // AUTHORING TODO: Trevor to audit and refine.
+    // v9 Prompt 20 — scaffolding prose. Omniscient narrator, quiet and
+    // direct. Single sentence per entry; past tense; interpolated fields
+    // kept in the same positions the tests assert. Anchor departure runs
+    // up to three sentences per the schema.
     static func line(for entry: LedgerEntry) -> String {
         switch entry {
 
         case .closure(let ev):
-            return "[ledger pending: \(ev.tenantName) closed after "
-                 + "\(ev.yearsOpen)y — \(monthYear(ev.month, ev.year))]"
+            let yearPhrase = ev.yearsOpen == 1 ? "a year" : "\(ev.yearsOpen) years"
+            return "\(monthYear(ev.month, ev.year)). \(ev.tenantName) closed "
+                 + "after \(yearPhrase). The lights stayed on for a week out of habit."
 
         case .offerDestruction(let oldName, let newName, let years,
                                 _, _, let y, let m):
-            return "[ledger pending: \(newName) replaced \(oldName) "
-                 + "(boarded \(years)y) — \(monthYear(m, y))]"
+            let yearPhrase = years == 1 ? "a year" : "\(years) years"
+            return "\(monthYear(m, y)). \(newName) signed the lease where "
+                 + "\(oldName) had been boarded for \(yearPhrase). The memorial came down with the plywood."
 
         case .artifactSealed(let name, _, _, _, let y, let m):
-            return "[ledger pending: \(name) sealed — \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). \(name) was sealed. Drywall, paint, and a clean corner where a doorway had been."
 
         case .displayConversion(let name, let content, _, _, let y, let m):
-            return "[ledger pending: \(name) became a "
-                 + "\(content.rawValue) display — \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). \(name) became a "
+                 + "\(content.displayName) display. Someone decided the space deserved curation."
 
         case .displayReverted(let name, let content, _, _, let y, let m):
-            return "[ledger pending: the \(content.rawValue) display at "
-                 + "\(name) came down — \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). The \(content.displayName) display at "
+                 + "\(name) was taken down. The window is boarded again."
 
-        case .artifactCreated(_, let name, let type, _, let y, let m):
-            return "[ledger pending: \(name) (\(type.rawValue)) placed "
-                 + "— \(monthYear(m, y))]"
+        case .artifactCreated(_, let name, _, _, let y, let m):
+            return "\(monthYear(m, y)). A \(name) was placed in the corridor. The first visitor walked past it without looking."
 
         case .decayTransition(_, let name, _, let from, let to, let y, let m):
-            return "[ledger pending: \(name) \(conditionName(from)) → "
-                 + "\(conditionName(to)) — \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). The \(name) slipped from "
+                 + "\(conditionName(from).lowercased()) to \(conditionName(to).lowercased()). Nobody logged a work order."
 
         case .artifactDestroyed(_, let name, _, let reason, let y, let m):
-            return "[ledger pending: \(name) lost (\(reason)) "
-                 + "— \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). The \(name) was lost. \(reason)."
 
         case .envTransition(let from, let to, let y, let m):
-            return "[ledger pending: mall \(from.rawValue) → "
-                 + "\(to.rawValue) — \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). The mall crossed from \(from.rawValue) "
+                 + "into \(to.rawValue). Nothing official was said."
 
         case .anchorDeparture(let name, let wing, _,
                                let coincident, let years, _, let y, let m):
-            let tail = coincident.isEmpty
-                ? ""
-                : " (also: \(coincident.joined(separator: ", ")))"
-            return "[ledger pending: \(name) vacated the \(wing.rawValue) "
-                 + "anchor after \(years)y\(tail) — \(monthYear(m, y))]"
+            let yearPhrase = years == 1 ? "one year" : "\(years) years"
+            let wingWord = wing.rawValue
+            let base = "\(monthYear(m, y)). \(name) vacated the \(wingWord) anchor "
+                     + "after \(yearPhrase). The lease ran, the staff went home, and the corridor "
+                     + "by the entrance darkened one band before the rest of the mall noticed."
+            if coincident.isEmpty {
+                return base
+            } else {
+                let list = coincident.joined(separator: ", ")
+                return base + " In the weeks that followed, \(list) closed behind them."
+            }
 
         case .attentionMilestone(_, let name, _, let t, let y, let m):
-            return "[ledger pending: \(name) thought of for the \(t)th "
-                 + "time — \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). The \(name) was thought of for the "
+                 + "\(t)th time. A visitor paused, remembered something specific, and walked on."
 
         case .nameInheritance(let newName, let anchorName, _, let y, let m):
-            return "[ledger pending: \(newName) signed, taking the "
-                 + "\(anchorName) name — \(monthYear(m, y))]"
+            return "\(monthYear(m, y)). \(newName) opened on the old "
+                 + "\(anchorName) footprint. They kept the name. They knew."
         }
     }
 }

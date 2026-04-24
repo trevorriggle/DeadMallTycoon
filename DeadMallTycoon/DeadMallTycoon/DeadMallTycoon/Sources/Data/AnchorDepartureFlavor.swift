@@ -30,18 +30,32 @@ import Foundation
 // -----------------------------------------------------------------------------
 enum AnchorDepartureFlavor {
 
+    // AUTHORING TODO: Trevor to audit and refine.
+    // v9 Prompt 20 — scaffolding. Both anchor cards treat the closure as
+    // a death in the family: specific, final, no melodrama. Distinct
+    // cultural registers — Halvorsen is the mid-century regional chain
+    // (appliances, housewares, shoe department); Pemberton is the
+    // aspirational anchor (fashion floor, mannequins, glass cases).
+    //
     // Per-anchor authored lines. Keyed by the Store.name as it appears in
     // StartingMall.storeSeeds (the two seed-set anchors in the fictional
     // brand rename).
     private static let perAnchor: [String: String] = [
-        "Halvorsen":  "[flavor pending: Halvorsen — 2-3 sentences]",
-        "Pemberton":  "[flavor pending: Pemberton — 2-3 sentences]",
+        "Halvorsen":
+            "Halvorsen opened with the mall. Four decades, three generations, a whole floor of appliances "
+            + "upstairs and a shoe department that remembered your kid's size. The terminal corridor goes "
+            + "dark tonight. The letters come down in the morning.",
+        "Pemberton":
+            "Pemberton is closing. The glass cases, the perfume counter, the marble pillars by the "
+            + "east escalator, the fashion floor with its own dedicated announcer. The mall that had a "
+            + "Pemberton is a different mall than the one that doesn't. That mall is gone.",
     ]
 
     // Last-resort generic. Reached for anchor-tier tenants not in the
     // perAnchor table. Should read as a universal anchor-loss beat.
     private static let genericFallback: String =
-        "[flavor pending: generic anchor fallback]"
+        "The anchor is closing. A corridor the mall was built around will go dark. "
+        + "The wing it headlined will never recover the traffic. Nothing replaces an anchor."
 
     // Resolve the flavor body. Exact match first, generic second. Never
     // returns an empty string — the placeholder itself is the legible

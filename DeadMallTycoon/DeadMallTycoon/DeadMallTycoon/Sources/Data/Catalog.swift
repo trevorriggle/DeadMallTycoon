@@ -46,9 +46,12 @@ struct ArtifactTypeInfo: Equatable {
 // sealedEntrance, emptyFoodCourt, custom) have cost == 0 and are filtered out
 // of the Acquire tab.
 //
-// Thought trigger pools are placeholder strings per the Prompt 1 convention.
-// Real prose authoring is deferred (highest-leverage creative work; should
-// happen intentionally, not by Claude Code defaults).
+// AUTHORING TODO: Trevor to audit and refine.
+// v9 Prompt 20 — scaffolding pass. Every defaultTriggers array below is
+// three lines ordered Explorer → Nostalgic → Original per the cohort pool
+// convention in Thought.swift (explorers see the front 30%, nostalgics
+// the front 60%, originals the full pool). Voice is grounded 1980s mall;
+// fictional-brand names only. Lines are scaffolding, not final copy.
 enum ArtifactCatalog {
 
     // v9 Prompt 6.5 fix — convenience accessor for the avoidance/pathing system
@@ -72,9 +75,9 @@ enum ArtifactCatalog {
                 cost: 3500, repair: 800,
                 description: "Granite sphere on water.",
                 defaultTriggers: [
-                    "[placeholder: kugel ball thought 1]",
-                    "[placeholder: kugel ball thought 2]",
-                    "[placeholder: kugel ball thought 3]",
+                    "\"How does it float? It's solid granite.\"",
+                    "\"My dad used to say it weighed a ton. I think he was right.\"",
+                    "\"They unveiled it the summer after the fountain. 1983. There was a rope line.\"",
                 ],
                 pathingClass: .obstacle)
         case .fountain:
@@ -86,9 +89,9 @@ enum ArtifactCatalog {
                 cost: 2500, repair: 600,
                 description: "Pennies stay when it stops.",
                 defaultTriggers: [
-                    "[placeholder: fountain thought 1]",
-                    "[placeholder: fountain thought 2]",
-                    "[placeholder: fountain thought 3]",
+                    "\"The pennies are still down there.\"",
+                    "\"I threw one in on prom night. Made a dumb wish. It came true.\"",
+                    "\"It ran on opening day. I brought the girls. They cried at the lights.\"",
                 ],
                 pathingClass: .obstacle)
         case .planter:
@@ -100,9 +103,9 @@ enum ArtifactCatalog {
                 cost: 400, repair: 100,
                 description: "A ficus.",
                 defaultTriggers: [
-                    "[placeholder: planter thought 1]",
-                    "[placeholder: planter thought 2]",
-                    "[placeholder: planter thought 3]",
+                    "\"Is this plant real?\"",
+                    "\"There used to be three of these. Somebody loved a ficus.\"",
+                    "\"The garden club lady watered these herself every Wednesday for eight years.\"",
                 ],
                 pathingClass: .obstacle)
         case .neonSign:
@@ -114,9 +117,9 @@ enum ArtifactCatalog {
                 cost: 1200, repair: 300,
                 description: "Flickering is peak liminal.",
                 defaultTriggers: [
-                    "[placeholder: neon sign thought 1]",
-                    "[placeholder: neon sign thought 2]",
-                    "[placeholder: neon sign thought 3]",
+                    "\"The buzz kind of hums in my teeth.\"",
+                    "\"My boyfriend used to meet me under this sign after his shift.\"",
+                    "\"They added the neon the year we opened. It cost more than my first car.\"",
                 ],
                 pathingClass: .ceiling)
         case .bench:
@@ -128,9 +131,9 @@ enum ArtifactCatalog {
                 cost: 600, repair: 150,
                 description: "Mall walkers rest here.",
                 defaultTriggers: [
-                    "[placeholder: bench thought 1]",
-                    "[placeholder: bench thought 2]",
-                    "[placeholder: bench thought 3]",
+                    "\"This slat is warped.\"",
+                    "\"Waited here for my mom with a Cinna-Swirl a thousand times.\"",
+                    "\"The carpet used to match these benches. It was ugly and I loved it.\"",
                 ],
                 pathingClass: .obstacle)
         case .directoryBoard:
@@ -142,9 +145,9 @@ enum ArtifactCatalog {
                 cost: 1500, repair: 400,
                 description: "Never update it.",
                 defaultTriggers: [
-                    "[placeholder: directory board thought 1]",
-                    "[placeholder: directory board thought 2]",
-                    "[placeholder: directory board thought 3]",
+                    "\"Half these stores aren't even here anymore.\"",
+                    "\"The You Are Here sticker is rubbed down to the backing.\"",
+                    "\"The original board was brass. They swapped it for plastic in '89. A real loss.\"",
                 ],
                 pathingClass: .obstacle)
 
@@ -159,9 +162,9 @@ enum ArtifactCatalog {
                 cost: 3000, repair: 700,
                 description: "Light through cracked glass.",
                 defaultTriggers: [
-                    "[placeholder: skylight thought 1]",
-                    "[placeholder: skylight thought 2]",
-                    "[placeholder: skylight thought 3]",
+                    "\"There's a water ring on the glass.\"",
+                    "\"Light through here used to hit the fountain just right.\"",
+                    "\"The opening program talked about the skylights for two paragraphs. They were the thing.\"",
                 ],
                 pathingClass: .ceiling)
         case .terrazzoFlooring:
@@ -173,9 +176,9 @@ enum ArtifactCatalog {
                 cost: 2000, repair: 500,
                 description: "Original '80s terrazzo.",
                 defaultTriggers: [
-                    "[placeholder: terrazzo flooring thought 1]",
-                    "[placeholder: terrazzo flooring thought 2]",
-                    "[placeholder: terrazzo flooring thought 3]",
+                    "\"The flecks in this are kind of pretty up close.\"",
+                    "\"I dropped my first ring on this floor. Never found it.\"",
+                    "\"They polished this twice a week the first decade. You could see yourself in it.\"",
                 ],
                 pathingClass: .floor)
 
@@ -189,9 +192,9 @@ enum ArtifactCatalog {
                 cost: 900, repair: 250,
                 description: "Nobody uses them.",
                 defaultTriggers: [
-                    "[placeholder: pay phone bank thought 1]",
-                    "[placeholder: pay phone bank thought 2]",
-                    "[placeholder: pay phone bank thought 3]",
+                    "\"Does anyone still call on these?\"",
+                    "\"I broke up with somebody on the middle one. 1992.\"",
+                    "\"There used to be eight phones. They pulled four out in '98 and forgot to put them back.\"",
                 ],
                 pathingClass: .obstacle)
         case .cigaretteVendingMachine:
@@ -202,9 +205,9 @@ enum ArtifactCatalog {
                 cost: 700, repair: 200,
                 description: "Unplugged. Never removed.",
                 defaultTriggers: [
-                    "[placeholder: cigarette vending thought 1]",
-                    "[placeholder: cigarette vending thought 2]",
-                    "[placeholder: cigarette vending thought 3]",
+                    "\"Why is this still here?\"",
+                    "\"My cousin bummed a pack from this for me in high school. I never told on him.\"",
+                    "\"They unplugged it the day the state law changed. Nobody ever got around to pulling it out.\"",
                 ],
                 pathingClass: .obstacle)
         case .coinOperatedHorseRide:
@@ -215,9 +218,9 @@ enum ArtifactCatalog {
                 cost: 1100, repair: 300,
                 description: "Twenty-five cents, still.",
                 defaultTriggers: [
-                    "[placeholder: coin horse thought 1]",
-                    "[placeholder: coin horse thought 2]",
-                    "[placeholder: coin horse thought 3]",
+                    "\"Is that a horse or a dinosaur?\"",
+                    "\"I sat on this every single Saturday until I was six.\"",
+                    "\"The original quarter is still jammed in the slot. I watched a kid try to pry it out in '86.\"",
                 ],
                 pathingClass: .obstacle)
         case .photoBooth:
@@ -228,9 +231,9 @@ enum ArtifactCatalog {
                 cost: 1400, repair: 350,
                 description: "Curtain torn halfway.",
                 defaultTriggers: [
-                    "[placeholder: photo booth thought 1]",
-                    "[placeholder: photo booth thought 2]",
-                    "[placeholder: photo booth thought 3]",
+                    "\"The curtain is torn.\"",
+                    "\"Prom night strip is still on my fridge somewhere.\"",
+                    "\"First picture I ever took of my wife was in this booth. She was laughing.\"",
                 ],
                 pathingClass: .obstacle)
         case .massageChair:
@@ -241,9 +244,9 @@ enum ArtifactCatalog {
                 cost: 900, repair: 250,
                 description: "Shake-your-fillings-loose era.",
                 defaultTriggers: [
-                    "[placeholder: massage chair thought 1]",
-                    "[placeholder: massage chair thought 2]",
-                    "[placeholder: massage chair thought 3]",
+                    "\"Does it still work?\"",
+                    "\"My dad paid a dollar to sit in one of these once. He said it rattled his fillings.\"",
+                    "\"Came in new when the shoe store expanded. Nobody used it. It's been here since.\"",
                 ],
                 pathingClass: .obstacle)
         case .brassRailing:
@@ -254,9 +257,9 @@ enum ArtifactCatalog {
                 cost: 800, repair: 200,
                 description: "Tarnished patina.",
                 defaultTriggers: [
-                    "[placeholder: brass railing thought 1]",
-                    "[placeholder: brass railing thought 2]",
-                    "[placeholder: brass railing thought 3]",
+                    "\"Somebody actually polished this at some point.\"",
+                    "\"I leaned on this rail with a boy and thought I was in a movie.\"",
+                    "\"They tore off the original wood trim to put this in. Everyone hated it at first.\"",
                 ],
                 pathingClass: .obstacle)
         case .terrazzoInlay:
@@ -267,9 +270,9 @@ enum ArtifactCatalog {
                 cost: 1100, repair: 300,
                 description: "The mall's seal, set in stone.",
                 defaultTriggers: [
-                    "[placeholder: terrazzo inlay thought 1]",
-                    "[placeholder: terrazzo inlay thought 2]",
-                    "[placeholder: terrazzo inlay thought 3]",
+                    "\"What's that pattern supposed to be?\"",
+                    "\"I used to jump between the colors to avoid the cracks. Rules I made up.\"",
+                    "\"It's the mall's original seal. They buried it under carpet for most of the nineties.\"",
                 ],
                 pathingClass: .floor)
         case .sunkenSeatingPit:
@@ -280,9 +283,9 @@ enum ArtifactCatalog {
                 cost: 2200, repair: 500,
                 description: "Nobody sits in it.",
                 defaultTriggers: [
-                    "[placeholder: sunken seating thought 1]",
-                    "[placeholder: sunken seating thought 2]",
-                    "[placeholder: sunken seating thought 3]",
+                    "\"Why is the floor lower here?\"",
+                    "\"Kissed somebody in this pit on a field trip. Seventh grade.\"",
+                    "\"Everybody gathered here before the movie. This was the meeting spot.\"",
                 ],
                 pathingClass: .obstacle)
         case .deadFicus:
@@ -293,9 +296,9 @@ enum ArtifactCatalog {
                 cost: 300, repair: 80,
                 description: "A planter nobody waters.",
                 defaultTriggers: [
-                    "[placeholder: dead ficus thought 1]",
-                    "[placeholder: dead ficus thought 2]",
-                    "[placeholder: dead ficus thought 3]",
+                    "\"Pretty sure this plant is dead.\"",
+                    "\"I watered one of these once as a prank. It didn't even notice.\"",
+                    "\"Opening year there was a full-time greens lady. You could tell.\"",
                 ],
                 pathingClass: .obstacle)
         case .waterStainedCeiling:
@@ -306,9 +309,9 @@ enum ArtifactCatalog {
                 cost: 200, repair: 80,
                 description: "Tannin-colored halo.",
                 defaultTriggers: [
-                    "[placeholder: water-stained ceiling thought 1]",
-                    "[placeholder: water-stained ceiling thought 2]",
-                    "[placeholder: water-stained ceiling thought 3]",
+                    "\"There's a brown splotch up there.\"",
+                    "\"That stain has been growing since before I moved to town.\"",
+                    "\"Leak started above the old drugstore in '91. They never fixed the cause. Just painted it.\"",
                 ],
                 pathingClass: .ceiling)
         case .flickeringFluorescent:
@@ -319,9 +322,9 @@ enum ArtifactCatalog {
                 cost: 400, repair: 100,
                 description: "Never fully on, never fully off.",
                 defaultTriggers: [
-                    "[placeholder: flickering fluorescent thought 1]",
-                    "[placeholder: flickering fluorescent thought 2]",
-                    "[placeholder: flickering fluorescent thought 3]",
+                    "\"It's like a horror movie in here.\"",
+                    "\"My sister swore there was a pattern to the flicker and it meant something.\"",
+                    "\"Three of these went bad opening week. The electrician blamed the architect.\"",
                 ],
                 pathingClass: .ceiling)
         case .emergencyExitSign:
@@ -332,9 +335,9 @@ enum ArtifactCatalog {
                 cost: 300, repair: 80,
                 description: "Always lit, never used.",
                 defaultTriggers: [
-                    "[placeholder: emergency exit sign thought 1]",
-                    "[placeholder: emergency exit sign thought 2]",
-                    "[placeholder: emergency exit sign thought 3]",
+                    "\"Where does that even go?\"",
+                    "\"We snuck out of that door after the manager left. Every Friday.\"",
+                    "\"It's on the old circuit. They kept saying they'd replace it. They never did.\"",
                 ],
                 pathingClass: .ceiling)
         case .arcadeCabinet:
@@ -345,9 +348,9 @@ enum ArtifactCatalog {
                 cost: 1800, repair: 450,
                 description: "Decommissioned. Screen dark.",
                 defaultTriggers: [
-                    "[placeholder: arcade cabinet thought 1]",
-                    "[placeholder: arcade cabinet thought 2]",
-                    "[placeholder: arcade cabinet thought 3]",
+                    "\"Screen's dead.\"",
+                    "\"I spent my whole allowance on this cabinet. Every single week.\"",
+                    "\"The line used to wrap around the corner. Mothers hated it.\"",
                 ],
                 pathingClass: .obstacle)
         case .christmasLeftUp:
@@ -358,9 +361,9 @@ enum ArtifactCatalog {
                 cost: 500, repair: 120,
                 description: "Still up in March.",
                 defaultTriggers: [
-                    "[placeholder: stale christmas thought 1]",
-                    "[placeholder: stale christmas thought 2]",
-                    "[placeholder: stale christmas thought 3]",
+                    "\"It's April.\"",
+                    "\"The lights used to come down the first week of January. Not anymore.\"",
+                    "\"They hired a whole holiday decor crew the first year. A department.\"",
                 ],
                 pathingClass: .ceiling)
         case .lostAndFoundCabinet:
@@ -371,9 +374,9 @@ enum ArtifactCatalog {
                 cost: 400, repair: 100,
                 description: "Sunglasses older than some visitors.",
                 defaultTriggers: [
-                    "[placeholder: lost and found thought 1]",
-                    "[placeholder: lost and found thought 2]",
-                    "[placeholder: lost and found thought 3]",
+                    "\"Those sunglasses look older than me.\"",
+                    "\"My keys were in there for two years once. They still gave them back.\"",
+                    "\"The original cabinet from opening day. There was a bell on top you could ring.\"",
                 ],
                 pathingClass: .obstacle)
         case .pretzelRemnant:
@@ -384,9 +387,9 @@ enum ArtifactCatalog {
                 cost: 600, repair: 150,
                 description: "Counter still smells faintly of butter.",
                 defaultTriggers: [
-                    "[placeholder: pretzel remnant thought 1]",
-                    "[placeholder: pretzel remnant thought 2]",
-                    "[placeholder: pretzel remnant thought 3]",
+                    "\"Still kind of smells like butter.\"",
+                    "\"Auntie Rae knew my order before I said anything. I miss her.\"",
+                    "\"The original kiosk was down the hall. They moved it once. Never recovered.\"",
                 ],
                 pathingClass: .obstacle)
         case .crackedTile:
@@ -397,9 +400,9 @@ enum ArtifactCatalog {
                 cost: 200, repair: 60,
                 description: "Caution tape left too long.",
                 defaultTriggers: [
-                    "[placeholder: cracked tile thought 1]",
-                    "[placeholder: cracked tile thought 2]",
-                    "[placeholder: cracked tile thought 3]",
+                    "\"Caution tape is peeling.\"",
+                    "\"I tripped here once. My knees still remember.\"",
+                    "\"Cracked the week they opened. Never got fixed right.\"",
                 ],
                 pathingClass: .floor)
         case .memorialBench:
@@ -410,9 +413,9 @@ enum ArtifactCatalog {
                 cost: 700, repair: 180,
                 description: "\"In Loving Memory of someone.\"",
                 defaultTriggers: [
-                    "[placeholder: memorial bench thought 1]",
-                    "[placeholder: memorial bench thought 2]",
-                    "[placeholder: memorial bench thought 3]",
+                    "\"Who was Walter?\"",
+                    "\"The plaque says 1994. My neighbor's husband. Heart attack.\"",
+                    "\"The family still comes. Every year, around the anniversary. They sit.\"",
                 ],
                 pathingClass: .obstacle)
 
@@ -428,9 +431,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "Where a tenant used to be.",
                 defaultTriggers: [
-                    "[placeholder: boarded storefront thought 1]",
-                    "[placeholder: boarded storefront thought 2]",
-                    "[placeholder: boarded storefront thought 3]",
+                    "\"Something used to be there.\"",
+                    "\"Used to buy my records here. Every Saturday for a year.\"",
+                    "\"They opened the same year the mall did. Their windows never stayed dark this long.\"",
                 ],
                 pathingClass: .obstacle)
         case .sealedStorefront:
@@ -444,9 +447,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "Drywalled over. The mall has given up on this space.",
                 defaultTriggers: [
-                    "[placeholder: sealed storefront thought 1]",
-                    "[placeholder: sealed storefront thought 2]",
-                    "[placeholder: sealed storefront thought 3]",
+                    "\"It's just wall now.\"",
+                    "\"You can't even tell there used to be a door.\"",
+                    "\"They drywalled it six months after the signs came down. Clean cut.\"",
                 ],
                 pathingClass: .obstacle)
         case .displaySpace:
@@ -462,9 +465,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "Curated in absence of a tenant.",
                 defaultTriggers: [
-                    "[placeholder: display space fallback thought 1]",
-                    "[placeholder: display space fallback thought 2]",
-                    "[placeholder: display space fallback thought 3]",
+                    "\"Someone's taking care of this.\"",
+                    "\"Didn't expect a curated window in here.\"",
+                    "\"Somebody decided this space mattered enough to keep something in it.\"",
                 ],
                 pathingClass: .obstacle)
         case .sealedEntrance:
@@ -475,9 +478,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "Boarded-over doors.",
                 defaultTriggers: [
-                    "[placeholder: sealed entrance thought 1]",
-                    "[placeholder: sealed entrance thought 2]",
-                    "[placeholder: sealed entrance thought 3]",
+                    "\"Are those boards new?\"",
+                    "\"That door went to the back lot. Nobody parked there after the anchor left.\"",
+                    "\"Used to be the employee entrance. Been sealed since '96.\"",
                 ],
                 pathingClass: .obstacle)
         case .emptyFoodCourt:
@@ -488,9 +491,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "Trays stacked, forgotten.",
                 defaultTriggers: [
-                    "[placeholder: empty food court thought 1]",
-                    "[placeholder: empty food court thought 2]",
-                    "[placeholder: empty food court thought 3]",
+                    "\"Most of the trays are still stacked.\"",
+                    "\"I had my sixteenth birthday at one of these tables.\"",
+                    "\"The whole court was packed the first decade. Saturday lunch was standing room only.\"",
                 ],
                 pathingClass: .floor)
         case .stoppedEscalator:
@@ -504,9 +507,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "Steps frozen mid-descent.",
                 defaultTriggers: [
-                    "[placeholder: stopped escalator thought 1]",
-                    "[placeholder: stopped escalator thought 2]",
-                    "[placeholder: stopped escalator thought 3]",
+                    "\"Guess it's just stairs now.\"",
+                    "\"I used to ride these up and down until my mom got mad.\"",
+                    "\"They cut the power the week the anchor left. Never turned it back on.\"",
                 ],
                 pathingClass: .obstacle)
         case .lostSignage:
@@ -520,9 +523,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "The letters outlived the logo.",
                 defaultTriggers: [
-                    "[placeholder: lost signage thought 1]",
-                    "[placeholder: lost signage thought 2]",
-                    "[placeholder: lost signage thought 3]",
+                    "\"The letters are huge up close.\"",
+                    "\"That was the old logo. Before they changed colors.\"",
+                    "\"They took it down in one afternoon. Whole crew. The letters have been stacked ever since.\"",
                 ],
                 pathingClass: .floor)
         case .custom:
@@ -533,9 +536,9 @@ enum ArtifactCatalog {
                 cost: 0, repair: 0,
                 description: "Scripted artifact.",
                 defaultTriggers: [
-                    "[placeholder: custom artifact thought 1]",
-                    "[placeholder: custom artifact thought 2]",
-                    "[placeholder: custom artifact thought 3]",
+                    "\"Huh. Looks old.\"",
+                    "\"Something I half remember.\"",
+                    "\"I could tell you a story about it. You wouldn't believe me.\"",
                 ],
                 pathingClass: .obstacle)
         }
