@@ -207,10 +207,22 @@ enum Economy {
     // v9 Prompt 15 Phase 1 — per-artifact hazard fine breakdown. Each
     // entry becomes one EconomicsEvent.hazardFine so the scene can
     // float a negative indicator at the offending artifact.
+    //
+    // v9 Prompt 21 Fix 2 — capped to ArtifactTuning.maxHazardFinesPerTick
+    // entries per month (currently 1). All hazarded artifacts remain on
+    // scene and continue to motivate repair; only the single largest fine
+    // bills per tick so stacked hazards don't dominate cash flow. Ties
+    // broken by artifactId (lowest first) for determinism.
     static func hazardFinesByArtifact(_ state: GameState) -> [(artifactId: Int, amount: Int)] {
-        state.artifacts
+        let all = state.artifacts
             .filter { $0.hazard }
-            .map { ($0.id, 500 + $0.condition * 200) }
+            .map { (artifactId: $0.id, amount: 500 + $0.condition * 200) }
+        let cap = ArtifactTuning.maxHazardFinesPerTick
+        guard cap > 0, all.count > cap else { return all }
+        return Array(all.sorted {
+            $0.amount != $1.amount ? $0.amount > $1.amount
+                                   : $0.artifactId < $1.artifactId
+        }.prefix(cap))
     }
 
     // v8: rawTraffic()

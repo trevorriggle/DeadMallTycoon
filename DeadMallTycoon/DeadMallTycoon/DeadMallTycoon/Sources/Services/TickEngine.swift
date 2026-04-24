@@ -208,7 +208,11 @@ enum TickEngine {
             guard ArtifactCatalog.info(s.artifacts[i].type).cost > 0 else { continue }
 
             s.artifacts[i].monthsAtCondition += 1
-            let decayChance = (0.02 + Double(s.artifacts[i].condition) * 0.01) * janitorialMult
+            // v9 Prompt 21 Fix 2 — constants pulled from ArtifactTuning
+            // (halved from the pre-Prompt-21 inline literals).
+            let decayChance = (ArtifactTuning.decayBaseProbability
+                + Double(s.artifacts[i].condition) * ArtifactTuning.decayConditionStep)
+                * janitorialMult
 
             if s.artifacts[i].condition < 4 && rng.chance(decayChance) {
                 // v9 Prompt 9 Phase A — capture from-condition for the ledger
@@ -228,12 +232,12 @@ enum TickEngine {
                 ))
                 if s.artifacts[i].condition >= 4
                     && !s.artifacts[i].hazard
-                    && rng.chance(0.4) {
+                    && rng.chance(ArtifactTuning.hazardOnDecayToRuinChance) {
                     s.artifacts[i].hazard = true
                 }
             } else if s.artifacts[i].condition >= 4
                         && !s.artifacts[i].hazard
-                        && rng.chance(0.15) {
+                        && rng.chance(ArtifactTuning.hazardAtRuinChance) {
                 s.artifacts[i].hazard = true
             }
         }
@@ -260,6 +264,19 @@ enum TickEngine {
         if s.cash < 0 {
             s.debt += abs(s.cash)
             s.cash = 0
+        }
+
+        // v9 Prompt 21 Fix 4 — first-crossing bankruptcy warning. Fires
+        // exactly once per run the first tick debt reaches the warning
+        // threshold ($20,000). bankruptcyWarningShown is a one-way latch;
+        // bankruptcyWarningPending drives the MallView card mount. The
+        // card's Continue clears Pending but leaves Shown set, so the
+        // warning does not re-fire if debt bounces across the threshold
+        // after a pay-down.
+        if s.debt >= FailureTuning.bankruptcyWarningThreshold
+            && !s.bankruptcyWarningShown {
+            s.bankruptcyWarningShown = true
+            s.bankruptcyWarningPending = true
         }
 
         // Emit economics events for scene rendering. Replaces

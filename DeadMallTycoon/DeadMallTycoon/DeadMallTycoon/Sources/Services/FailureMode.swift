@@ -37,6 +37,13 @@ enum FailureTuning {
     // monthsInDeadState which counts both) before the sustained-
     // collapse gate is open. Two in-game years. (Prompt 14)
     static let deadOrGhostMonths: Int = 24
+
+    // v9 Prompt 21 Fix 4 — the bank's first warning. When state.debt
+    // crosses this on any tick AND state.bankruptcyWarningShown is
+    // still false, a full-screen warning card fires once per run. The
+    // actual ceiling (GameConstants.debtCeiling = $25,000) remains
+    // enforced separately in the TickEngine bankruptcy check.
+    static let bankruptcyWarningThreshold: Int = 20_000
 }
 
 enum FailureMode {

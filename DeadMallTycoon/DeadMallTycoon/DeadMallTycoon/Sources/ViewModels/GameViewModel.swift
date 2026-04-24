@@ -355,6 +355,64 @@ final class GameViewModel {
         }
     }
 
+    // MARK: v9 Prompt 21 Fix 5 — pay down debt
+
+    // Minimum payment; prevents the player from tapping out dust-sized
+    // amounts that create ledger noise without meaningful impact.
+    static let payDownDebtMinimum: Int = 100
+
+    // Apply `amount` of cash toward debt. Rejects invalid inputs
+    // (below the minimum, above available cash, above current debt).
+    // Returns true iff the payment landed; false indicates the
+    // caller's input was out of range. Pure state mutation — no
+    // event, toast, or ledger emission on purpose. Pay Down is
+    // utilitarian; the P&L modal's cash delta is where the player
+    // sees it.
+    @discardableResult
+    func payDownDebt(amount: Int) -> Bool {
+        guard amount >= GameViewModel.payDownDebtMinimum else { return false }
+        guard amount <= state.cash else { return false }
+        guard amount <= state.debt else { return false }
+        state.cash -= amount
+        state.debt -= amount
+        return true
+    }
+
+    // Convenience for the "Pay Max" button. Pays min(cash, debt) — if
+    // that would leave the player at zero cash, the UI surfaces a
+    // confirmation before calling this. The floor on payDownDebt's
+    // $100 minimum still applies; if the max payment is under $100
+    // this returns false and nothing mutates.
+    @discardableResult
+    func payDownDebtMax() -> Bool {
+        payDownDebt(amount: min(state.cash, state.debt))
+    }
+
+    // MARK: v9 Prompt 21 Fix 4 — bankruptcy warning card
+
+    // Called when BankruptcyWarningCardView.onAppear fires. Claims the
+    // pause iff nothing else owns it; otherwise hands off — a tenant
+    // offer / anchor card / tutorial beat still owns the pause and the
+    // warning just layers on top of the shared paused state.
+    func claimBankruptcyWarningPause() {
+        guard !state.paused else { return }
+        state.paused = true
+        state.bankruptcyWarningOwnedPause = true
+    }
+
+    // Called by the Acknowledge button. Clears Pending so the card
+    // dismisses; releases pause only if we claimed it ourselves.
+    // bankruptcyWarningShown stays true for the rest of the run — the
+    // warning is once-per-run even if debt oscillates across $20k after
+    // a pay-down.
+    func dismissBankruptcyWarning() {
+        state.bankruptcyWarningPending = false
+        if state.bankruptcyWarningOwnedPause {
+            state.paused = false
+            state.bankruptcyWarningOwnedPause = false
+        }
+    }
+
     // MARK: v9 Prompt 7 / Prompt 19 — seal confirmation flow
 
     // v9 Prompt 19 — unified request entrypoint for all three seal kinds.
@@ -390,7 +448,14 @@ final class GameViewModel {
             // Only close if not already closed; toggleClosed would re-open
             // an already-closed wing. The sheet's eligibility filter prevents
             // this from happening in practice, but guard here defensively.
-            if !(state.wingsClosed[wing] ?? false) {
+            //
+            // v9 Prompt 21 Fix 1 — also refuse to seal a wing with an
+            // active anchor. Anchors depart via the cascade system; the
+            // sheet filters them out, but this guard ensures any future
+            // seal entry point (tutorial trigger, debug menu, scripted
+            // event) cannot bypass the rule.
+            if !(state.wingsClosed[wing] ?? false)
+                && !Sealing.wingHasActiveAnchor(wing, in: state) {
                 state = WingActions.toggleClosed(wing, state)
             }
         case .entrance(let corner):

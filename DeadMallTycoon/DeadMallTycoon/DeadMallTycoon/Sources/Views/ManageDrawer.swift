@@ -25,6 +25,10 @@ struct ManageDrawer: View {
     // drawer footer. Same HowToPlayView used on the start screen.
     @State private var showingHowToPlay = false
 
+    // v9 Prompt 21 Fix 5 — confirmation gate for Pay Max when the
+    // payment would zero out cash. Non-draining Max payments skip this.
+    @State private var showingPayMaxConfirm = false
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -39,6 +43,7 @@ struct ManageDrawer: View {
                     case .staff:   staffTab
                     case .wings:   wingsTab
                     case .ads:     adsTab
+                    case .finance: financeTab
                     case .history: historyTab
                     }
                 }
@@ -373,6 +378,145 @@ struct ManageDrawer: View {
     // large detent the drawer covers the pulse entirely. Non-tappable
     // cases (envTransition, offerDestruction, artifactDestroyed) skip
     // the tap wiring at the LedgerEntryRow level.
+    // MARK: - Finance (v9 Prompt 21 Fix 5)
+
+    // Pay Down Debt surface. Presets at $500 / $1,000 / $5,000 / Pay Max.
+    // Each preset button is disabled (dimmed) if the payment would fail
+    // the $100 minimum, exceed available cash, or exceed current debt —
+    // the VM's payDownDebt also re-validates so UI disable state is
+    // defense in depth, not the source of truth.
+    //
+    // Pay Max asks for confirmation only when the payment would drain
+    // cash to zero (see payMaxWouldDrain below); non-draining Max
+    // payments fire immediately, matching the "utilitarian, no
+    // confirmation card needed" directive for the smaller presets.
+    private var financeTab: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Finance")
+            subtle("No interest accrues on debt. Pay any amount from cash at any time.")
+
+            // Live summary row. Mirrors the warning card's compact stat
+            // block so the two surfaces read consistently.
+            VStack(alignment: .leading, spacing: 4) {
+                financeRow("Cash", "$\(vm.state.cash.formatted())", tint: Color(hex: "#9FE1CB"))
+                financeRow("Debt", "$\(vm.state.debt.formatted())",
+                           tint: debtSummaryTint)
+                financeRow("Ceiling", "$\(GameConstants.debtCeiling.formatted())",
+                           tint: Color(hex: "#6a6a78"))
+            }
+            .padding(10)
+            .background(Color(hex: "#0e0e14"))
+            .overlay(RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(Color(hex: "#2a2a34"), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+
+            sectionHeader("Pay Down Debt").padding(.top, 6)
+
+            if vm.state.debt <= 0 {
+                emptyState("No debt. Nothing to pay down.")
+            } else {
+                // Presets. Each one's amount is the nominal value clamped
+                // to min(cash, debt); the button is enabled iff that
+                // clamped value meets the $100 minimum.
+                payDownPresetButton(500)
+                payDownPresetButton(1_000)
+                payDownPresetButton(5_000)
+                payMaxButton
+            }
+        }
+        .alert("Pay off debt with your last dollar?",
+               isPresented: $showingPayMaxConfirm) {
+            Button("Cancel", role: .cancel) { }
+            Button("Pay $\(payMaxAmount.formatted())", role: .destructive) {
+                vm.payDownDebtMax()
+            }
+        } message: {
+            Text("This will pay $\(payMaxAmount.formatted()) and leave $0 in cash. The mall still has monthly operating costs.")
+        }
+    }
+
+    private func financeRow(_ label: String, _ value: String, tint: Color) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(Color(hex: "#9898a8"))
+            Spacer()
+            Text(value)
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(tint)
+        }
+    }
+
+    // v9 Prompt 21 Fix 5 — summary-row debt color uses the same bands as
+    // the HUD (see HUDView.debtColor). Duplicated rather than hoisted so
+    // the drawer never imports the HUD view; if the bands shift, update
+    // both sites.
+    private var debtSummaryTint: Color {
+        let d = vm.state.debt
+        if d > 20_000 { return Color(hex: "#ff2f4a") }
+        if d > 10_000 { return Color(hex: "#ffd477") }
+        if d > 0      { return Color(hex: "#8a8a9a") }
+        return Color(hex: "#6a6a78")
+    }
+
+    private func payDownPresetButton(_ nominal: Int) -> some View {
+        let applicable = min(nominal, vm.state.cash, vm.state.debt)
+        let enabled = applicable >= GameViewModel.payDownDebtMinimum
+        return actionButton(active: false, action: {
+            vm.payDownDebt(amount: applicable)
+        }) {
+            HStack {
+                Text("Pay $\(nominal.formatted())")
+                Spacer()
+                if !enabled {
+                    Text(vm.state.cash < GameViewModel.payDownDebtMinimum
+                         ? "insufficient cash"
+                         : "would pay $\(applicable.formatted())")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(Color(hex: "#6a6a78"))
+                }
+            }
+        }
+        .disabled(!enabled)
+    }
+
+    private var payMaxButton: some View {
+        let amount = payMaxAmount
+        let enabled = amount >= GameViewModel.payDownDebtMinimum
+        return actionButton(active: false, action: {
+            if payMaxWouldDrain {
+                showingPayMaxConfirm = true
+            } else {
+                vm.payDownDebtMax()
+            }
+        }) {
+            HStack {
+                Text("Pay Max")
+                Spacer()
+                Text("$\(amount.formatted())")
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(Color(hex: "#9FE1CB"))
+            }
+        }
+        .disabled(!enabled)
+    }
+
+    private var payMaxAmount: Int {
+        min(vm.state.cash, vm.state.debt)
+    }
+
+    // Confirmation required only when Pay Max would leave the player at
+    // exactly $0 cash AND that's a meaningful amount (i.e., more than
+    // the $100 minimum payment). Paying $50 of a $50 cash reserve
+    // against a larger debt isn't a significant enough decision to
+    // warrant a confirmation.
+    private var payMaxWouldDrain: Bool {
+        payMaxAmount == vm.state.cash
+            && payMaxAmount >= GameViewModel.payDownDebtMinimum
+            && payMaxAmount < vm.state.debt
+    }
+
     private var historyTab: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("The Ledger")
@@ -450,7 +594,11 @@ enum ManageTab: String, CaseIterable, Hashable {
     // so artifact placement is the most obvious entry point in the drawer.
     // v9 Prompt 9 Phase B — `history` appended as the seventh tab (the
     // mall's narrative log; reference, not action).
-    case acquire, tenants, promos, staff, wings, ads, history
+    // v9 Prompt 21 Fix 5 — `finance` inserted before `history` so the Pay
+    // Down Debt action is near other verbs; history stays last as the
+    // reference tab. Finance only surfaces the pay-down form for now;
+    // future debt-related mechanics (interest, refinancing) would land here.
+    case acquire, tenants, promos, staff, wings, ads, finance, history
     var title: String {
         switch self {
         case .acquire: return "Acquire"
@@ -459,6 +607,7 @@ enum ManageTab: String, CaseIterable, Hashable {
         case .staff:   return "Staff"
         case .wings:   return "Wings"
         case .ads:     return "Ads"
+        case .finance: return "Finance"
         case .history: return "History"
         }
     }

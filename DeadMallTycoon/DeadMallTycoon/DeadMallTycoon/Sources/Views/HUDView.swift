@@ -65,16 +65,26 @@ struct HUDView: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    // Cash — big bold value. Debt shown as small red subscript beside cash when > 0.
-    // Tapping the cell opens the P&L modal.
+    // Cash — big bold value. Debt shown as a small persistent subscript beside
+    // cash when > 0. Tapping the cell opens the P&L modal.
     //
     // v9 Prompt 15 Phase 1 — cash animates upward rather than jumping.
     // contentTransition(.numericText()) gives the iOS-17 counter-style
     // digit transition; the .animation modifier below drives it on
     // any state.cash mutation. 0.6s easeOut matches the economics
     // floating labels' drift window so HUD and scene feel synced.
+    //
+    // v9 Prompt 21 Fix 3 — debt reads from a local `debt` binding at the
+    // top of the body so the same value drives both the visibility gate
+    // and the color branch. Previously the conditional and the color
+    // helper each re-read vm.state.debt, which opened a window (during
+    // cash's content transition) where the two reads could disagree and
+    // the subscript would render empty. Binding once also makes the
+    // .contentTransition below work cleanly — the numeric text animates
+    // between debt values instead of tearing down/rebuilding the Text.
     private var cashCell: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        let debt = vm.state.debt
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(fmt(vm.state.cash))
                 .font(.system(size: 26, weight: .black, design: .monospaced))
                 .monospacedDigit()
@@ -83,11 +93,13 @@ struct HUDView: View {
                 .minimumScaleFactor(0.6)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.6), value: vm.state.cash)
-            if vm.state.debt > 0 {
+            if debt > 0 {
                 (Text("debt ").foregroundStyle(Color(hex: "#6a6a78"))
-                 + Text("-\(fmt(vm.state.debt))").foregroundStyle(debtColor))
+                 + Text("-\(fmt(debt))").foregroundStyle(debtColor(debt)))
                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                     .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.6), value: debt)
             }
         }
         .contentShape(Rectangle())   // make the whole cell (including padding) tappable
@@ -137,10 +149,20 @@ struct HUDView: View {
         return Color(hex: "#ff4dbd")
     }
 
-    private var debtColor: Color {
-        if vm.state.debt > 15000 { return Color(hex: "#ff4dbd") }
-        if vm.state.debt > 0     { return Color(hex: "#7fd3f0") }
-        return Color(hex: "#9FE1CB")
+    // v9 Prompt 21 Fix 3 — debt color gradient per the spec:
+    //   $0              : not shown (the cashCell gates visibility)
+    //   $1–$10,000      : gray — "you're in debt, but not yet a red flag"
+    //   $10,001–$20,000 : amber — "notice this"
+    //   $20,001–$24,999 : red — "one more bad month and the bank forecloses"
+    //   $25,000         : foreclosure (failure mode takes the screen)
+    // Colors pulled from the existing HUD palette: gray #8a8a9a, amber
+    // #ffd477, red #ff2f4a. Takes an explicit value so the cash cell
+    // can pass its once-read binding and the HUD stays consistent across
+    // the cash-animation window (see cashCell's Fix 3 comment).
+    private func debtColor(_ debt: Int) -> Color {
+        if debt > 20_000 { return Color(hex: "#ff2f4a") }
+        if debt > 10_000 { return Color(hex: "#ffd477") }
+        return Color(hex: "#8a8a9a")
     }
 
     // Short money format — $1.2k / $2.5M / $850.

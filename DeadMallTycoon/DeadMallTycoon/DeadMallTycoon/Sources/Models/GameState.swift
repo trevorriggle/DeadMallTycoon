@@ -264,4 +264,22 @@ struct GameState: Equatable {
     // — ownership stays with the decision, and the card doesn't
     // clobber on dismiss.
     var anchorCardOwnedPause: Bool = false
+
+    // v9 Prompt 21 Fix 4 — bankruptcy warning card state.
+    //
+    // Fires exactly once per run the first time debt crosses the
+    // FailureTuning.bankruptcyWarningThreshold ($20,000). Two flags
+    // so the "once per run" latch is independent of the "is the card
+    // currently on screen" visibility:
+    //   bankruptcyWarningShown   — one-way latch; once set, stays set
+    //                              for the rest of the run. Prevents re-fire
+    //                              if debt oscillates across the threshold.
+    //   bankruptcyWarningPending — true while the card is on screen.
+    //                              Cleared by dismissBankruptcyWarning.
+    //   bankruptcyWarningOwnedPause — mirrors the other *OwnedPause
+    //                              flags; claim-on-appear, release-on-dismiss
+    //                              only if we claimed it ourselves.
+    var bankruptcyWarningShown: Bool = false
+    var bankruptcyWarningPending: Bool = false
+    var bankruptcyWarningOwnedPause: Bool = false
 }

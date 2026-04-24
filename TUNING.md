@@ -241,6 +241,39 @@ Six-state visual + audio state machine keyed to mall occupancy (plus a 60-month 
 
 - Halo pulse: ±8% alpha, ±3% scale, 3.5s period. (Prompt 4)
 
+## Hazards + decay (Prompt 21 Fix 2)
+
+Hazard + decay probabilities halved from the pre-Prompt-21 inline TickEngine literals, and hazard fines capped to one per tick. Pre-Prompt-21 playtesting showed pipes + HVAC failing too frequently; stacked hazard fines dominated cash flow late-run. Constants now live in `ArtifactTuning`.
+
+- `ArtifactTuning.decayBaseProbability = 0.01` — per-tick decay roll for a pristine (condition 0) artifact, before janitorial and per-condition multipliers. Was 0.02.
+- `ArtifactTuning.decayConditionStep = 0.005` — added per condition step. Final per-tick chance is `(base + c * step) × janitorialMult`. Was 0.01.
+- `ArtifactTuning.hazardOnDecayToRuinChance = 0.20` — probability that an artifact is flagged as hazard on the tick its condition advances to ruin (4). One roll per advancement. Was 0.40.
+- `ArtifactTuning.hazardAtRuinChance = 0.075` — per-tick probability that a condition-4 artifact without the hazard flag acquires it on a subsequent tick. Was 0.15.
+- `ArtifactTuning.maxHazardFinesPerTick = 1` — cap on hazard-fine events emitted per tick. Every hazarded artifact still exists on scene and still motivates repair, but only the single largest outstanding fine bills per month. Ties broken by `artifactId` (lowest wins) for determinism.
+
+**Unchanged — condition threshold for hazard**: hazard can only be set on artifacts at condition ≥ 4 (ruin). Already more restrictive than the Prompt 21 bullet's "if hazard fine threshold is condition 2+" guard, so no change needed on that axis.
+
+## Debt + bankruptcy (Prompt 21 Fixes 3-5)
+
+- `GameConstants.debtCeiling = 25_000` — unchanged; the bank forecloses when debt reaches or exceeds this. (v8 DEBT_CEIL)
+- `FailureTuning.bankruptcyWarningThreshold = 20_000` — first-crossing warning. Full-screen `BankruptcyWarningCard` fires exactly once per run via the latch pair `GameState.bankruptcyWarningShown` (one-way; prevents re-fire after pay-down) + `bankruptcyWarningPending` (drives card visibility). Set in TickEngine after the `s.debt += abs(s.cash)` step.
+- **HUD debt color bands** (`HUDView.debtColor(_:)` — duplicated in `ManageDrawer.debtSummaryTint`):
+    | debt | color |
+    |---|---|
+    | $0 | not rendered |
+    | $1–$10,000 | `#8a8a9a` gray |
+    | $10,001–$20,000 | `#ffd477` amber |
+    | $20,001–$24,999 | `#ff2f4a` red |
+    | $25,000 | foreclosure (game-over screen takes over) |
+- **Pay Down Debt** — `GameViewModel.payDownDebt(amount:)`. Validates `amount >= GameViewModel.payDownDebtMinimum (100)`, `amount <= state.cash`, `amount <= state.debt`; subtracts from both cash and debt on success; returns `false` on any out-of-range input (no mutation). `payDownDebtMax()` calls through with `min(cash, debt)`.
+- **No interest on debt** — audited in Prompt 21. Only `TickEngine` writes to `state.debt`, and only via `s.debt += abs(s.cash)` when cash goes negative. No periodic interest accrual, no compounding. If a future interest mechanic is added, a `debtMonthlyInterestRate` constant belongs in `FailureTuning`; today there is no such constant by design.
+- **Finance tab** — `ManageTab.finance`, inserted before `.history` in the seven-tab drawer. Surfaces a cash/debt/ceiling summary block and four pay-down buttons: presets $500 / $1,000 / $5,000 / Pay Max. Pay Max requires confirmation only when it would leave `cash == 0` AND the payment meets the $100 minimum — non-draining Max payments fire immediately.
+
+## Sealing eligibility (Prompt 21 Fix 1)
+
+- `Sealing.wingHasActiveAnchor(_:in:)` — new helper. A wing with an active (non-vacant) anchor store is excluded from `Sealing.eligibleWings` and rejected by `GameViewModel.confirmSeal` as a defense-in-depth guard. Anchors only depart via the anchor cascade (Prompt 10), never via player wing-seal. Before this fix, sealing a wing with an active anchor effectively erased the anchor without firing `.anchorDeparture`, skipping the 25% wing traffic drop, the neighbor hardship stagger, and the cascade memorials.
+- `Sealing.wingOccupancyAdvisory` and `Sealing.activeTenantCount` also exclude anchors now — counting them would falsely promise an anchor closure in the advisory text and the confirmation preview.
+
 ## Tutorial beats (Prompt 18)
 
 Optional in-run tutorial that surfaces teaching moments as modal cards. Opt-in from the NewMallSheet; `GameState.tutorialEnabled` gates every trigger and is checked by `TutorialBeatDetector.scan` AND `GameViewModel.fireBeat`.

@@ -110,9 +110,22 @@ struct MallView: View {
             // takes precedence (the seismic narrative beat wins over a
             // didactic one).
             if vm.state.decision == nil,
+               !vm.state.bankruptcyWarningPending,
                let card = vm.state.anchorDepartureCardQueue.first {
                 AnchorDepartureCardView(vm: vm, payload: card)
                     .id(card.id)   // fresh .onAppear per queued card
+                    .transition(.opacity)
+            }
+
+            // v9 Prompt 21 Fix 4 — bankruptcy warning card. Gated on
+            // decision == nil (same priority rule as the anchor card —
+            // tenant offers / flavor events come first). Rendered above
+            // the anchor and tutorial cards so a $20k crossing that
+            // happens in the same tick as a cascade still surfaces —
+            // the anchor card waits behind it until Acknowledge.
+            if vm.state.decision == nil,
+               vm.state.bankruptcyWarningPending {
+                BankruptcyWarningCard(vm: vm)
                     .transition(.opacity)
             }
 
@@ -124,6 +137,7 @@ struct MallView: View {
             // while a higher-priority surface was up present serially
             // via tutorialBeatQueue as each card is dismissed.
             if vm.state.decision == nil,
+               !vm.state.bankruptcyWarningPending,
                vm.state.anchorDepartureCardQueue.isEmpty,
                let beat = vm.state.activeTutorialBeat {
                 TutorialBeatCard(vm: vm, beat: beat)

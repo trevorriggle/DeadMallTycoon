@@ -12,11 +12,23 @@ import Foundation
 // partially-occupied wings, no gating."
 enum Sealing {
 
-    // All wings not currently closed. Sealing a wing is always permitted;
-    // an advisory string (see wingOccupancyAdvisory) reads the occupancy
-    // and surfaces a soft warning when a wing still has active tenants.
+    // v9 Prompt 21 Fix 1 — wings with an active anchor cannot be sealed.
+    // Anchors are architectural: they depart on their own schedule via the
+    // anchor cascade (Prompt 10), never by player wing-seal. Before this
+    // fix, sealing a wing with an active anchor effectively erased the
+    // anchor without firing .anchorDeparture, skipping the 25% traffic
+    // drop, neighbor hardship stagger, and cascade memorials.
+    static func wingHasActiveAnchor(_ wing: Wing, in state: GameState) -> Bool {
+        state.stores.contains { $0.wing == wing && $0.tier == .anchor }
+    }
+
+    // All wings not currently closed AND not still hosting an active
+    // anchor. Once the anchor has departed, the wing becomes sealable.
     static func eligibleWings(in state: GameState) -> [Wing] {
-        Wing.allCases.filter { !Mall.isWingClosed($0, in: state) }
+        Wing.allCases.filter { wing in
+            !Mall.isWingClosed(wing, in: state)
+                && !wingHasActiveAnchor(wing, in: state)
+        }
     }
 
     // Entrances that are currently OPEN — i.e., both not individually
@@ -49,21 +61,25 @@ enum Sealing {
     // that would be lost so the confirmation preview isn't the first
     // place the player sees the cost.
     static func wingOccupancyAdvisory(for wing: Wing, in state: GameState) -> String? {
-        let stores = state.stores.filter { $0.wing == wing }
-        guard !stores.isEmpty else { return nil }
-        let active = stores.filter { $0.tier != .vacant }.count
-        let ratio = Double(active) / Double(stores.count)
+        // v9 Prompt 21 Fix 1 — anchors are not counted here. Wing seal
+        // doesn't touch the anchor; anchor departures run through the
+        // cascade system, not player sealing. Counting anchors would
+        // falsely promise an anchor closure in the advisory.
+        let nonAnchor = state.stores.filter { $0.wing == wing && $0.tier != .anchor }
+        guard !nonAnchor.isEmpty else { return nil }
+        let active = nonAnchor.filter { $0.tier != .vacant }.count
+        let ratio = Double(active) / Double(nonAnchor.count)
         if ratio < 0.5 { return nil }
         if active == 1 { return "1 active tenant would close" }
         return "\(active) active tenants would close"
     }
 
     // v9 Prompt 19 — count of active (non-vacant) tenants in a wing.
-    // Used by the confirmation preview for the consequences line ("this
-    // will close N storefronts permanently").
+    // v9 Prompt 21 Fix 1 — anchors excluded; wing seal doesn't close them.
+    // Used by the confirmation preview for the consequences line.
     static func activeTenantCount(in wing: Wing, _ state: GameState) -> Int {
         state.stores
-            .filter { $0.wing == wing && $0.tier != .vacant }
+            .filter { $0.wing == wing && $0.tier != .vacant && $0.tier != .anchor }
             .count
     }
 }

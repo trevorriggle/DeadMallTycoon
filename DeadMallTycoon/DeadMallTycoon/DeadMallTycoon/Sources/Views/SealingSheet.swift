@@ -73,13 +73,26 @@ struct SealingSheet: View {
         return VStack(alignment: .leading, spacing: 8) {
             sectionHeader("WINGS")
             if wings.isEmpty {
-                sectionEmpty("Both wings already sealed.")
+                sectionEmpty(wingsEmptyText)
             } else {
                 ForEach(wings, id: \.self) { wing in
                     wingRow(wing)
                 }
             }
         }
+    }
+
+    // v9 Prompt 21 Fix 1 — the wings section is empty either because both
+    // wings are already sealed, or because the remaining open wings still
+    // host active anchors (which the player cannot seal).
+    private var wingsEmptyText: String {
+        let unsealed = Wing.allCases.filter { !Mall.isWingClosed($0, in: vm.state) }
+        if unsealed.isEmpty { return "Both wings already sealed." }
+        let anchoredAndOpen = unsealed.filter { Sealing.wingHasActiveAnchor($0, in: vm.state) }
+        if anchoredAndOpen.count == unsealed.count {
+            return "Wings with an active anchor cannot be sealed. The anchor departs on its own schedule."
+        }
+        return "No wings currently eligible for sealing."
     }
 
     private func wingRow(_ wing: Wing) -> some View {
@@ -164,11 +177,11 @@ struct SealingSheet: View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .serif))
+                    .font(.system(size: 15, weight: .semibold, design: .default))
                     .foregroundStyle(Color(hex: "#d8d8e0"))
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 12, design: .serif))
+                        .font(.system(size: 12, design: .default))
                         .italic()
                         .foregroundStyle(Color(hex: "#9898a8"))
                         .fixedSize(horizontal: false, vertical: true)
@@ -208,7 +221,7 @@ struct SealingSheet: View {
 
     private func sectionEmpty(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 12, design: .serif))
+            .font(.system(size: 12, design: .default))
             .italic()
             .foregroundStyle(Color(hex: "#6a6a78"))
             .padding(10)
