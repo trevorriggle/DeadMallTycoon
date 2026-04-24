@@ -54,6 +54,30 @@ final class UIScaleComputationTests: XCTestCase {
                                     "minScale must not push the smallest label below 8pt")
     }
 
+    func testCompactMinScaleKeepsPrimaryLabelsReadable() {
+        // v9 Prompt 24 — compact floor is looser to let iPhone-height
+        // viewports breathe. Main-line labels (14pt+) must still clear
+        // 10pt after scaling; sublabels (10pt) may drop to ~7.2pt,
+        // which is tight but legible for secondary info.
+        let main: CGFloat   = 14
+        let sublabel: CGFloat = 10
+        XCTAssertGreaterThanOrEqual(main * UIScaleBaseline.minScaleCompact, 10.0)
+        XCTAssertGreaterThanOrEqual(sublabel * UIScaleBaseline.minScaleCompact, 7.0)
+    }
+
+    func testIPhoneLandscapeUsesCompactFloor() {
+        // iPhone 15 landscape: 852 × 393. hScale = 393/1366 ≈ 0.287
+        // — below the iPad floor (0.80) AND below the compact floor
+        // (0.72). Passing the compact floor clamps to 0.72.
+        let compact = computeUIScale(for: CGSize(width: 852, height: 393),
+                                     minScale: UIScaleBaseline.minScaleCompact)
+        XCTAssertEqual(compact, UIScaleBaseline.minScaleCompact, accuracy: 0.001)
+
+        // With the iPad (default) floor the same viewport pins at 0.80.
+        let regular = computeUIScale(for: CGSize(width: 852, height: 393))
+        XCTAssertEqual(regular, UIScaleBaseline.minScale, accuracy: 0.001)
+    }
+
     func testScaleIsMonotonicInDominantAxis() {
         // Shrinking either axis must not increase the scale.
         let baseline = computeUIScale(for: CGSize(width: 1024, height: 1366))

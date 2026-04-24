@@ -78,10 +78,10 @@ struct BankruptcyWarningCard: View {
 
                 Spacer().frame(height: 40)
             }
-            // v9 Prompt 23 — max width scales with UI scale so on iPad
-            // Pro 13" the card body isn't marooned mid-screen and on
-            // iPad mini the copy column doesn't overflow.
-            .scaledFrame(maxWidth: 520)
+            // v9 Prompt 23 — max width scales with UI scale on iPad.
+            // v9 Prompt 24 — cap drops on compact (iPhone landscape)
+            // so the card fills the narrow viewport.
+            .modalCardMaxWidth(520)
             .padding(.horizontal, 24)
         }
         .onAppear { vm.claimBankruptcyWarningPause() }

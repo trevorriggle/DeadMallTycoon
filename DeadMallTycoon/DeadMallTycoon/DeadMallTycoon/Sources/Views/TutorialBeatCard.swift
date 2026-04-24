@@ -67,8 +67,9 @@ struct TutorialBeatCard: View {
 
                 Spacer()
             }
-            // v9 Prompt 23 — scales with UI scale for cross-iPad fit.
-            .scaledFrame(maxWidth: 520)
+            // v9 Prompts 23/24 — scales with UI scale on iPad; cap
+            // drops on compact for iPhone landscape.
+            .modalCardMaxWidth(520)
             .padding(.horizontal, 24)
         }
     }

@@ -82,8 +82,10 @@ struct AnchorDepartureCardView: View {
 
                 Spacer().frame(height: 40)
             }
-            // v9 Prompt 23 — scales with UI scale for cross-iPad fit.
-            .scaledFrame(maxWidth: 520)
+            // v9 Prompts 23/24 — scales with UI scale on iPad; cap
+            // drops on compact so the card fills an iPhone landscape
+            // viewport instead of centering in a narrow column.
+            .modalCardMaxWidth(520)
             .padding(.horizontal, 24)
         }
         .onAppear { vm.claimAnchorCardPause() }

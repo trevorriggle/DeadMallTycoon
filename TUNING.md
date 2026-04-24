@@ -241,6 +241,18 @@ Six-state visual + audio state machine keyed to mall occupancy (plus a 60-month 
 
 - Halo pulse: ±8% alpha, ±3% scale, 3.5s period. (Prompt 4)
 
+## iPhone landscape support (Prompt 24)
+
+iPhone runs landscape-only; iPad keeps all four orientations.
+
+- `OrientationLockDelegate` (in `DeadMallTycoonApp.swift`) — UIApplicationDelegate plumbed via `@UIApplicationDelegateAdaptor`. `supportedInterfaceOrientationsFor` returns `.landscape` on `.phone` idiom, `.all` on `.pad`. Restricts at the UIApplication layer so every window/scene inherits.
+- **Known limitation.** The project's Info.plist build setting (`project.pbxproj` key `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone`) still lists `UIInterfaceOrientationPortrait`. The runtime delegate force-rotates landscape, but launching with the device in portrait flashes portrait briefly before rotating. Fix is to remove `UIInterfaceOrientationPortrait` from that build setting — do in Xcode on a Mac (not hand-authored from Linux per CLAUDE.md).
+- **Compact-width adaptations** (iPhone landscape = `horizontalSizeClass == .compact`):
+  - **Bottom controls reflow** (`ContentView.compactBottomControls`): the iPad vertical stack (ACQUIRE/SEAL/MANAGE) + separate bottom-right speed tray becomes a single horizontal row. Saves ~90pt of vertical space on viewports where every pt counts.
+  - **Modal cards** (`BankruptcyWarningCard`, `AnchorDepartureCardView`, `TutorialBeatCard`) use `.modalCardMaxWidth(520)` which drops the 520pt cap entirely on compact and scales it on regular. iPhone gets a full-viewport card; iPad keeps the centered column.
+  - **UI scale floor** drops from 0.80 to `UIScaleBaseline.minScaleCompact = 0.72`. Main-line labels stay ≥ 10pt; 10pt sublabels (MONTH counter, Memory tag) drop to 7.2pt — tight but legible. Buys back ~10% of the HUD's vertical budget.
+- **Deferred.** Per-device world geometry (the scene is 1200×1400, much taller than a 2:1 landscape viewport, so iPhone sees heavy left/right letterboxing). The existing pinch/pan camera lets players zoom in; a future pass could default the compact camera to a higher zoom level.
+
 ## Adaptive UI scale (Prompt 23)
 
 Proportional pass — HUD + full-screen modal cards scale with a single factor injected from the app root via `GeometryReader`. Size-class-aware reflow (separate layouts on compact vs regular widths) is a larger, future pass; this is the quick fix that unblocks playtesting across iPad mini through iPad Pro 13".

@@ -34,14 +34,27 @@ enum UIScaleBaseline {
     // vertical space on iPad Pro 13".
     static let minScale: CGFloat = 0.80
     static let maxScale: CGFloat = 1.12
+    // v9 Prompt 24 — on compact-width (iPhone landscape) the vertical
+    // axis is short enough (~375–430pt vs 1366 baseline) that the
+    // dominant-axis clamp pins at the floor. Dropping the floor to
+    // 0.72 on compact buys back ~10% of vertical HUD budget at the
+    // cost of 10pt sublabels (MONTH, memory tag) rendering at 7.2pt —
+    // legible but tight. Main-line labels (cash 26pt → 18.7pt, date
+    // 18pt → 12.96pt) stay comfortably readable.
+    static let minScaleCompact: CGFloat = 0.72
 }
 
 // Pure function so both the GeometryReader root AND tests can compute
 // the scale identically. Caller passes the actual viewport; callee
 // returns the clamped scale.
+//
+// v9 Prompt 24 — `minScale` defaults to the iPad floor but callers that
+// know they're on compact-width can pass UIScaleBaseline.minScaleCompact.
+// InjectUIScale picks the right floor via @Environment(\.horizontalSizeClass).
 func computeUIScale(for viewport: CGSize,
                     baseline: CGSize = CGSize(width: UIScaleBaseline.width,
-                                              height: UIScaleBaseline.height))
+                                              height: UIScaleBaseline.height),
+                    minScale: CGFloat = UIScaleBaseline.minScale)
 -> CGFloat {
     // Scale to the DOMINANT axis — on an iPad in landscape, height is
     // the binding constraint (short axis); in portrait, width is. Taking
@@ -50,7 +63,7 @@ func computeUIScale(for viewport: CGSize,
     let wScale = viewport.width / baseline.width
     let hScale = viewport.height / baseline.height
     let raw = min(wScale, hScale)
-    return max(UIScaleBaseline.minScale, min(UIScaleBaseline.maxScale, raw))
+    return max(minScale, min(UIScaleBaseline.maxScale, raw))
 }
 
 private struct UIScaleKey: EnvironmentKey {
@@ -99,6 +112,15 @@ extension View {
         modifier(ScaledMaxFrameModifier(maxWidth: maxWidth,
                                          maxHeight: maxHeight,
                                          alignment: alignment))
+    }
+
+    // v9 Prompt 24 — modal-card max-width that drops entirely on
+    // horizontalSizeClass == .compact. On iPad this scales the passed
+    // max-width by uiScale like `scaledFrame(maxWidth:)`; on iPhone
+    // landscape the cap is removed so the card fills the viewport
+    // horizontally (subtracting the caller's own .padding).
+    func modalCardMaxWidth(_ width: CGFloat) -> some View {
+        modifier(ModalCardMaxWidthModifier(baseline: width))
     }
 
     // Padding whose edge insets scale with uiScale. Mirrors
@@ -153,6 +175,23 @@ private struct ScaledMaxFrameModifier: ViewModifier {
     }
 }
 
+private struct ModalCardMaxWidthModifier: ViewModifier {
+    @Environment(\.uiScale) private var uiScale
+    @Environment(\.horizontalSizeClass) private var hSize
+    let baseline: CGFloat
+
+    func body(content: Content) -> some View {
+        // On compact (iPhone landscape), let the card fill — the
+        // viewport's already narrow, further capping wastes space.
+        // On regular (iPad), cap at the baseline × uiScale.
+        if hSize == .compact {
+            content.frame(maxWidth: .infinity)
+        } else {
+            content.frame(maxWidth: baseline * uiScale)
+        }
+    }
+}
+
 private struct ScaledPaddingModifier: ViewModifier {
     @Environment(\.uiScale) private var uiScale
     let edges: Edge.Set
@@ -169,7 +208,12 @@ private struct ScaledPaddingModifier: ViewModifier {
 // to the value computed from the current viewport. Place near the root
 // of a full-screen surface (e.g. ContentView); nested InjectUIScale calls
 // are harmless — the innermost wins.
+//
+// v9 Prompt 24 — picks the floor based on `horizontalSizeClass`. Compact
+// (iPhone landscape) gets UIScaleBaseline.minScaleCompact so the HUD
+// doesn't eat disproportionate vertical space on short viewports.
 struct InjectUIScale<Content: View>: View {
+    @Environment(\.horizontalSizeClass) private var hSize
     let content: Content
 
     init(@ViewBuilder _ content: () -> Content) {
@@ -178,8 +222,12 @@ struct InjectUIScale<Content: View>: View {
 
     var body: some View {
         GeometryReader { geo in
+            let floor: CGFloat = (hSize == .compact)
+                ? UIScaleBaseline.minScaleCompact
+                : UIScaleBaseline.minScale
             content
-                .environment(\.uiScale, computeUIScale(for: geo.size))
+                .environment(\.uiScale,
+                             computeUIScale(for: geo.size, minScale: floor))
         }
     }
 }

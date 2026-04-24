@@ -1,7 +1,14 @@
 import SwiftUI
+import UIKit
 
 @main
 struct DeadMallTycoonApp: App {
+    // v9 Prompt 24 — UIApplicationDelegateAdaptor plumbs the device-
+    // orientation callback through a traditional UIApplicationDelegate.
+    // iPad keeps all orientations (per the project's Info.plist keys);
+    // iPhone is landscape-only because the scene is 1200×1400 and the
+    // full HUD + bottom controls don't fit cleanly in iPhone portrait.
+    @UIApplicationDelegateAdaptor(OrientationLockDelegate.self) private var appDelegate
     @State private var vm = GameViewModel()
 
     init() {
@@ -14,6 +21,26 @@ struct DeadMallTycoonApp: App {
         WindowGroup {
             ContentView(vm: vm)
                 .preferredColorScheme(.dark)
+        }
+    }
+}
+
+// v9 Prompt 24 — iPhone landscape-only, iPad unchanged.
+//
+// The Info.plist build settings (project.pbxproj
+// INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone) list landscape
+// AND portrait so UIKit permits both at launch; this callback restricts
+// the runtime-allowed set to landscape on iPhone. iPad returns .all so
+// its four-orientation experience is preserved. Intentionally restricts
+// at the UIApplication layer rather than per-scene so the lock applies
+// to every window/scene in the process.
+final class OrientationLockDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone: return .landscape
+        case .pad:   return .all
+        default:     return .all
         }
     }
 }
@@ -120,44 +147,25 @@ struct ContentView: View {
                 .allowsHitTesting(true)
             }
 
-            // Bottom-left: ACQUIRE shortcut stacked above MANAGE drawer trigger.
-            // v9 Prompt 3 followup — Acquire promoted to the HUD as a
-            // top-level shortcut. MANAGE is unchanged; the Acquire tab inside
-            // MANAGE is also untouched (this is an additional entry point,
-            // not a replacement).
+            // Bottom controls.
+            //
+            // Regular width (iPad): ACQUIRE/SEAL/MANAGE stack vertically
+            // in the bottom-left corner; SpeedControls float in the
+            // bottom-right. This is the original iPad layout.
+            //
+            // v9 Prompt 24 — Compact width (iPhone landscape): the
+            // vertical stack would eat ~130pt of the ~400pt-tall
+            // viewport. Reflow to a single horizontal row spanning the
+            // bottom of the screen — three action buttons, a spacer,
+            // the speed tray. Keeps all four controls reachable without
+            // stealing vertical space from the mall scene.
             VStack {
                 Spacer()
-                HStack(alignment: .bottom) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        AcquireButton(action: { showAcquire = true })
-                        // v9 Prompt 19 — SEAL between ACQUIRE and MANAGE so
-                        // the sealing surface is discoverable at the same
-                        // level as the other top-level action shortcuts.
-                        SealButton(action: { showSealing = true })
-                        ManageButton(action: { showManage = true })
-                    }
-                    #if DEBUG
-                    // v9: Dev-only button to inspect the Artifact list. Sits next to
-                    // MANAGE; stripped from release builds by the surrounding #if DEBUG.
-                    Button(action: { showArtifactDebug = true }) {
-                        Text("DBG")
-                            .font(.system(size: 11, weight: .black, design: .monospaced))
-                            .tracking(1)
-                            .foregroundStyle(Color(hex: "#b8e8f8"))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .background(Color(hex: "#14141a").opacity(0.8))
-                            .overlay(
-                                Rectangle().stroke(Color(hex: "#3a3a48"), lineWidth: 1)
-                            )
-                    }
-                    .padding(.leading, 6)
-                    #endif
-                    Spacer()
-                    SpeedControls(vm: vm)
+                if hSize == .compact {
+                    compactBottomControls
+                } else {
+                    regularBottomControls
                 }
-                .padding(.horizontal, 14)
-                .padding(.bottom, 12)
             }
         }
         .sheet(isPresented: $showManage)  { ManageDrawer(vm: vm) }
@@ -168,4 +176,61 @@ struct ContentView: View {
         .sheet(isPresented: $showArtifactDebug) { ArtifactDebugPanel(vm: vm) }
         #endif
     }
+
+    // MARK: - Bottom controls per size class (v9 Prompt 24)
+
+    // Regular (iPad): vertical stack of ACQUIRE / SEAL / MANAGE in the
+    // bottom-left, SpeedControls in the bottom-right. Unchanged from
+    // the original Phase A layout.
+    private var regularBottomControls: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 8) {
+                AcquireButton(action: { showAcquire = true })
+                SealButton(action: { showSealing = true })
+                ManageButton(action: { showManage = true })
+            }
+            #if DEBUG
+            debugButton.padding(.leading, 6)
+            #endif
+            Spacer()
+            SpeedControls(vm: vm)
+        }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 12)
+    }
+
+    // Compact (iPhone landscape): one horizontal strip, action buttons
+    // on the left, speed controls on the right. Saves ~90pt of vertical
+    // space vs the stacked column on devices that can't spare it.
+    private var compactBottomControls: some View {
+        HStack(alignment: .bottom, spacing: 6) {
+            AcquireButton(action: { showAcquire = true })
+            SealButton(action: { showSealing = true })
+            ManageButton(action: { showManage = true })
+            #if DEBUG
+            debugButton
+            #endif
+            Spacer()
+            SpeedControls(vm: vm)
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 8)
+    }
+
+    #if DEBUG
+    private var debugButton: some View {
+        Button(action: { showArtifactDebug = true }) {
+            Text("DBG")
+                .font(.system(size: 11, weight: .black, design: .monospaced))
+                .tracking(1)
+                .foregroundStyle(Color(hex: "#b8e8f8"))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(Color(hex: "#14141a").opacity(0.8))
+                .overlay(
+                    Rectangle().stroke(Color(hex: "#3a3a48"), lineWidth: 1)
+                )
+        }
+    }
+    #endif
 }
