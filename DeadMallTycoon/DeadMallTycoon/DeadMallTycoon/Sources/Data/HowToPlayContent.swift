@@ -85,7 +85,7 @@ enum HowToPlayContent {
             id: 5,
             title: "Closures and memorials",
             body: """
-            When a tenant closes, the storefront is not cleared. It becomes a boardedStorefront artifact — a memorial at that slot.
+            When a tenant closes, the storefront is not cleared. It becomes a boardedStorefront artifact: a memorial at that slot.
 
             Memorials accrue memory weight the same way any artifact does: visitors pass nearby, and a thought fires that references the memorial.
 
@@ -131,7 +131,7 @@ enum HowToPlayContent {
 
             State is computed from traffic, occupancy, and overall decay. The transition is automatic; there is no manual override.
 
-            Each state changes multiple systems at once. Scoring multipliers rise as the state worsens. Visitor mix shifts toward photographers, urbex explorers, and paranormal investigators. Operating costs scale. Visual tone — lighting, audio, color grade — darkens.
+            Each state changes multiple systems at once. Scoring multipliers rise as the state worsens. Visitor mix shifts toward photographers, urbex explorers, and paranormal investigators. Operating costs scale. Visual tone (lighting, audio, color grade) darkens.
 
             ghostMall is a special state: five consecutive years in dead. Scoring multiplier is maxed. Visitor mix is entirely late-game cohorts. This is the endgame state the game is built around.
             """
@@ -186,7 +186,7 @@ enum HowToPlayContent {
             id: 11,
             title: "Two failure modes",
             body: """
-            Bankruptcy. Debt exceeds $25,000. The run ends immediately. This is the failure mode for runs that keep the mall too full — standard-tier rent cannot outpace anchor-loss operating costs once the cascade fires.
+            Bankruptcy. Debt exceeds $25,000. The run ends immediately. This is the failure mode for runs that keep the mall too full: standard-tier rent cannot outpace anchor-loss operating costs once the cascade fires.
 
             Forgotten. Three conditions must hold at once:
               • Total memory weight across all artifacts is below 15.0
@@ -201,7 +201,7 @@ enum HowToPlayContent {
             id: 12,
             title: "Endgame guidance",
             body: """
-            The target is ghostMall — five consecutive years in dead.
+            The target is ghostMall: five consecutive years in dead.
 
             The rough playbook:
 
@@ -211,7 +211,7 @@ enum HowToPlayContent {
             • Curate selected memorials as display spaces. Historical plaques and vintage mall photos on specific anchor slots make the difference in late-game memory score.
             • Keep memory weight well above the forgotten threshold before the mall ever enters dead.
 
-            See ENDGAME.md for the design intent — the forty-minutes-in mall the game exists to produce.
+            See ENDGAME.md for the design intent: the forty-minutes-in mall the game exists to produce.
             """
         ),
 
