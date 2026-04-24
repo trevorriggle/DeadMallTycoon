@@ -4,6 +4,12 @@ import SwiftUI
 struct DeadMallTycoonApp: App {
     @State private var vm = GameViewModel()
 
+    init() {
+        // v9 — configure AVAudioSession before any player loads so music
+        // and ambient hum aren't silenced by the hardware silent switch.
+        AudioSession.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView(vm: vm)
