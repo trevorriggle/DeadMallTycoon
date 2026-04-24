@@ -65,11 +65,14 @@ final class VisitorNode: SKSpriteNode {
 
     private static func bagColor(for tier: StoreTier) -> UIColor {
         switch tier {
-        case .anchor:   return Palette.storeAnchor
-        case .standard: return Palette.storeStandard
-        case .kiosk:    return Palette.storeKiosk
-        case .sketchy:  return Palette.storeSketchy
-        case .vacant:   return .gray  // unreachable — guarded above
+        case .anchor:    return Palette.storeAnchor
+        case .standard:  return Palette.storeStandard
+        case .kiosk:     return Palette.storeKiosk
+        case .sketchy:   return Palette.storeSketchy
+        // v9 Prompt 17 — specialty bags read institutional/tenured, same
+        // visual register as anchor until a dedicated palette entry exists.
+        case .specialty: return Palette.storeAnchor
+        case .vacant:    return .gray  // unreachable — guarded above
         }
     }
 

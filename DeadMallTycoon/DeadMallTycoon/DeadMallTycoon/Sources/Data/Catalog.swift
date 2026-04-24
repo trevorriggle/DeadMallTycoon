@@ -738,7 +738,7 @@ enum Tenants {
         case .fading:
             // ~8% specialty — first hints that traditional retail is
             // less interested.
-            return mid + mid + good + sketchy + longLived.prefix(1)
+            return mid + mid + good + sketchy + Array(longLived.prefix(1))
         case .struggling:
             // ~15% specialty mix — retail offers thinning, services
             // picking up the slack.
