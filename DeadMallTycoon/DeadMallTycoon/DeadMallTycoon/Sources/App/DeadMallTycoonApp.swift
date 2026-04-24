@@ -42,17 +42,26 @@ struct ContentView: View {
     #endif
 
     var body: some View {
-        ZStack {
-            Color(hex: "#0a0a0e").ignoresSafeArea()
-            if !vm.state.started {
-                StartScreenView(onStart: { tutorialEnabled in
-                    vm.startGame(tutorialEnabled: tutorialEnabled)
-                })
-            } else {
-                gameBody
-                if vm.state.gameover {
-                    GameOverView(vm: vm)
-                        .transition(.opacity)
+        // v9 Prompt 23 — adaptive UI scale. InjectUIScale wraps the
+        // content in a root GeometryReader and computes a clamped
+        // scale factor (UIScaleBaseline.minScale...maxScale) that
+        // every .scaledFont / .scaledFrame / .scaledPadding reads via
+        // @Environment(\.uiScale). One injection point at the top
+        // covers every sheet, overlay, and full-screen card the app
+        // presents below it.
+        InjectUIScale {
+            ZStack {
+                Color(hex: "#0a0a0e").ignoresSafeArea()
+                if !vm.state.started {
+                    StartScreenView(onStart: { tutorialEnabled in
+                        vm.startGame(tutorialEnabled: tutorialEnabled)
+                    })
+                } else {
+                    gameBody
+                    if vm.state.gameover {
+                        GameOverView(vm: vm)
+                            .transition(.opacity)
+                    }
                 }
             }
         }

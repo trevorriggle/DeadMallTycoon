@@ -241,6 +241,19 @@ Six-state visual + audio state machine keyed to mall occupancy (plus a 60-month 
 
 - Halo pulse: ±8% alpha, ±3% scale, 3.5s period. (Prompt 4)
 
+## Adaptive UI scale (Prompt 23)
+
+Proportional pass — HUD + full-screen modal cards scale with a single factor injected from the app root via `GeometryReader`. Size-class-aware reflow (separate layouts on compact vs regular widths) is a larger, future pass; this is the quick fix that unblocks playtesting across iPad mini through iPad Pro 13".
+
+- `UIScaleBaseline.width = 1024`, `UIScaleBaseline.height = 1366` — the surface the hardcoded pt values were authored against (roughly iPad Pro 11" 1st gen portrait). Devices narrower/shorter in the dominant axis scale down; larger scale up.
+- `UIScaleBaseline.minScale = 0.80` — lower clamp. Below this, 10pt labels in the HUD (smallest authored text) push under 8pt and become unreadable.
+- `UIScaleBaseline.maxScale = 1.12` — upper clamp. Above this, the HUD strip starts eating too much vertical space on iPad Pro 13".
+- `computeUIScale(for:)` — pure function, tested in `UIScaleTests`. Returns `max(min, min(max, min(wScale, hScale)))` where `*Scale = viewport.dim / baseline.dim`. Takes the dominant (smaller) axis so the HUD never clips off-screen in either orientation.
+
+**Adopted surfaces** — `HUDView` (all font sizes + threat meter width), `BankruptcyWarningCard`, `AnchorDepartureCardView`, `TutorialBeatCard` (font sizes + max-widths). Other views continue to use static `.font(.system(size:))` and render at 1.0 uniformly; migrating them is a call-site edit (replace `.font(.system(size:…))` with `.scaledFont(size:…)`) with no functional risk.
+
+**Why not `@ScaledMetric`** — that type scales with Dynamic Type accessibility setting, not viewport. We want both: this system provides screen-size scaling; Dynamic Type compatibility is a separate pass.
+
 ## Hazards + decay (Prompt 21 Fix 2)
 
 Hazard + decay probabilities halved from the pre-Prompt-21 inline TickEngine literals, and hazard fines capped to one per tick. Pre-Prompt-21 playtesting showed pipes + HVAC failing too frequently; stacked hazard fines dominated cash flow late-run. Constants now live in `ArtifactTuning`.

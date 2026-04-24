@@ -36,14 +36,14 @@ struct TutorialBeatCard: View {
                 // Title — short, ALL CAPS. Matches the "WELCOME · JANUARY
                 // 1982" / "TENANT OFFER · PAUSED" typography family.
                 Text(content.title)
-                    .font(.system(size: 16, weight: .black, design: .monospaced))
+                    .scaledFont(size: 16, weight: .black, design: .monospaced)
                     .tracking(1.8)
                     .foregroundStyle(Color(hex: "#ff4dbd"))
                     .multilineTextAlignment(.center)
 
                 // Body — two or three sentences of teaching prose.
                 Text(content.body)
-                    .font(.system(size: 17, design: .default))
+                    .scaledFont(size: 17, design: .default)
                     .foregroundStyle(Color(hex: "#b8e8f8"))
                     .lineSpacing(3)
                     .multilineTextAlignment(.center)
@@ -53,7 +53,7 @@ struct TutorialBeatCard: View {
                 // Continue — explicit dismissal. No tap-elsewhere path.
                 Button(action: { vm.dismissTutorialBeat() }) {
                     Text("Continue")
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .scaledFont(size: 16, weight: .bold, design: .monospaced)
                         .tracking(1.0)
                         .foregroundStyle(Color(hex: "#2a0a2a"))
                         .padding(.horizontal, 28).padding(.vertical, 10)
@@ -67,7 +67,8 @@ struct TutorialBeatCard: View {
 
                 Spacer()
             }
-            .frame(maxWidth: 520)
+            // v9 Prompt 23 — scales with UI scale for cross-iPad fit.
+            .scaledFrame(maxWidth: 520)
             .padding(.horizontal, 24)
         }
     }

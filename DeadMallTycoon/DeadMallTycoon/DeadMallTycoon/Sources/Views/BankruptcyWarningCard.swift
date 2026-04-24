@@ -23,13 +23,13 @@ struct BankruptcyWarningCard: View {
                 Spacer()
 
                 Text("THE BANK HAS NOTICED")
-                    .font(.system(size: 28, weight: .black, design: .monospaced))
+                    .scaledFont(size: 28, weight: .black, design: .monospaced)
                     .tracking(2.4)
                     .foregroundStyle(Color(hex: "#ff2f4a"))
                     .multilineTextAlignment(.center)
 
                 Text("Your debt has reached $20,000.")
-                    .font(.system(size: 22, weight: .semibold, design: .default))
+                    .scaledFont(size: 22, weight: .semibold, design: .default)
                     .foregroundStyle(Color(hex: "#b8e8f8"))
                     .multilineTextAlignment(.center)
 
@@ -39,7 +39,7 @@ struct BankruptcyWarningCard: View {
                     Text("At $25,000 the bank forecloses and you lose the mall.")
                     Text("You can pay down debt from available cash at any time via the MANAGE drawer.")
                 }
-                .font(.system(size: 15, design: .default))
+                .scaledFont(size: 15, design: .default)
                 .foregroundStyle(Color(hex: "#d8d8e0"))
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: 440, alignment: .leading)
@@ -58,14 +58,14 @@ struct BankruptcyWarningCard: View {
                     Text("Available cash · $\(vm.state.cash)")
                     Text("Ceiling · $25,000")
                 }
-                .font(.system(size: 13, weight: .regular, design: .monospaced))
+                .scaledFont(size: 13, weight: .regular, design: .monospaced)
                 .foregroundStyle(Color(hex: "#6a6a78"))
 
                 Spacer()
 
                 Button(action: { vm.dismissBankruptcyWarning() }) {
                     Text("Acknowledge")
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .scaledFont(size: 18, weight: .bold, design: .monospaced)
                         .tracking(1.2)
                         .foregroundStyle(Color(hex: "#2a0a2a"))
                         .padding(.horizontal, 32).padding(.vertical, 12)
@@ -78,7 +78,10 @@ struct BankruptcyWarningCard: View {
 
                 Spacer().frame(height: 40)
             }
-            .frame(maxWidth: 520)
+            // v9 Prompt 23 — max width scales with UI scale so on iPad
+            // Pro 13" the card body isn't marooned mid-screen and on
+            // iPad mini the copy column doesn't overflow.
+            .scaledFrame(maxWidth: 520)
             .padding(.horizontal, 24)
         }
         .onAppear { vm.claimBankruptcyWarningPause() }

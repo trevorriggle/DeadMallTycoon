@@ -29,20 +29,20 @@ struct AnchorDepartureCardView: View {
 
                 // Anchor name — the emblematic word the run just lost.
                 Text(payload.tenantName)
-                    .font(.system(size: 48, weight: .black, design: .default))
+                    .scaledFont(size: 48, weight: .black, design: .default)
                     .foregroundStyle(Color(hex: "#b8e8f8"))
                     .multilineTextAlignment(.center)
 
                 // Headline: "announces closure after N years."
                 Text(headlineSuffix)
-                    .font(.system(size: 20, design: .default)).italic()
+                    .scaledFont(size: 20, design: .default).italic()
                     .foregroundStyle(Color(hex: "#d8d8e0"))
 
                 // Authored flavor (2-3 sentences). Placeholder string
                 // renders as-is until copy lands, matching the
                 // ClosureFlavor / LedgerTemplates convention.
                 Text(AnchorDepartureFlavor.line(for: payload.tenantName))
-                    .font(.system(size: 15, design: .default)).italic()
+                    .scaledFont(size: 15, design: .default).italic()
                     .foregroundStyle(Color(hex: "#c0c0cc"))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -50,7 +50,7 @@ struct AnchorDepartureCardView: View {
                     .padding(.top, 8)
 
                 Divider()
-                    .frame(width: 240)
+                    .scaledFrame(width: 240)
                     .overlay(Color(hex: "#3a3a48"))
                     .padding(.vertical, 8)
 
@@ -61,7 +61,7 @@ struct AnchorDepartureCardView: View {
                     Text("Traffic falls.")
                     Text("Neighboring tenants feel it.")
                 }
-                .font(.system(size: 13, weight: .regular, design: .monospaced))
+                .scaledFont(size: 13, weight: .regular, design: .monospaced)
                 .foregroundStyle(Color(hex: "#6a6a78"))
 
                 Spacer()
@@ -69,7 +69,7 @@ struct AnchorDepartureCardView: View {
                 // Continue — explicit, no tap-elsewhere path.
                 Button(action: { vm.dismissAnchorDepartureCard() }) {
                     Text("Continue")
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .scaledFont(size: 18, weight: .bold, design: .monospaced)
                         .tracking(1.2)
                         .foregroundStyle(Color(hex: "#2a0a2a"))
                         .padding(.horizontal, 32).padding(.vertical, 12)
@@ -82,7 +82,8 @@ struct AnchorDepartureCardView: View {
 
                 Spacer().frame(height: 40)
             }
-            .frame(maxWidth: 520)
+            // v9 Prompt 23 — scales with UI scale for cross-iPad fit.
+            .scaledFrame(maxWidth: 520)
             .padding(.horizontal, 24)
         }
         .onAppear { vm.claimAnchorCardPause() }

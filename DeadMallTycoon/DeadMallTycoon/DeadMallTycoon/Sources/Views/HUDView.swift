@@ -34,15 +34,17 @@ struct HUDView: View {
     // v9 Prompt 4 Phase 5 — total mall memory weight. Read-only, minimal.
     // Matches the ambient typography of the threat-reason label: monospaced,
     // muted color, tabular digits.
+    // v9 Prompt 23 — font sizes scale with UI scale so the cell doesn't
+    // eat disproportionate real estate on small iPads.
     private var memoryCell: some View {
         let total = Int(vm.state.totalMemoryWeight.rounded())
         return HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text("Memory")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .scaledFont(size: 10, weight: .bold, design: .monospaced)
                 .tracking(0.6)
                 .foregroundStyle(Color(hex: "#6a6a78"))
             Text("\(total)")
-                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .scaledFont(size: 14, weight: .bold, design: .monospaced)
                 .monospacedDigit()
                 .foregroundStyle(Color(hex: "#b8e8f8"))
         }
@@ -54,11 +56,11 @@ struct HUDView: View {
     private var dateCell: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("\(GameConstants.months[vm.state.month]) \(String(vm.state.year))")
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .scaledFont(size: 18, weight: .bold, design: .monospaced)
                 .monospacedDigit()
                 .foregroundStyle(Color(hex: "#ff4dbd"))
             Text("MONTH \(monthsSurvived)")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .scaledFont(size: 10, weight: .bold, design: .monospaced)
                 .tracking(1.4)
                 .foregroundStyle(Color(hex: "#6a6a78"))
         }
@@ -86,7 +88,7 @@ struct HUDView: View {
         let debt = vm.state.debt
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(fmt(vm.state.cash))
-                .font(.system(size: 26, weight: .black, design: .monospaced))
+                .scaledFont(size: 26, weight: .black, design: .monospaced)
                 .monospacedDigit()
                 .foregroundStyle(cashColor)
                 .lineLimit(1)
@@ -96,7 +98,7 @@ struct HUDView: View {
             if debt > 0 {
                 (Text("debt ").foregroundStyle(Color(hex: "#6a6a78"))
                  + Text("-\(fmt(debt))").foregroundStyle(debtColor(debt)))
-                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .scaledFont(size: 12, weight: .bold, design: .monospaced)
                     .monospacedDigit()
                     .contentTransition(.numericText())
                     .animation(.easeOut(duration: 0.6), value: debt)
@@ -118,7 +120,7 @@ struct HUDView: View {
         }()
         return HStack(spacing: 6) {
             Text(band.displayName.uppercased())
-                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .scaledFont(size: 10, weight: .black, design: .monospaced)
                 .tracking(0.8)
                 .padding(.horizontal, 5).padding(.vertical, 1)
                 .background(Capsule().fill(fillColor.opacity(0.25)))
@@ -131,7 +133,9 @@ struct HUDView: View {
                     Capsule().fill(fillColor).frame(width: geo.size.width * t)
                 }
             }
-            .frame(width: 140, height: 10)
+            // v9 Prompt 23 — bar scales with UI scale so it keeps its
+            // proportion on iPad mini (shorter) / iPad Pro 13" (longer).
+            .scaledFrame(width: 140, height: 10)
         }
     }
 
