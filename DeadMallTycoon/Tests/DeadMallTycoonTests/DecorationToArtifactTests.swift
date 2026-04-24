@@ -208,16 +208,65 @@ final class ArtifactPlacementTests: XCTestCase {
         XCTAssertFalse(placed.hazard)
     }
 
-    func testPlaceOutsideCorridorRejects() {
+    func testPlaceInsideStorefrontRejects() {
+        // v9 Prompt 22 — placement gate replaced the old y-range check
+        // with an AABB overlap against every Store.position. A photo
+        // booth centered at (300, 100) spans roughly x:285..315 y:76..124
+        // which sits inside the north-standard row (x:200..1000, y:0..90)
+        // → overlap → placement rejected.
         var s = StartingMall.initialState()
         s.cash = 5000
         let before = s.artifacts.count
 
-        // y < 200 → above corridor; must be rejected.
         s = ArtifactActions.place(type: .photoBooth,
                                   at: (x: 300, y: 100), s)
         XCTAssertEqual(s.artifacts.count, before)
         XCTAssertEqual(s.cash, 5000)
+    }
+
+    func testPlaceInsideAnchorColumnRejects() {
+        // v9 Prompt 22 — anchor rects (x:0..200 north, x:1000..1200
+        // south, both y:200..1200) are gated like any other storefront.
+        // A photo booth at (100, 600) would sit inside Halvorsen; must
+        // be rejected even though the old y-range check would've let it
+        // through.
+        var s = StartingMall.initialState()
+        s.cash = 5000
+        let before = s.artifacts.count
+
+        s = ArtifactActions.place(type: .photoBooth,
+                                  at: (x: 100, y: 600), s)
+        XCTAssertEqual(s.artifacts.count, before)
+        XCTAssertEqual(s.cash, 5000)
+    }
+
+    func testPlaceInUpperAccessCorridorAccepted() {
+        // v9 Prompt 22 — the strip between the north storefront row
+        // (y:0..90) and the anchor tops (y:200) is walkable corridor
+        // and must be placeable. The old y<300 gate wrongly blocked
+        // it; the new AABB check lets it through.
+        var s = StartingMall.initialState()
+        s.cash = 5000
+        let before = s.artifacts.count
+
+        // photoBooth is 30x48; at x:500 y:150 its rect is x:485..515
+        // y:126..174 — no overlap with any store.
+        s = ArtifactActions.place(type: .photoBooth,
+                                  at: (x: 500, y: 150), s)
+        XCTAssertEqual(s.artifacts.count, before + 1,
+                       "placement near the north access corridor succeeds")
+    }
+
+    func testPlaceOutsideWorldBoundsRejects() {
+        // v9 Prompt 22 — bounding box must sit inside the world. A
+        // center at y:-5 pushes the rect's top below 0.
+        var s = StartingMall.initialState()
+        s.cash = 5000
+        let before = s.artifacts.count
+
+        s = ArtifactActions.place(type: .photoBooth,
+                                  at: (x: 500, y: -5), s)
+        XCTAssertEqual(s.artifacts.count, before)
     }
 
     func testPlaceWithInsufficientCashRejects() {

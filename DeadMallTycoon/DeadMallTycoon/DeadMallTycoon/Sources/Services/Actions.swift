@@ -295,12 +295,47 @@ enum ArtifactActions {
         let info = ArtifactCatalog.info(type)
         if info.cost <= 0 { return s }                // not player-placeable
         if s.cash < info.cost { return s }
-        // v8: corridor constraint y in [200, 320].
-        // v9 patch — worldHeight 1400. Constrain placement to the central
-        // corridor band (y:300..1100), leaving 100pt margins at top/bottom
-        // of the main corridor (y:200..1200) so artifacts don't crowd the
-        // access-corridor seams.
-        if point.y < 300 || point.y > 1100 { return s }
+        // v9 Prompt 22 — placement gate.
+        //
+        // Pre-Prompt-22: a hard y-range of [300, 1100] blocked 210-pt
+        // strips directly below the north storefronts (y:90..300) and
+        // above the south storefronts (y:1100..1310), even though those
+        // are walkable corridor. It also failed to guard the anchor
+        // columns on the x-axis (x:0..200 and x:1000..1200), so a raw
+        // placeArtifact call could drop a kugel ball INSIDE Halvorsen's
+        // footprint.
+        //
+        // New rule per Trevor: place anywhere that isn't a storefront.
+        // The artifact's full bounding box must sit inside the world
+        // and avoid every Store.position rect. Overlap with other
+        // artifacts is allowed (matches pre-fix behavior — the old
+        // range check didn't prevent that either).
+        //
+        // Upper-left corner of the prospective rect; width/height from
+        // the catalog; Store.position uses the same upper-left
+        // convention (StorePosition.x/y = upper-left), so AABB overlap
+        // is a straightforward half-plane check.
+        let aX = point.x - info.size.width  / 2
+        let aY = point.y - info.size.height / 2
+        let aW = Double(info.size.width)
+        let aH = Double(info.size.height)
+        // Inside world bounds.
+        if aX < 0 || aY < 0
+            || aX + aW > GameConstants.worldWidth
+            || aY + aH > GameConstants.worldHeight {
+            return s
+        }
+        // No overlap with any store's rect (includes anchors, standards,
+        // kiosks, and vacant slots — sealed/boarded positions still
+        // occupy physical space the player shouldn't cover).
+        for store in s.stores {
+            let sp = store.position
+            let overlaps = aX < sp.x + sp.w
+                && aX + aW > sp.x
+                && aY < sp.y + sp.h
+                && aY + aH > sp.y
+            if overlaps { return s }
+        }
         s.cash -= info.cost
         let newId = (s.artifacts.map(\.id).max() ?? 0) + 1
         let origin: ArtifactOrigin = .playerAction("placed")
@@ -310,8 +345,8 @@ enum ArtifactActions {
             name: info.name,
             origin: origin,
             yearCreated: s.year,
-            x: point.x - info.size.width  / 2,
-            y: point.y - info.size.height / 2
+            x: aX,
+            y: aY
         ))
         s.ledger.append(.artifactCreated(
             artifactId: newId,
