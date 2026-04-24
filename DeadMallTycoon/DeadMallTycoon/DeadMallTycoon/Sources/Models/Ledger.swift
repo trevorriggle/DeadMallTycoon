@@ -326,7 +326,8 @@ extension LedgerEntry {
         switch self {
         case .artifactCreated, .decayTransition, .attentionMilestone,
              .closure, .anchorDeparture,
-             .artifactSealed, .displayConversion, .displayReverted:
+             .artifactSealed, .displayConversion, .displayReverted,
+             .nameInheritance:
             return true
         case .offerDestruction, .artifactDestroyed, .envTransition:
             return false
